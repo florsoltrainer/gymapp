@@ -5,66 +5,86 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Panel de Entrenador - Gestión de Rutinas</title>
   <style>
+    /* =========================================================
+       1. VARIABLES POR DEFECTO: MODO OSCURO (DARK MODE)
+       Mantiene los colores originales de tu app
+       ========================================================= */
     :root {
       --bg: #121214;
       --card: #1e1e24;
       --accent: #00e676;
+      --accent-text: #000000;
       --text: #ffffff;
       --muted: #a0a0b0;
       --border: #2a2a35;
+      --input-bg: #252530;
       --danger: #ff5252;
       --warning: #ffb74d;
+      --tree-bg: #18181c;
+      --badge-bg: #333342;
     }
 
+    /* =========================================================
+       2. MODO CLARO (LIGHT MODE): Se activa automáticamente 
+       si el dispositivo del usuario está configurado en Claro
+       ========================================================= */
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f4f5f8;
+        --card: #ffffff;
+        --accent: #00b050; /* Verde accesible para contraste claro */
+        --accent-text: #ffffff;
+        --text: #1a1a1e;
+        --muted: #6c707e;
+        --border: #e2e4e9;
+        --input-bg: #f0f1f5;
+        --danger: #e53935;
+        --warning: #f57c00;
+        --tree-bg: #f8f9fc;
+        --badge-bg: #e4e6ed;
+      }
+    }
+
+    /* =========================================================
+       3. ESTILOS BASE ADAPTATIVOS
+       ========================================================= */
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 700px; margin: 0 auto; }
+    body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 600px; margin: 0 auto; transition: background-color 0.3s ease, color 0.3s ease; }
 
     h1, h2, h3, h4 { margin-bottom: 12px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
 
     label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
-    input, select, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: #252530; color: var(--text); margin-bottom: 12px; font-size: 1rem; }
+    input, select, textarea, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); margin-bottom: 12px; font-size: 1rem; }
+    textarea { resize: vertical; min-height: 70px; font-family: inherit; }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
-    /* Menú de Navegación */
-    .nav-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-    .nav-btn { flex: 1; padding: 12px 8px; background: #252530; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; text-align: center; margin-bottom: 0; }
-    .nav-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
-
-    button.btn-main { background: var(--accent); color: #000; font-weight: bold; cursor: pointer; border: none; margin-bottom: 0; }
+    /* Botones */
+    button.btn-main { background: var(--accent); color: var(--accent-text); font-weight: bold; cursor: pointer; border: none; margin-bottom: 0; }
     button.btn-sec { background: transparent; color: var(--accent); border: 1px solid var(--accent); cursor: pointer; }
     button.btn-warning { background: transparent; color: var(--warning); border: 1px solid var(--warning); padding: 6px 10px; font-size: 0.8rem; margin-bottom: 0; cursor: pointer; }
     button.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 6px 10px; font-size: 0.8rem; margin-bottom: 0; cursor: pointer; }
     button.btn-google { background: #4285F4; color: #fff; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; }
 
+    .timer-display { font-size: 2.5rem; font-weight: bold; text-align: center; color: var(--accent); margin: 8px 0; }
+    .sync-status { font-size: 0.85rem; text-align: center; color: var(--accent); margin-top: 6px; font-weight: 500; }
+    .loading-overlay { text-align: center; padding: 40px 20px; font-size: 1rem; color: var(--muted); }
+
+    /* Galería / Elementos secundarios */
+    .image-gallery { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 6px; scroll-snap-type: x mandatory; }
+    .image-gallery img { flex: 0 0 100%; max-height: 250px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); scroll-snap-align: center; }
+
     .flex-row { display: flex; gap: 8px; align-items: center; }
-    .tree-node { background: #18181c; border-radius: 8px; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); }
-    .item-chip { background: #252530; border-radius: 6px; padding: 8px 12px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
-    .status-msg { text-align: center; font-weight: bold; margin-top: 8px; font-size: 0.9rem; }
-    .auth-box { text-align: center; padding: 40px 20px; }
-
-    .module-section { display: none; }
-    .module-section.active-module { display: block; }
-
-    /* Estilos de la caja de enlace */
-    .link-box { background: #18181c; border: 1px solid var(--accent); border-radius: 8px; padding: 12px; margin-top: 12px; }
-    .link-input-group { display: flex; gap: 8px; margin-top: 6px; }
-    .link-input-group input { margin-bottom: 0; font-size: 0.85rem; color: var(--accent); }
-    .link-input-group button { width: auto; white-space: nowrap; margin-bottom: 0; font-size: 0.85rem; }
-
-    /* Estilos del resumen semanal */
-    .day-summary-card { background: #18181c; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+    .tree-node { background: var(--tree-bg); border-radius: 8px; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); }
+    .item-chip { background: var(--input-bg); border-radius: 6px; padding: 8px 12px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+    .badge-zona { background: var(--badge-bg); color: var(--accent); font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px; border: 1px solid var(--border); }
+    
+    .day-summary-card { background: var(--tree-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
     .day-summary-header { font-weight: bold; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 8px; font-size: 0.95rem; }
     .zone-summary-title { font-size: 0.85rem; font-weight: bold; color: var(--warning); margin: 8px 0 4px 0; display: flex; align-items: center; gap: 4px; }
-    .log-chip { background: #252530; padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
-    
-    .badge-zona { background: #333342; color: var(--accent); font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px; border: 1px solid var(--border); }
-
-    /* Modales de edición */
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 16px; }
-    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 500px; padding: 20px; max-height: 90vh; overflow-y: auto; }
+    .log-chip { background: var(--input-bg); padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
   </style>
 
   <!-- Módulos de Firebase -->
