@@ -365,7 +365,8 @@
       
       const selectedExName = document.getElementById('selectGlobalExercise').value;
       const manualExName = document.getElementById('manualExName').value.trim();
-      
+      const notes = document.getElementById('newExNotes').value.trim();
+
       const exName = selectedExName || manualExName;
       const sets = Number(document.getElementById('newExSets').value) || 3;
       const weight = Number(document.getElementById('newExWeight').value);
@@ -390,10 +391,12 @@
         sets: sets, 
         weight: weight, 
         reps: reps,
+        notes: notes,
         imageUrls: imageUrls
       });
 
       document.getElementById('manualExName').value = '';
+      document.getElementById('newExNotes').value = '';
       document.getElementById('selectGlobalExercise').value = '';
       renderEditor();
     };
@@ -478,7 +481,13 @@
         const div = document.createElement('div');
         div.className = 'item-chip';
         const imgCount = ex.imageUrls ? ex.imageUrls.length : (ex.imageUrl ? 1 : 0);
-        div.innerHTML = `<span>🏋️ <strong>${ex.name}</strong> (${ex.sets || 3} series x ${ex.reps} reps @ ${ex.weight} kg) ${imgCount > 0 ? `🖼️ (${imgCount})` : ''}</span> <button class="btn-danger" onclick="deleteExercise('${day}', '${zone}', ${idx})">Eliminar</button>`;
+        div.innerHTML = `
+          <div>
+            <span>🏋️ <strong>${ex.name}</strong> (${ex.sets || 3} series x ${ex.reps} reps @ ${ex.weight} kg) ${imgCount > 0 ? `🖼️ (${imgCount})` : ''}</span>
+            ${ex.notes ? `<div style="font-size:0.8rem; color:var(--accent); margin-top:2px;">📌 <em>${ex.notes}</em></div>` : ''}
+          </div>
+          <button class="btn-danger" onclick="deleteExercise('${day}', '${zone}', ${idx})">Eliminar</button>
+        `;
         container.appendChild(div);
       });
     }
@@ -608,6 +617,9 @@
 
             <label style="margin-top:6px;">O escribir uno nuevo (se guardará en el banco):</label>
             <input type="text" id="manualExName" placeholder="Ej: Press Francés" oninput="document.getElementById('selectGlobalExercise').value=''">
+
+            <label style="margin-top:6px;">Observación / Nota para este alumno (opcional):</label>
+            <input type="text" id="newExNotes" placeholder="Ej: Controlar la bajada / Usar agarre neutro">
 
             <div class="grid-3">
               <div>
