@@ -45,6 +45,11 @@
 
     .module-section { display: none; }
     .module-section.active-module { display: block; }
+
+    /* Estilos del resumen semanal */
+    .day-summary-card { background: #18181c; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+    .day-summary-header { font-weight: bold; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 8px; font-size: 0.95rem; }
+    .log-chip { background: #252530; padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
   </style>
 
   <!-- Módulos de Firebase -->
@@ -118,7 +123,7 @@
       signOut(auth);
     };
 
-    // Control de Navegación entre Módulos
+    // Control de Navegación
     window.switchModule = function(moduleName) {
       document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.module-section').forEach(sec => sec.classList.remove('active-module'));
@@ -127,7 +132,7 @@
       document.getElementById(`module-${moduleName}`).classList.add('active-module');
     };
 
-    // Cargar Ejercicios Globales desde Firebase
+    // Banco de Ejercicios Base
     async function loadGlobalExercises() {
       window.globalExercises = [];
       const selectEx = document.getElementById('selectGlobalExercise');
@@ -158,7 +163,6 @@
       }
     }
 
-    // Agregar Ejercicio Nuevo al Banco Global
     window.addGlobalExercise = async function() {
       const nameInput = document.getElementById('newGlobalExInput');
       const fileInput = document.getElementById('newGlobalExFiles');
@@ -216,7 +220,7 @@
       }
     };
 
-    // Cargar Lista de Alumnos
+    // Cargar Dropdown de Alumnos
     async function loadStudentsDropdown() {
       const select = document.getElementById('selectStudent');
       select.innerHTML = '<option value="">-- Selecciona un alumno --</option>';
@@ -234,7 +238,7 @@
       }
     }
 
-    // Crear Alumno y Planilla Automática
+    // Crear Alumno
     window.createNewStudent = async function() {
       const name = document.getElementById('newStudentName').value.trim();
       const id = document.getElementById('newStudentId').value.trim().toLowerCase().replace(/\s+/g, '-');
@@ -274,7 +278,6 @@
           document.getElementById('newStudentId').value = '';
           document.getElementById('newStudentEmail').value = '';
 
-          // Cambiar automáticamente a la pestaña "Mis Alumnos" y seleccionar al nuevo alumno
           switchModule('alumnos');
           document.getElementById('selectStudent').value = id;
           onSelectStudent();
@@ -313,9 +316,70 @@
         document.getElementById('editStudentEmail').value = window.currentStudentData.email;
         document.getElementById('sheetUrlDisplay').href = window.currentStudentData.google_sheet_url || "#";
         document.getElementById('sheetUrlDisplay').textContent = window.currentStudentData.google_sheet_url ? "Abrir Planilla en Google Drive ↗" : "Sin planilla generada";
+        
         renderEditor();
+        fetchWeeklyLogs(window.currentStudentData.spreadsheet_id);
       }
     };
+
+    // Función para obtener y procesar los registros semanales de Google Sheets
+    async function fetchWeeklyLogs(spreadsheetId) {
+      const container = document.getElementById('weeklyLogsContainer');
+      container.innerHTML = '<p style="color: var(--muted); font-size: 0.85rem; text-align: center;">⏳ Cargando entrenamientos de esta semana...</p>';
+
+      if (!spreadsheetId || !MASTER_SCRIPT_URL) {
+        container.innerHTML = '<p style="color: var(--muted); font-size: 0.85rem; text-align: center;">Sin planilla asociada.</p>';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${MASTER_SCRIPT_URL}?action=GET_WEEKLY_LOGS&spreadsheetId=${spreadsheetId}`);
+        const data = await response.json();
+
+        if (data.status === "success" && data.logs && data.logs.length > 0) {
+          // Agrupar registros por Fecha/Día
+          const groupedByDay = {};
+          data.logs.forEach(row => {
+            const dayKey = `${row.Fecha} (${row.Día})`;
+            if (!groupedByDay[dayKey]) groupedByDay[dayKey] = [];
+            groupedByDay[dayKey].push(row);
+          });
+
+          container.innerHTML = '';
+          Object.keys(groupedByDay).forEach(dayLabel => {
+            const dayCard = document.createElement('div');
+            dayCard.className = 'day-summary-card';
+            
+            let itemsHTML = '';
+            groupedByDay[dayLabel].forEach(log => {
+              itemsHTML += `
+                <div class="log-chip">
+                  <div>
+                    <strong>🏋️ ${log.Ejercicio}</strong> (Serie ${log.Serie})
+                    ${log.Comentarios ? `<div style="font-size:0.75rem; color:var(--accent);">💬 <em>"${log.Comentarios}"</em></div>` : ''}
+                  </div>
+                  <div style="text-align: right;">
+                    <span style="color:var(--accent); font-weight:bold;">${log["Peso (kg)"]} kg × ${log.Repeticiones} reps</span>
+                    <div style="font-size:0.75rem; color:var(--muted);">${log.Hora}</div>
+                  </div>
+                </div>
+              `;
+            });
+
+            dayCard.innerHTML = `
+              <div class="day-summary-header">📅 ${dayLabel}</div>
+              ${itemsHTML}
+            `;
+            container.appendChild(dayCard);
+          });
+        } else {
+          container.innerHTML = '<p style="color: var(--muted); font-size: 0.85rem; text-align: center;">El alumno no registró entrenamientos en los últimos 7 días.</p>';
+        }
+      } catch (e) {
+        console.error("Error al obtener entrenamientos semanales:", e);
+        container.innerHTML = '<p style="color: var(--danger); font-size: 0.85rem; text-align: center;">⚠️ Error de lectura de la planilla de Google Sheets.</p>';
+      }
+    }
 
     window.saveToFirebase = async function() {
       if (!window.currentStudentId) return alert("No hay un alumno seleccionado.");
@@ -396,7 +460,6 @@
 
       if (!day || !zone || !exName) return alert("Selecciona o escribe el nombre del ejercicio.");
 
-      // Procesar pesos (array)
       let weightsArray = [];
       if (weightsInput.includes(',')) {
         weightsArray = weightsInput.split(',').map(w => Number(w.trim()) || 0);
@@ -405,7 +468,6 @@
         weightsArray = Array(sets).fill(singleWeight);
       }
 
-      // Procesar repeticiones (array)
       let repsArray = [];
       if (repsInput.includes(',')) {
         repsArray = repsInput.split(',').map(r => Number(r.trim()) || 0);
@@ -608,8 +670,15 @@
         <select id="selectStudent" onchange="onSelectStudent()"></select>
       </div>
 
-      <!-- Editor de Rutina -->
+      <!-- Editor de Rutina y Visualizador -->
       <div id="editorContainer" style="display: none;">
+        
+        <!-- RESUMEN DE REGISTROS DE LA SEMANA -->
+        <div class="card">
+          <h2>📊 Entrenamientos Realizados esta Semana</h2>
+          <div id="weeklyLogsContainer"></div>
+        </div>
+
         <div class="card">
           <h2>👤 Datos del Alumno</h2>
           <div class="grid-2">
@@ -623,7 +692,7 @@
             </div>
           </div>
           <label>Planilla de Google Sheets Asignada:</label>
-          <a id="sheetUrlDisplay" href="#" target="_blank" style="color: var(--accent); font-weight: bold; font-size: 0.9rem;">Abrir Planilla ↗</a>
+          <a id="sheetUrlDisplay" href="#" target="_blank" style="color: var(--accent); font-weight: bold; font-size: 0.9rem;">Abrir Planilla en Google Drive ↗</a>
         </div>
 
         <div class="card">
