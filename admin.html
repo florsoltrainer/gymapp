@@ -27,6 +27,11 @@
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
+    /* Menú de Navegación */
+    .nav-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .nav-btn { flex: 1; padding: 12px 8px; background: #252530; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; text-align: center; margin-bottom: 0; }
+    .nav-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
     button.btn-main { background: var(--accent); color: #000; font-weight: bold; cursor: pointer; border: none; margin-bottom: 0; }
     button.btn-sec { background: transparent; color: var(--accent); border: 1px solid var(--accent); cursor: pointer; }
     button.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 6px 10px; font-size: 0.8rem; margin-bottom: 0; cursor: pointer; }
@@ -37,6 +42,9 @@
     .item-chip { background: #252530; border-radius: 6px; padding: 8px 12px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
     .status-msg { text-align: center; font-weight: bold; margin-top: 8px; font-size: 0.9rem; }
     .auth-box { text-align: center; padding: 40px 20px; }
+
+    .module-section { display: none; }
+    .module-section.active-module { display: block; }
   </style>
 
   <!-- Módulos de Firebase -->
@@ -110,6 +118,15 @@
       signOut(auth);
     };
 
+    // Control de Navegación entre Módulos
+    window.switchModule = function(moduleName) {
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.module-section').forEach(sec => sec.classList.remove('active-module'));
+
+      document.getElementById(`btn-${moduleName}`).classList.add('active');
+      document.getElementById(`module-${moduleName}`).classList.add('active-module');
+    };
+
     // Cargar Ejercicios Globales desde Firebase
     async function loadGlobalExercises() {
       window.globalExercises = [];
@@ -141,7 +158,7 @@
       }
     }
 
-    // Agregar Ejercicio Nuevo al Banco Global con hasta 3 imágenes subidas a Cloudinary
+    // Agregar Ejercicio Nuevo al Banco Global
     window.addGlobalExercise = async function() {
       const nameInput = document.getElementById('newGlobalExInput');
       const fileInput = document.getElementById('newGlobalExFiles');
@@ -249,15 +266,18 @@
 
           await saveToFirebase();
           await loadStudentsDropdown();
-          document.getElementById('selectStudent').value = id;
-          renderEditor();
-
+          
           status.textContent = `✅ Alumno creado y planilla generada en Drive!`;
           status.style.color = "var(--accent)";
 
           document.getElementById('newStudentName').value = '';
           document.getElementById('newStudentId').value = '';
           document.getElementById('newStudentEmail').value = '';
+
+          // Cambiar automáticamente a la pestaña "Mis Alumnos" y seleccionar al nuevo alumno
+          switchModule('alumnos');
+          document.getElementById('selectStudent').value = id;
+          onSelectStudent();
         } else {
           status.textContent = "❌ Error creando la planilla en Google Drive.";
           status.style.color = "var(--danger)";
@@ -271,7 +291,10 @@
 
     window.onSelectStudent = async function() {
       const id = document.getElementById('selectStudent').value;
-      if (!id) return;
+      if (!id) {
+        document.getElementById('editorContainer').style.display = 'none';
+        return;
+      }
 
       window.currentStudentId = id;
       const docRef = doc(db, "alumnos", id);
@@ -529,140 +552,151 @@
 
   <!-- APLICACIÓN ADMINISTRADOR -->
   <div id="adminApp" style="display: none;">
-    <div class="flex-row" style="justify-content: space-between; margin-bottom: 16px;">
-      <span style="font-size: 0.9rem; color: var(--muted);">Conectado como: <strong id="adminEmailDisplay" style="color:var(--text);"></strong></span>
-      <button class="btn-danger" onclick="logout()" style="width: auto;">Cerrar Sesión</button>
+    <div class="flex-row" style="justify-content: space-between; margin-bottom: 12px;">
+      <span style="font-size: 0.85rem; color: var(--muted);">Conectado: <strong id="adminEmailDisplay" style="color:var(--text);"></strong></span>
+      <button class="btn-danger" onclick="logout()" style="width: auto; padding: 4px 10px;">Salir</button>
     </div>
 
-    <!-- 0. Gestor de Ejercicios Base -->
-    <div class="card">
-      <details>
-        <summary style="cursor: pointer; color: var(--accent); font-weight: bold;">📚 Banco de Ejercicios Precargados</summary>
-        <div style="margin-top: 12px;">
-          <input type="text" id="newGlobalExInput" placeholder="Nombre: Ej. Sentadilla Búlgara">
-          <label>Imágenes/GIFs (hasta 3 archivos):</label>
-          <input type="file" id="newGlobalExFiles" accept="image/*" multiple>
-          <button class="btn-main" onclick="addGlobalExercise()">+ Agregar al Banco</button>
-          <div id="globalExercisesList" style="margin-top: 10px;"></div>
-        </div>
-      </details>
+    <!-- Pestañas Principales -->
+    <div class="nav-tabs">
+      <button class="nav-btn active" id="btn-ejercicios" onclick="switchModule('ejercicios')">📚 Banco Ejercicios</button>
+      <button class="nav-btn" id="btn-nuevo-alumno" onclick="switchModule('nuevo-alumno')">➕ Nuevo Alumno</button>
+      <button class="nav-btn" id="btn-alumnos" onclick="switchModule('alumnos')">👥 Mis Alumnos</button>
     </div>
 
-    <!-- 1. Crear Nuevo Alumno -->
-    <div class="card">
-      <h2>➕ Crear Nuevo Alumno (Auto-Planilla)</h2>
-      <div class="grid-2">
-        <div>
-          <label>Nombre Completo</label>
-          <input type="text" id="newStudentName" placeholder="Ej: Juan Pérez">
-        </div>
-        <div>
-          <label>ID para el Enlace (sin espacios)</label>
-          <input type="text" id="newStudentId" placeholder="Ej: juan">
-        </div>
-      </div>
-      <label>Email de Google del Alumno (para validar su acceso)</label>
-      <input type="email" id="newStudentEmail" placeholder="juan.perez@gmail.com">
-      
-      <button class="btn-main" onclick="createNewStudent()">Crear Alumno y Generar Planilla</button>
-      <div class="status-msg" id="createStatus"></div>
-    </div>
-
-    <!-- 2. Seleccionar Alumno -->
-    <div class="card">
-      <h2>✏️ Cargar o Editar Rutina de Alumno</h2>
-      <label for="selectStudent">Selecciona un Alumno:</label>
-      <select id="selectStudent" onchange="onSelectStudent()"></select>
-    </div>
-
-    <!-- 3. Formulario de Edición -->
-    <div id="editorContainer" style="display: none;">
+    <!-- MÓDULO 1: BANCO DE EJERCICIOS -->
+    <div id="module-ejercicios" class="module-section active-module">
       <div class="card">
-        <h2>👤 Datos del Alumno</h2>
+        <h2>📚 Banco de Ejercicios Precargados</h2>
+        <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 12px;">Administra los ejercicios globales que estarán disponibles para asignar a cualquier alumno.</p>
+        <input type="text" id="newGlobalExInput" placeholder="Nombre: Ej. Sentadilla Búlgara">
+        <label>Imágenes/GIFs ilustrativos (hasta 3):</label>
+        <input type="file" id="newGlobalExFiles" accept="image/*" multiple>
+        <button class="btn-main" onclick="addGlobalExercise()">+ Agregar al Banco</button>
+        <div id="globalExercisesList" style="margin-top: 12px;"></div>
+      </div>
+    </div>
+
+    <!-- MÓDULO 2: CREAR NUEVO ALUMNO -->
+    <div id="module-nuevo-alumno" class="module-section">
+      <div class="card">
+        <h2>➕ Registrar Nuevo Alumno</h2>
+        <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 12px;">Al registrarlo se creará automáticamente su planilla propia en Google Drive.</p>
         <div class="grid-2">
           <div>
-            <label>Nombre</label>
-            <input type="text" id="editStudentName">
+            <label>Nombre Completo</label>
+            <input type="text" id="newStudentName" placeholder="Ej: Juan Pérez">
           </div>
           <div>
-            <label>Email de Google del Alumno</label>
-            <input type="email" id="editStudentEmail">
+            <label>ID para Enlace (sin espacios)</label>
+            <input type="text" id="newStudentId" placeholder="Ej: juan">
           </div>
         </div>
-        <label>Planilla de Google Sheets Asignada:</label>
-        <a id="sheetUrlDisplay" href="#" target="_blank" style="color: var(--accent); font-weight: bold; font-size: 0.9rem;">Abrir Planilla ↗</a>
+        <label>Email de Google del Alumno</label>
+        <input type="email" id="newStudentEmail" placeholder="juan.perez@gmail.com">
+        
+        <button class="btn-main" onclick="createNewStudent()">Crear Alumno y Generar Planilla</button>
+        <div class="status-msg" id="createStatus"></div>
+      </div>
+    </div>
+
+    <!-- MÓDULO 3: LISTADO Y EDICIÓN DE ALUMNOS -->
+    <div id="module-alumnos" class="module-section">
+      <div class="card">
+        <h2>👥 Seleccionar Alumno</h2>
+        <label for="selectStudent">Elige un alumno registrado para ver o editar su rutina:</label>
+        <select id="selectStudent" onchange="onSelectStudent()"></select>
       </div>
 
-      <div class="card">
-        <h2>⚙️ Diseñar Rutina (Día > Zona > Ejercicio)</h2>
-
-        <!-- Días -->
-        <div class="tree-node">
-          <h4>1. Añadir Día de Entrenamiento</h4>
-          <div class="flex-row" style="margin-top: 6px;">
-            <input type="text" id="newDayInput" placeholder="Ej: Lunes - Día A" style="margin-bottom:0;">
-            <button class="btn-main" onclick="addDay()" style="width:auto; white-space:nowrap;">+ Día</button>
-          </div>
-          <div id="daysList" style="margin-top: 8px;"></div>
-        </div>
-
-        <!-- Zonas -->
-        <div class="tree-node">
-          <h4>2. Añadir Zona del Cuerpo</h4>
-          <label>Día:</label>
-          <select id="selectDayForZone" onchange="renderZonesList()"></select>
-          <div class="flex-row">
-            <input type="text" id="newZoneInput" placeholder="Ej: Pecho, Tríceps" style="margin-bottom:0;">
-            <button class="btn-main" onclick="addZone()" style="width:auto; white-space:nowrap;">+ Zona</button>
-          </div>
-          <div id="zonesList" style="margin-top: 8px;"></div>
-        </div>
-
-        <!-- Ejercicios -->
-        <div class="tree-node">
-          <h4>3. Añadir Ejercicios</h4>
+      <!-- Editor de Rutina -->
+      <div id="editorContainer" style="display: none;">
+        <div class="card">
+          <h2>👤 Datos del Alumno</h2>
           <div class="grid-2">
             <div>
-              <label>Día:</label>
-              <select id="selectDayForEx" onchange="updateZoneDropdownForEx()"></select>
+              <label>Nombre</label>
+              <input type="text" id="editStudentName">
             </div>
             <div>
-              <label>Zona:</label>
-              <select id="selectZoneForEx" onchange="renderExercisesList()"></select>
+              <label>Email de Google del Alumno</label>
+              <input type="email" id="editStudentEmail">
             </div>
           </div>
-
-          <div style="background:#252530; padding:10px; border-radius:6px; margin-bottom:8px;">
-            <label>Elegir de Ejercicios Precargados:</label>
-            <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''"></select>
-
-            <label style="margin-top:6px;">O escribir uno nuevo (se guardará en el banco):</label>
-            <input type="text" id="manualExName" placeholder="Ej: Press Francés" oninput="document.getElementById('selectGlobalExercise').value=''">
-
-            <label style="margin-top:6px;">Observación / Nota para este alumno (opcional):</label>
-            <input type="text" id="newExNotes" placeholder="Ej: Controlar la bajada / Usar agarre neutro">
-
-            <div class="grid-3">
-              <div>
-                <label>Series Target</label>
-                <input type="number" id="newExSets" value="3" min="1">
-              </div>
-              <div>
-                <label>Peso Target por Serie (kg)</label>
-                <input type="text" id="newExWeights" placeholder="Ej: 50, 55, 60">
-              </div>
-              <div>
-                <label>Reps Target por Serie</label>
-                <input type="text" id="newExReps" placeholder="Ej: 12, 10, 8">
-              </div>
-            </div>
-            <button class="btn-sec" onclick="addExercise()" style="margin-bottom:0;">+ Añadir Ejercicio a la Rutina</button>
-          </div>
-          <div id="exercisesList"></div>
+          <label>Planilla de Google Sheets Asignada:</label>
+          <a id="sheetUrlDisplay" href="#" target="_blank" style="color: var(--accent); font-weight: bold; font-size: 0.9rem;">Abrir Planilla ↗</a>
         </div>
 
-        <button class="btn-main" onclick="saveToFirebase()" style="padding: 14px; font-size: 1.1rem; margin-top: 10px;">💾 Guardar y Publicar Rutina</button>
-        <div class="status-msg" id="saveStatus"></div>
+        <div class="card">
+          <h2>⚙️ Diseñar Rutina (Día > Zona > Ejercicio)</h2>
+
+          <!-- Días -->
+          <div class="tree-node">
+            <h4>1. Añadir Día de Entrenamiento</h4>
+            <div class="flex-row" style="margin-top: 6px;">
+              <input type="text" id="newDayInput" placeholder="Ej: Lunes - Día A" style="margin-bottom:0;">
+              <button class="btn-main" onclick="addDay()" style="width:auto; white-space:nowrap;">+ Día</button>
+            </div>
+            <div id="daysList" style="margin-top: 8px;"></div>
+          </div>
+
+          <!-- Zonas -->
+          <div class="tree-node">
+            <h4>2. Añadir Zona del Cuerpo</h4>
+            <label>Día:</label>
+            <select id="selectDayForZone" onchange="renderZonesList()"></select>
+            <div class="flex-row">
+              <input type="text" id="newZoneInput" placeholder="Ej: Pecho, Tríceps" style="margin-bottom:0;">
+              <button class="btn-main" onclick="addZone()" style="width:auto; white-space:nowrap;">+ Zona</button>
+            </div>
+            <div id="zonesList" style="margin-top: 8px;"></div>
+          </div>
+
+          <!-- Ejercicios -->
+          <div class="tree-node">
+            <h4>3. Añadir Ejercicios</h4>
+            <div class="grid-2">
+              <div>
+                <label>Día:</label>
+                <select id="selectDayForEx" onchange="updateZoneDropdownForEx()"></select>
+              </div>
+              <div>
+                <label>Zona:</label>
+                <select id="selectZoneForEx" onchange="renderExercisesList()"></select>
+              </div>
+            </div>
+
+            <div style="background:#252530; padding:10px; border-radius:6px; margin-bottom:8px;">
+              <label>Elegir de Ejercicios Precargados:</label>
+              <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''"></select>
+
+              <label style="margin-top:6px;">O escribir uno nuevo (se guardará en el banco):</label>
+              <input type="text" id="manualExName" placeholder="Ej: Press Francés" oninput="document.getElementById('selectGlobalExercise').value=''">
+
+              <label style="margin-top:6px;">Observación / Nota para este alumno (opcional):</label>
+              <input type="text" id="newExNotes" placeholder="Ej: Controlar la bajada / Usar agarre neutro">
+
+              <div class="grid-3">
+                <div>
+                  <label>Series Target</label>
+                  <input type="number" id="newExSets" value="3" min="1">
+                </div>
+                <div>
+                  <label>Peso Target por Serie (kg)</label>
+                  <input type="text" id="newExWeights" placeholder="Ej: 50, 55, 60">
+                </div>
+                <div>
+                  <label>Reps Target por Serie</label>
+                  <input type="text" id="newExReps" placeholder="Ej: 12, 10, 8">
+                </div>
+              </div>
+              <button class="btn-sec" onclick="addExercise()" style="margin-bottom:0;">+ Añadir Ejercicio a la Rutina</button>
+            </div>
+            <div id="exercisesList"></div>
+          </div>
+
+          <button class="btn-main" onclick="saveToFirebase()" style="padding: 14px; font-size: 1.1rem; margin-top: 10px;">💾 Guardar y Publicar Rutina</button>
+          <div class="status-msg" id="saveStatus"></div>
+        </div>
       </div>
     </div>
   </div>
