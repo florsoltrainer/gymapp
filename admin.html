@@ -46,6 +46,12 @@
     .module-section { display: none; }
     .module-section.active-module { display: block; }
 
+    /* Estilos de la caja de enlace */
+    .link-box { background: #18181c; border: 1px solid var(--accent); border-radius: 8px; padding: 12px; margin-top: 12px; }
+    .link-input-group { display: flex; gap: 8px; margin-top: 6px; }
+    .link-input-group input { margin-bottom: 0; font-size: 0.85rem; color: var(--accent); }
+    .link-input-group button { width: auto; white-space: nowrap; margin-bottom: 0; font-size: 0.85rem; }
+
     /* Estilos del resumen semanal */
     .day-summary-card { background: #18181c; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
     .day-summary-header { font-weight: bold; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 8px; font-size: 0.95rem; }
@@ -86,6 +92,12 @@
     window.currentStudentData = { nombre: "", google_sheet_url: "", spreadsheet_id: "", rutina: {} };
     window.currentStudentId = "";
     window.globalExercises = [];
+
+    // URL Base de la app del alumno
+    function getStudentBaseUrl() {
+      const url = window.location.href.split('admin.html')[0];
+      return url.endsWith('/') ? url : url + '/';
+    }
 
     // Control de Sesión
     onAuthStateChanged(auth, async (user) => {
@@ -244,11 +256,14 @@
       const id = document.getElementById('newStudentId').value.trim().toLowerCase().replace(/\s+/g, '-');
       const email = document.getElementById('newStudentEmail').value.trim().toLowerCase();
       const status = document.getElementById('createStatus');
+      const resultBox = document.getElementById('createdStudentResult');
+      const resultLinkInput = document.getElementById('createdStudentLinkInput');
 
       if (!name || !id || !email) return alert("Ingresa Nombre, ID y Email del alumno.");
 
       status.textContent = "⏳ Generando planilla de Google Sheets automática...";
       status.style.color = "var(--muted)";
+      resultBox.style.display = 'none';
 
       try {
         const response = await fetch(MASTER_SCRIPT_URL, {
@@ -274,13 +289,14 @@
           status.textContent = `✅ Alumno creado y planilla generada en Drive!`;
           status.style.color = "var(--accent)";
 
+          // Generar enlace para compartir
+          const accessUrl = `${getStudentBaseUrl()}index.html?id=${id}`;
+          resultLinkInput.value = accessUrl;
+          resultBox.style.display = 'block';
+
           document.getElementById('newStudentName').value = '';
           document.getElementById('newStudentId').value = '';
           document.getElementById('newStudentEmail').value = '';
-
-          switchModule('alumnos');
-          document.getElementById('selectStudent').value = id;
-          onSelectStudent();
         } else {
           status.textContent = "❌ Error creando la planilla en Google Drive.";
           status.style.color = "var(--danger)";
@@ -290,6 +306,17 @@
         status.textContent = "❌ Falló la conexión con el Script Maestro.";
         status.style.color = "var(--danger)";
       }
+    };
+
+    window.copyLink = function(inputId) {
+      const input = document.getElementById(inputId);
+      input.select();
+      input.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(input.value).then(() => {
+        alert("📋 Enlace copiado al portapapeles!");
+      }).catch(err => {
+        alert("Error al copiar enlace: " + err);
+      });
     };
 
     window.onSelectStudent = async function() {
@@ -314,6 +341,11 @@
         };
         document.getElementById('editStudentName').value = window.currentStudentData.nombre;
         document.getElementById('editStudentEmail').value = window.currentStudentData.email;
+        
+        // Cargar enlace de acceso al alumno
+        const accessUrl = `${getStudentBaseUrl()}index.html?id=${id}`;
+        document.getElementById('studentAccessLinkInput').value = accessUrl;
+
         document.getElementById('sheetUrlDisplay').href = window.currentStudentData.google_sheet_url || "#";
         document.getElementById('sheetUrlDisplay').textContent = window.currentStudentData.google_sheet_url ? "Abrir Planilla en Google Drive ↗" : "Sin planilla generada";
         
@@ -322,7 +354,7 @@
       }
     };
 
-    // Función para obtener y procesar los registros semanales de Google Sheets
+    // Función para obtener y procesar los registros semanales
     async function fetchWeeklyLogs(spreadsheetId) {
       const container = document.getElementById('weeklyLogsContainer');
       container.innerHTML = '<p style="color: var(--muted); font-size: 0.85rem; text-align: center;">⏳ Cargando entrenamientos de esta semana...</p>';
@@ -337,7 +369,6 @@
         const data = await response.json();
 
         if (data.status === "success" && data.logs && data.logs.length > 0) {
-          // Agrupar registros por Fecha/Día
           const groupedByDay = {};
           data.logs.forEach(row => {
             const dayKey = `${row.Fecha} (${row.Día})`;
@@ -619,14 +650,14 @@
       <button class="btn-danger" onclick="logout()" style="width: auto; padding: 4px 10px;">Salir</button>
     </div>
 
-    <!-- Pestañas Principales en Nuevo Orden -->
+    <!-- Pestañas Principales -->
     <div class="nav-tabs">
       <button class="nav-btn active" id="btn-alumnos" onclick="switchModule('alumnos')">👥 Mis Alumnos</button>
       <button class="nav-btn" id="btn-nuevo-alumno" onclick="switchModule('nuevo-alumno')">➕ Nuevo Alumno</button>
       <button class="nav-btn" id="btn-ejercicios" onclick="switchModule('ejercicios')">📚 Banco Ejercicios</button>
     </div>
 
-    <!-- PESTAÑA 1: MIS ALUMNOS (LISTADO, EDICIÓN Y REGISTROS) -->
+    <!-- PESTAÑA 1: MIS ALUMNOS -->
     <div id="module-alumnos" class="module-section active-module">
       <div class="card">
         <h2>👥 Seleccionar Alumno</h2>
@@ -634,17 +665,12 @@
         <select id="selectStudent" onchange="onSelectStudent()"></select>
       </div>
 
-      <!-- Editor de Rutina y Visualizador -->
+      <!-- Editor de Rutina y Ficha -->
       <div id="editorContainer" style="display: none;">
         
-        <!-- RESUMEN DE REGISTROS DE LA SEMANA -->
+        <!-- FICHA Y ENLACE DEL ALUMNO -->
         <div class="card">
-          <h2>📊 Entrenamientos Realizados esta Semana</h2>
-          <div id="weeklyLogsContainer"></div>
-        </div>
-
-        <div class="card">
-          <h2>👤 Datos del Alumno</h2>
+          <h2>👤 Datos y Enlace del Alumno</h2>
           <div class="grid-2">
             <div>
               <label>Nombre</label>
@@ -655,8 +681,21 @@
               <input type="email" id="editStudentEmail">
             </div>
           </div>
-          <label>Planilla de Google Sheets Asignada:</label>
+
+          <label>🔗 Enlace Personal de Acceso (compartir con el alumno):</label>
+          <div class="link-input-group">
+            <input type="text" id="studentAccessLinkInput" readonly>
+            <button class="btn-sec" onclick="copyLink('studentAccessLinkInput')">📋 Copiar Enlace</button>
+          </div>
+
+          <label style="margin-top: 12px;">📊 Planilla de Google Sheets Asignada:</label>
           <a id="sheetUrlDisplay" href="#" target="_blank" style="color: var(--accent); font-weight: bold; font-size: 0.9rem;">Abrir Planilla en Google Drive ↗</a>
+        </div>
+
+        <!-- RESUMEN DE REGISTROS DE LA SEMANA -->
+        <div class="card">
+          <h2>📊 Entrenamientos Realizados esta Semana</h2>
+          <div id="weeklyLogsContainer"></div>
         </div>
 
         <div class="card">
@@ -753,6 +792,16 @@
         
         <button class="btn-main" onclick="createNewStudent()">Crear Alumno y Generar Planilla</button>
         <div class="status-msg" id="createStatus"></div>
+
+        <!-- RESULTADO DE REGISTRO CON ENLACE DE ACCESO -->
+        <div id="createdStudentResult" class="link-box" style="display: none;">
+          <h4 style="color: var(--accent); margin-bottom: 6px;">🎉 ¡Alumno Creado con Éxito!</h4>
+          <p style="font-size: 0.85rem; color: var(--muted);">Copia y envía este enlace directo al alumno para que acceda a su rutina:</p>
+          <div class="link-input-group">
+            <input type="text" id="createdStudentLinkInput" readonly>
+            <button class="btn-main" onclick="copyLink('createdStudentLinkInput')">📋 Copiar Enlace</button>
+          </div>
+        </div>
       </div>
     </div>
 
