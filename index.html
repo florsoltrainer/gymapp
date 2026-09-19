@@ -202,7 +202,7 @@
       <div class="grid-3">
         <div>
           <label for="setNum" id="setNumLabel">Serie Nº</label>
-          <input type="number" id="setNum" value="1" min="1" onchange="updateWeightForSet()">
+          <input type="number" id="setNum" value="1" min="1" onchange="updateTargetsForSet()">
         </div>
         <div>
           <label for="weight">Peso (kg)</label>
@@ -291,10 +291,7 @@
         const ex = window.workoutData[day][zone].find(e => e.name === exName);
         if (ex) {
           document.getElementById('setNum').value = 1;
-          
-          const initialWeight = (ex.weights && ex.weights[0] !== undefined) ? ex.weights[0] : (ex.weight || 0);
-          document.getElementById('weight').value = initialWeight;
-          document.getElementById('reps').value = ex.reps || 0;
+          updateTargetsForSet();
           
           const targetSets = ex.sets || 3;
           setLabel.textContent = `Serie Nº (de ${targetSets})`;
@@ -320,7 +317,7 @@
       }
     }
 
-    function updateWeightForSet() {
+    function updateTargetsForSet() {
       const day = document.getElementById('daySelect').value;
       const zone = document.getElementById('zoneSelect').value;
       const exName = document.getElementById('exerciseSelect').value;
@@ -328,8 +325,20 @@
 
       if (day && zone && exName && window.workoutData[day][zone]) {
         const ex = window.workoutData[day][zone].find(e => e.name === exName);
-        if (ex && ex.weights && ex.weights.length >= currentSet) {
-          document.getElementById('weight').value = ex.weights[currentSet - 1];
+        if (ex) {
+          // Actualizar peso
+          if (ex.weights && ex.weights.length >= currentSet) {
+            document.getElementById('weight').value = ex.weights[currentSet - 1];
+          } else {
+            document.getElementById('weight').value = ex.weight || 0;
+          }
+
+          // Actualizar repeticiones
+          if (ex.repsArray && ex.repsArray.length >= currentSet) {
+            document.getElementById('reps').value = ex.repsArray[currentSet - 1];
+          } else {
+            document.getElementById('reps').value = ex.reps || 0;
+          }
         }
       }
     }
@@ -377,10 +386,10 @@
         }
       }
 
-      // Avanzar de serie y actualizar peso
+      // Avanzar de serie y actualizar objetivos (peso y reps)
       const nextSet = Number(setNum) + 1;
       document.getElementById('setNum').value = nextSet;
-      updateWeightForSet();
+      updateTargetsForSet();
 
       startTimer(90);
     }
