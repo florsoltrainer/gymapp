@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Tracker Alumnos</title>
+  <style>
+    :root {
+      --bg: #121214;
+      --card: #1e1e24;
+      --accent: #00e676;
+      --text: #ffffff;
+      --muted: #a0a0b0;
+      --border: #2a2a35;
+      --danger: #ff5252;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 600px; margin: 0 auto; }
+
+    h1, h2 { margin-bottom: 12px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+    input, select, textarea, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: #252530; color: var(--text); margin-bottom: 12px; font-size: 1rem; }
+    textarea { resize: vertical; min-height: 70px; font-family: inherit; }
+
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+    button.btn-main { background: var(--accent); color: #000; font-weight: bold; cursor: pointer; border: none; margin-bottom: 0; }
+    button.btn-sec { background: transparent; color: var(--accent); border: 1px solid var(--accent); cursor: pointer; }
+    button.btn-google { background: #4285F4; color: #fff; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+    .timer-display { font-size: 2.5rem; font-weight: bold; text-align: center; color: var(--accent); margin: 8px 0; }
+    .sync-status { font-size: 0.85rem; text-align: center; color: var(--accent); margin-top: 6px; font-weight: 500; }
+    .loading-overlay { text-align: center; padding: 40px 20px; font-size: 1rem; color: var(--muted); }
+  </style>
+
+  <!-- Módulos de Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // ⚠️ REEMPLAZA CON TUS CLAVES
+    const firebaseConfig = {
+      apiKey: "AIzaSyDC3Wvw3E8IhSnkSKg5Qk98NivuqK-FNzM",
+      authDomain: "florsoltrainer-f22c2.firebaseapp.com",
+      projectId: "florsoltrainer-f22c2",
+      storageBucket: "florsoltrainer-f22c2.firebasestorage.app",
+      messagingSenderId: "36053648611",
+      appId: "1:36053648611:web:34f519fc41a12024f4f1d6"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    window.workoutData = {};
+    window.GOOGLE_SCRIPT_URL = "";
+    window.alumnoId = "";
+
+    // Leer ID de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    window.alumnoId = urlParams.get('id');
+
+    // Escuchar Estado de Sesión del Alumno
+    onAuthStateChanged(auth, async (user) => {
+      const loginCard = document.getElementById('studentLoginCard');
+      const mainContent = document.getElementById('mainContent');
+      const loadingState = document.getElementById('loadingState');
+      const authError = document.getElementById('authError');
+
+      if (!window.alumnoId) {
+        loadingState.innerHTML = "⚠️ <strong>Error:</strong> No se especificó el ID de alumno en la URL (?id=nombre).";
+        return;
+      }
+
+      if (user) {
+        loadingState.style.display = 'block';
+        loadingState.textContent = "⏳ Verificando acceso a la rutina...";
+        loginCard.style.display = 'none';
+
+        try {
+          const docRef = doc(db, "alumnos", window.alumnoId);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+
+            // Validar que el email ingresado sea el asignado al alumno (o si no tiene email cargado lo permite)
+            if (!data.email || data.email.toLowerCase() === user.email.toLowerCase()) {
+              window.workoutData = data.rutina || {};
+              window.GOOGLE_SCRIPT_URL = data.google_script_url || "";
+
+              document.getElementById('alumnoNombreHeader').textContent = `🏋️ Hola, ${data.nombre || user.displayName}`;
+              document.getElementById('userEmailDisplay').textContent = user.email;
+
+              initDropdowns();
+              loadingState.style.display = 'none';
+              mainContent.style.display = 'block';
+            } else {
+              loadingState.style.display = 'none';
+              loginCard.style.display = 'block';
+              authError.textContent = `❌ Este enlace pertenece a otro alumno. Tu cuenta (${user.email}) no tiene acceso.`;
+              signOut(auth);
+            }
+          } else {
+            loadingState.innerHTML = `⚠️ Rutina no encontrada para "${window.alumnoId}".`;
+          }
+        } catch (error) {
+          console.error(error);
+          loadingState.innerHTML = "❌ Error de conexión al cargar la rutina.";
+        }
+      } else {
+        loadingState.style.display = 'none';
+        mainContent.style.display = 'none';
+        loginCard.style.display = 'block';
+      }
+    });
+
+    window.loginStudentGoogle = async function() {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        alert("Error al iniciar sesión: " + error.message);
+      }
+    };
+
+    window.logoutStudent = function() {
+      signOut(auth);
+    };
+  </script>
+</head>
+<body>
+
+  <div class="loading-overlay" id="loadingState">
+    ⏳ Cargando aplicación...
+  </div>
+
+  <!-- LOGIN DE ALUMNO -->
+  <div class="card" id="studentLoginCard" style="display: none; text-align: center; padding: 30px 16px;">
+    <h2>🏋️ Bienvenido a tu Tracker</h2>
+    <p style="color: var(--muted); margin-bottom: 20px;">Inicia sesión con tu cuenta de Google para acceder a tu rutina de entrenamiento.</p>
+    <button class="btn-google" onclick="loginStudentGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+      Iniciar Sesión con Google
+    </button>
+    <div id="authError" style="color: var(--danger); margin-top: 16px; font-size: 0.9rem; font-weight: bold;"></div>
+  </div>
+
+  <!-- APLICACIÓN PRINCIPAL DEL ALUMNO -->
+  <div id="mainContent" style="display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h1 id="alumnoNombreHeader" style="margin-bottom:0;">🏋️ Mi Entrenamiento</h1>
+      <button onclick="logoutStudent()" style="width: auto; padding: 6px 12px; font-size: 0.8rem; background: #252530;">Salir</button>
+    </div>
+    <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 16px;">Sesión iniciada: <span id="userEmailDisplay" style="color: var(--text);"></span></div>
+
+    <!-- Cronómetro -->
+    <div class="card">
+      <h2>⏱️ Descanso entre series</h2>
+      <div class="timer-display" id="timerDisplay">00:00</div>
+      <div class="grid-3">
+        <button onclick="startTimer(60)">60s</button>
+        <button onclick="startTimer(90)">90s</button>
+        <button onclick="startTimer(120)">120s</button>
+      </div>
+      <button class="btn-sec" onclick="resetTimer()">Detener / Reiniciar</button>
+    </div>
+
+    <!-- Registro de Serie -->
+    <div class="card">
+      <h2>📝 Registrar Serie</h2>
+      
+      <label for="daySelect">1. Día de Entrenamiento</label>
+      <select id="daySelect" onchange="onDayChange()"></select>
+
+      <label for="zoneSelect">2. Zona del Cuerpo</label>
+      <select id="zoneSelect" onchange="onZoneChange()"></select>
+
+      <label for="exerciseSelect">3. Ejercicio</label>
+      <select id="exerciseSelect" onchange="onExerciseChange()"></select>
+
+      <div class="grid-3">
+        <div>
+          <label for="setNum">Serie Nº</label>
+          <input type="number" id="setNum" value="1" min="1">
+        </div>
+        <div>
+          <label for="weight">Peso (kg)</label>
+          <input type="number" id="weight" value="0" step="0.5">
+        </div>
+        <div>
+          <label for="reps">Reps</label>
+          <input type="number" id="reps" value="0" min="1">
+        </div>
+      </div>
+
+      <label for="workoutComments">Comentarios (opcional)</label>
+      <textarea id="workoutComments" placeholder="Ej: Me costó la última repe / Subir peso"></textarea>
+
+      <button class="btn-main" id="btnLogSet" onclick="logSet()">Completar Serie y Descansar</button>
+      <div class="sync-status" id="syncStatus">☁️ Sincronizado automáticamente</div>
+    </div>
+  </div>
+
+  <script>
+    let timerInterval = null;
+    let timeRemaining = 0;
+
+    function initDropdowns() {
+      const daySelect = document.getElementById('daySelect');
+      daySelect.innerHTML = '';
+      
+      const days = Object.keys(window.workoutData);
+      days.forEach(day => {
+        const opt = document.createElement('option');
+        opt.value = day;
+        opt.textContent = day;
+        daySelect.appendChild(opt);
+      });
+
+      onDayChange();
+    }
+
+    function onDayChange() {
+      const day = document.getElementById('daySelect').value;
+      const zoneSelect = document.getElementById('zoneSelect');
+      zoneSelect.innerHTML = '';
+
+      if (day && window.workoutData[day]) {
+        Object.keys(window.workoutData[day]).forEach(zone => {
+          const opt = document.createElement('option');
+          opt.value = zone;
+          opt.textContent = zone;
+          zoneSelect.appendChild(opt);
+        });
+      }
+      onZoneChange();
+    }
+
+    function onZoneChange() {
+      const day = document.getElementById('daySelect').value;
+      const zone = document.getElementById('zoneSelect').value;
+      const exSelect = document.getElementById('exerciseSelect');
+      exSelect.innerHTML = '';
+
+      if (day && zone && window.workoutData[day][zone]) {
+        window.workoutData[day][zone].forEach(ex => {
+          const opt = document.createElement('option');
+          opt.value = ex.name;
+          opt.textContent = ex.name;
+          exSelect.appendChild(opt);
+        });
+      }
+      onExerciseChange();
+    }
+
+    function onExerciseChange() {
+      const day = document.getElementById('daySelect').value;
+      const zone = document.getElementById('zoneSelect').value;
+      const exName = document.getElementById('exerciseSelect').value;
+
+      if (day && zone && exName && window.workoutData[day][zone]) {
+        const ex = window.workoutData[day][zone].find(e => e.name === exName);
+        if (ex) {
+          document.getElementById('weight').value = ex.weight || 0;
+          document.getElementById('reps').value = ex.reps || 0;
+          document.getElementById('setNum').value = 1;
+        }
+      }
+    }
+
+    async function logSet() {
+      const day = document.getElementById('daySelect').value;
+      const zone = document.getElementById('zoneSelect').value;
+      const exercise = document.getElementById('exerciseSelect').value;
+      const setNum = document.getElementById('setNum').value;
+      const weight = document.getElementById('weight').value;
+      const reps = document.getElementById('reps').value;
+      const comments = document.getElementById('workoutComments').value.trim();
+      const statusDiv = document.getElementById('syncStatus');
+
+      if (!exercise) return alert("Selecciona un ejercicio válido.");
+
+      const entry = {
+        Fecha: new Date().toLocaleDateString('es-AR'),
+        Hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        Día: day,
+        Zona: zone,
+        Ejercicio: exercise,
+        Serie: Number(setNum),
+        "Peso (kg)": Number(weight),
+        Repeticiones: Number(reps),
+        Comentarios: comments
+      };
+
+      if (window.GOOGLE_SCRIPT_URL) {
+        statusDiv.textContent = "⏳ Enviando a Google Sheets...";
+        try {
+          fetch(window.GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(entry)
+          });
+          statusDiv.textContent = "✅ Guardado en la planilla del alumno";
+        } catch (e) {
+          statusDiv.textContent = "⚠️ Falló la conexión con Google Sheets";
+        }
+      }
+
+      document.getElementById('setNum').value = Number(setNum) + 1;
+      startTimer(90);
+    }
+
+    function startTimer(seconds) {
+      clearInterval(timerInterval);
+      timeRemaining = seconds;
+      updateTimerDisplay();
+
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        updateTimerDisplay();
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          alert('⏱️ ¡Tiempo de descanso terminado!');
+        }
+      }, 1000);
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      timeRemaining = 0;
+      updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(timeRemaining / 60);
+      const seconds = timeRemaining % 60;
+      document.getElementById('timerDisplay').textContent = 
+        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+  </script>
+</body>
+</html>

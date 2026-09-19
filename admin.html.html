@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Entrenador - Login Google</title>
+  <style>
+    :root {
+      --bg: #121214;
+      --card: #1e1e24;
+      --accent: #00e676;
+      --text: #ffffff;
+      --muted: #a0a0b0;
+      --border: #2a2a35;
+      --danger: #ff5252;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 700px; margin: 0 auto; }
+
+    h1, h2, h3 { margin-bottom: 12px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+    input, select, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: #252530; color: var(--text); margin-bottom: 12px; font-size: 1rem; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    button.btn-main { background: var(--accent); color: #000; font-weight: bold; cursor: pointer; border: none; margin-bottom: 0; }
+    button.btn-sec { background: transparent; color: var(--accent); border: 1px solid var(--accent); cursor: pointer; }
+    button.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 6px; font-size: 0.8rem; margin-bottom: 0; }
+    button.btn-google { background: #4285F4; color: #fff; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+    .flex-row { display: flex; gap: 8px; align-items: center; }
+    .tree-node { background: #18181c; border-radius: 8px; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); }
+    .item-chip { background: #252530; border-radius: 6px; padding: 6px 10px; margin-top: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+    .status-msg { text-align: center; font-weight: bold; margin-top: 8px; font-size: 0.9rem; }
+    .auth-box { text-align: center; padding: 40px 20px; }
+  </style>
+
+  <!-- Módulos de Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // ⚠️ REEMPLAZA CON TUS CLAVES
+    const firebaseConfig = {
+      apiKey: "AIzaSyDC3Wvw3E8IhSnkSKg5Qk98NivuqK-FNzM",
+      authDomain: "florsoltrainer-f22c2.firebaseapp.com",
+      projectId: "florsoltrainer-f22c2",
+      storageBucket: "florsoltrainer-f22c2.firebasestorage.app",
+      messagingSenderId: "36053648611",
+      appId: "1:36053648611:web:34f519fc41a12024f4f1d6"
+    };
+
+    // ⚠️ ESCRIBÍ ACÁ TU CORREO EXACTO DE GOOGLE
+    const ADMIN_EMAIL = "florsoltrainer@gmail.com";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    window.currentStudentData = { nombre: "", google_script_url: "", rutina: {} };
+    window.currentStudentId = "";
+
+    // Control de Estado de Autenticación
+    onAuthStateChanged(auth, (user) => {
+      const loginBox = document.getElementById('loginBox');
+      const adminApp = document.getElementById('adminApp');
+      const authError = document.getElementById('authError');
+
+      if (user) {
+        if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+          loginBox.style.display = 'none';
+          adminApp.style.display = 'block';
+          document.getElementById('adminEmailDisplay').textContent = user.email;
+          loadStudentsDropdown();
+        } else {
+          authError.textContent = `❌ Acceso denegado. La cuenta ${user.email} no tiene permisos de Administrador.`;
+          signOut(auth);
+        }
+      } else {
+        loginBox.style.display = 'block';
+        adminApp.style.display = 'none';
+      }
+    });
+
+    window.loginGoogle = async function() {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        alert("Error al iniciar sesión: " + error.message);
+      }
+    };
+
+    window.logout = function() {
+      signOut(auth);
+    };
+
+    // Lógica de Alumnos en Firebase
+    async function loadStudentsDropdown() {
+      const select = document.getElementById('selectStudent');
+      select.innerHTML = '<option value="">-- Selecciona un alumno --</option>';
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "alumnos"));
+        querySnapshot.forEach((docSnap) => {
+          const opt = document.createElement('option');
+          opt.value = docSnap.id;
+          opt.textContent = `${docSnap.data().nombre || docSnap.id} (${docSnap.id})`;
+          select.appendChild(opt);
+        });
+      } catch (e) {
+        console.error("Error al cargar alumnos:", e);
+      }
+    }
+
+    window.createNewStudent = async function() {
+      const name = document.getElementById('newStudentName').value.trim();
+      const id = document.getElementById('newStudentId').value.trim().toLowerCase().replace(/\s+/g, '-');
+      const email = document.getElementById('newStudentEmail').value.trim().toLowerCase();
+      const scriptUrl = document.getElementById('newStudentScriptUrl').value.trim();
+
+      if (!name || !id || !email) return alert("Ingresa Nombre, ID y Email de Google del alumno.");
+
+      window.currentStudentId = id;
+      window.currentStudentData = {
+        nombre: name,
+        email: email,
+        google_script_url: scriptUrl,
+        rutina: {}
+      };
+
+      await saveToFirebase();
+      await loadStudentsDropdown();
+      document.getElementById('selectStudent').value = id;
+      renderEditor();
+
+      document.getElementById('newStudentName').value = '';
+      document.getElementById('newStudentId').value = '';
+      document.getElementById('newStudentEmail').value = '';
+      document.getElementById('newStudentScriptUrl').value = '';
+    };
+
+    window.onSelectStudent = async function() {
+      const id = document.getElementById('selectStudent').value;
+      if (!id) return;
+
+      window.currentStudentId = id;
+      const docRef = doc(db, "alumnos", id);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        window.currentStudentData = {
+          nombre: data.nombre || id,
+          email: data.email || "",
+          google_script_url: data.google_script_url || "",
+          rutina: data.rutina || {}
+        };
+        document.getElementById('editStudentName').value = window.currentStudentData.nombre;
+        document.getElementById('editStudentEmail').value = window.currentStudentData.email;
+        document.getElementById('editStudentScriptUrl').value = window.currentStudentData.google_script_url;
+        renderEditor();
+      }
+    };
+
+    window.saveToFirebase = async function() {
+      if (!window.currentStudentId) return alert("No hay un alumno seleccionado.");
+
+      const status = document.getElementById('saveStatus');
+      status.textContent = "⏳ Guardando en Firebase...";
+      status.style.color = "var(--muted)";
+
+      window.currentStudentData.nombre = document.getElementById('editStudentName').value.trim();
+      window.currentStudentData.email = document.getElementById('editStudentEmail').value.trim().toLowerCase();
+      window.currentStudentData.google_script_url = document.getElementById('editStudentScriptUrl').value.trim();
+
+      try {
+        await setDoc(doc(db, "alumnos", window.currentStudentId), window.currentStudentData);
+        status.textContent = "✅ Rutina guardada correctamente.";
+        status.style.color = "var(--accent)";
+      } catch (e) {
+        console.error(e);
+        status.textContent = "❌ Error al guardar en Firebase.";
+        status.style.color = "var(--danger)";
+      }
+    };
+
+    window.renderEditor = function() {
+      document.getElementById('editorContainer').style.display = 'block';
+      renderDayDropdowns();
+      renderDaysList();
+      renderZonesList();
+      renderExercisesList();
+    };
+
+    window.addDay = function() {
+      const dayName = document.getElementById('newDayInput').value.trim();
+      if (!dayName) return;
+      if (!window.currentStudentData.rutina[dayName]) {
+        window.currentStudentData.rutina[dayName] = {};
+        document.getElementById('newDayInput').value = '';
+        renderEditor();
+      }
+    };
+
+    window.deleteDay = function(day) {
+      delete window.currentStudentData.rutina[day];
+      renderEditor();
+    };
+
+    window.addZone = function() {
+      const day = document.getElementById('selectDayForZone').value;
+      const zoneName = document.getElementById('newZoneInput').value.trim();
+      if (!day || !zoneName) return;
+      if (!window.currentStudentData.rutina[day][zoneName]) {
+        window.currentStudentData.rutina[day][zoneName] = [];
+        document.getElementById('newZoneInput').value = '';
+        renderEditor();
+      }
+    };
+
+    window.deleteZone = function(day, zone) {
+      delete window.currentStudentData.rutina[day][zone];
+      renderEditor();
+    };
+
+    window.addExercise = function() {
+      const day = document.getElementById('selectDayForEx').value;
+      const zone = document.getElementById('selectZoneForEx').value;
+      const exName = document.getElementById('newExName').value.trim();
+      const weight = Number(document.getElementById('newExWeight').value);
+      const reps = Number(document.getElementById('newExReps').value);
+
+      if (!day || !zone || !exName) return;
+      window.currentStudentData.rutina[day][zone].push({ name: exName, weight, reps });
+      document.getElementById('newExName').value = '';
+      renderEditor();
+    };
+
+    window.deleteExercise = function(day, zone, index) {
+      window.currentStudentData.rutina[day][zone].splice(index, 1);
+      renderEditor();
+    };
+
+    function renderDayDropdowns() {
+      const dayForZone = document.getElementById('selectDayForZone');
+      const dayForEx = document.getElementById('selectDayForEx');
+      const days = Object.keys(window.currentStudentData.rutina);
+
+      [dayForZone, dayForEx].forEach(select => {
+        const curr = select.value;
+        select.innerHTML = '';
+        days.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d;
+          opt.textContent = d;
+          select.appendChild(opt);
+        });
+        if (days.includes(curr)) select.value = curr;
+      });
+      updateZoneDropdownForEx();
+    }
+
+    window.updateZoneDropdownForEx = function() {
+      const day = document.getElementById('selectDayForEx').value;
+      const zoneSelect = document.getElementById('selectZoneForEx');
+      zoneSelect.innerHTML = '';
+
+      if (day && window.currentStudentData.rutina[day]) {
+        Object.keys(window.currentStudentData.rutina[day]).forEach(z => {
+          const opt = document.createElement('option');
+          opt.value = z;
+          opt.textContent = z;
+          zoneSelect.appendChild(opt);
+        });
+      }
+      renderExercisesList();
+    };
+
+    function renderDaysList() {
+      const container = document.getElementById('daysList');
+      container.innerHTML = '';
+      Object.keys(window.currentStudentData.rutina).forEach(day => {
+        const div = document.createElement('div');
+        div.className = 'item-chip';
+        div.innerHTML = `<span>📅 ${day}</span> <button class="btn-danger" style="width:auto;" onclick="deleteDay('${day}')">Eliminar</button>`;
+        container.appendChild(div);
+      });
+    }
+
+    function renderZonesList() {
+      const day = document.getElementById('selectDayForZone').value;
+      const container = document.getElementById('zonesList');
+      container.innerHTML = '';
+      if (!day || !window.currentStudentData.rutina[day]) return;
+
+      Object.keys(window.currentStudentData.rutina[day]).forEach(zone => {
+        const div = document.createElement('div');
+        div.className = 'item-chip';
+        div.innerHTML = `<span>💪 ${zone}</span> <button class="btn-danger" style="width:auto;" onclick="deleteZone('${day}', '${zone}')">Eliminar</button>`;
+        container.appendChild(div);
+      });
+    }
+
+    function renderExercisesList() {
+      const day = document.getElementById('selectDayForEx').value;
+      const zone = document.getElementById('selectZoneForEx').value;
+      const container = document.getElementById('exercisesList');
+      container.innerHTML = '';
+
+      if (!day || !zone || !window.currentStudentData.rutina[day] || !window.currentStudentData.rutina[day][zone]) return;
+
+      window.currentStudentData.rutina[day][zone].forEach((ex, idx) => {
+        const div = document.createElement('div');
+        div.className = 'item-chip';
+        div.innerHTML = `<span>🏋️ <strong>${ex.name}</strong> (${ex.weight} kg, ${ex.reps} reps)</span> <button class="btn-danger" style="width:auto;" onclick="deleteExercise('${day}', '${zone}', ${idx})">Eliminar</button>`;
+        container.appendChild(div);
+      });
+    }
+  </script>
+</head>
+<body>
+
+  <!-- PANTALLA DE LOGIN DE ADMINISTRADOR -->
+  <div id="loginBox" class="card auth-box">
+    <h1>🔐 Acceso de Entrenador</h1>
+    <p style="color: var(--muted); margin-bottom: 20px;">Inicia sesión con tu cuenta de Google para administrar las rutinas.</p>
+    <button class="btn-google" onclick="loginGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+      Iniciar Sesión con Google
+    </button>
+    <div id="authError" style="color: var(--danger); margin-top: 16px; font-weight: bold;"></div>
+  </div>
+
+  <!-- APLICACIÓN ADMINISTRADOR (Oculta por defecto) -->
+  <div id="adminApp" style="display: none;">
+    <div class="flex-row" style="justify-content: space-between; margin-bottom: 16px;">
+      <span style="font-size: 0.9rem; color: var(--muted);">Conectado como: <strong id="adminEmailDisplay" style="color:var(--text);"></strong></span>
+      <button class="btn-danger" onclick="logout()" style="width: auto;">Cerrar Sesión</button>
+    </div>
+
+    <!-- 1. Crear Nuevo Alumno -->
+    <div class="card">
+      <h2>➕ Crear Nuevo Alumno</h2>
+      <div class="grid-2">
+        <div>
+          <label>Nombre Completo</label>
+          <input type="text" id="newStudentName" placeholder="Ej: Juan Pérez">
+        </div>
+        <div>
+          <label>ID para el Enlace (sin espacios)</label>
+          <input type="text" id="newStudentId" placeholder="Ej: juan">
+        </div>
+      </div>
+      <label>Email de Google del Alumno (para validarlo al entrar)</label>
+      <input type="email" id="newStudentEmail" placeholder="juan.perez@gmail.com">
+      
+      <label>URL de Apps Script (Google Sheets del Alumno)</label>
+      <input type="text" id="newStudentScriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
+      <button class="btn-main" onclick="createNewStudent()">Crear Alumno</button>
+    </div>
+
+    <!-- 2. Seleccionar Alumno -->
+    <div class="card">
+      <h2>✏️ Cargar o Editar Rutina de Alumno</h2>
+      <label for="selectStudent">Selecciona un Alumno:</label>
+      <select id="selectStudent" onchange="onSelectStudent()"></select>
+    </div>
+
+    <!-- 3. Formulario de Edición -->
+    <div id="editorContainer" style="display: none;">
+      <div class="card">
+        <h2>👤 Datos de Alumno</h2>
+        <div class="grid-2">
+          <div>
+            <label>Nombre</label>
+            <input type="text" id="editStudentName">
+          </div>
+          <div>
+            <label>Email de Google del Alumno</label>
+            <input type="email" id="editStudentEmail">
+          </div>
+        </div>
+        <label>URL de Apps Script (Planilla)</label>
+        <input type="text" id="editStudentScriptUrl">
+      </div>
+
+      <div class="card">
+        <h2>⚙️ Diseñar Rutina (Día > Zona > Ejercicio)</h2>
+
+        <!-- A. Días -->
+        <div class="tree-node">
+          <h4>1. Añadir Día de Entrenamiento</h4>
+          <div class="flex-row" style="margin-top: 6px;">
+            <input type="text" id="newDayInput" placeholder="Ej: Lunes - Día A" style="margin-bottom:0;">
+            <button class="btn-main" onclick="addDay()" style="width:auto; white-space:nowrap;">+ Día</button>
+          </div>
+          <div id="daysList" style="margin-top: 8px;"></div>
+        </div>
+
+        <!-- B. Zonas -->
+        <div class="tree-node">
+          <h4>2. Añadir Zona del Cuerpo</h4>
+          <label>Día:</label>
+          <select id="selectDayForZone" onchange="renderZonesList()"></select>
+          <div class="flex-row">
+            <input type="text" id="newZoneInput" placeholder="Ej: Pecho, Tríceps" style="margin-bottom:0;">
+            <button class="btn-main" onclick="addZone()" style="width:auto; white-space:nowrap;">+ Zona</button>
+          </div>
+          <div id="zonesList" style="margin-top: 8px;"></div>
+        </div>
+
+        <!-- C. Ejercicios -->
+        <div class="tree-node">
+          <h4>3. Añadir Ejercicios</h4>
+          <div class="grid-2">
+            <div>
+              <label>Día:</label>
+              <select id="selectDayForEx" onchange="updateZoneDropdownForEx()"></select>
+            </div>
+            <div>
+              <label>Zona:</label>
+              <select id="selectZoneForEx" onchange="renderExercisesList()"></select>
+            </div>
+          </div>
+
+          <div style="background:#252530; padding:10px; border-radius:6px; margin-bottom:8px;">
+            <label>Nombre Ejercicio:</label>
+            <input type="text" id="newExName" placeholder="Ej: Press de Banca Plano">
+            <div class="grid-2">
+              <div>
+                <label>Peso Objetivo (kg)</label>
+                <input type="number" id="newExWeight" value="50" step="0.5">
+              </div>
+              <div>
+                <label>Reps Objetivo</label>
+                <input type="number" id="newExReps" value="10">
+              </div>
+            </div>
+            <button class="btn-sec" onclick="addExercise()" style="margin-bottom:0;">+ Añadir Ejercicio</button>
+          </div>
+          <div id="exercisesList"></div>
+        </div>
+
+        <button class="btn-main" onclick="saveToFirebase()" style="padding: 14px; font-size: 1.1rem; margin-top: 10px;">💾 Guardar y Publicar Rutina</button>
+        <div class="status-msg" id="saveStatus"></div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
