@@ -116,19 +116,35 @@
       }
     }
 
-    window.createNewStudent = async function() {
-      const name = document.getElementById('newStudentName').value.trim();
-      const id = document.getElementById('newStudentId').value.trim().toLowerCase().replace(/\s+/g, '-');
-      const email = document.getElementById('newStudentEmail').value.trim().toLowerCase();
-      const scriptUrl = document.getElementById('newStudentScriptUrl').value.trim();
+window.createNewStudent = async function() {
+  const name = document.getElementById('newStudentName').value.trim();
+  const id = document.getElementById('newStudentId').value.trim().toLowerCase().replace(/\s+/g, '-');
+  const email = document.getElementById('newStudentEmail').value.trim().toLowerCase();
 
-      if (!name || !id || !email) return alert("Ingresa Nombre, ID y Email de Google del alumno.");
+  if (!name || !id || !email) return alert("Ingresa Nombre, ID y Email.");
 
+  // URL de tu Script Maestro
+  const MASTER_SCRIPT_URL = "https://script.google.com/macros/s/TU_SCRIPT_MAESTRO_ID/exec";
+
+  const status = document.getElementById('saveStatus');
+  status.textContent = "⏳ Creando planilla de Google Sheets automática...";
+
+  try {
+    // Solicitar creación de planilla remota
+    const response = await fetch(MASTER_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "CREATE_SHEET", nombre: name })
+    });
+    
+    const resData = await response.json();
+    
+    if (resData.status === "success") {
       window.currentStudentId = id;
       window.currentStudentData = {
         nombre: name,
         email: email,
-        google_script_url: scriptUrl,
+        google_sheet_url: resData.sheetUrl,      // URL directa para que la revises
+        spreadsheet_id: resData.spreadsheetId,  // ID interno para guardar series
         rutina: {}
       };
 
@@ -136,6 +152,14 @@
       await loadStudentsDropdown();
       document.getElementById('selectStudent').value = id;
       renderEditor();
+      
+      alert(`✅ ¡Alumno creado! Planilla generada en tu Google Drive: ${resData.sheetUrl}`);
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Error al generar la planilla de Google Sheets automática.");
+  }
+};
 
       document.getElementById('newStudentName').value = '';
       document.getElementById('newStudentId').value = '';
