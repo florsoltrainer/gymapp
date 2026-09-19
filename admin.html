@@ -56,6 +56,8 @@
     .day-summary-card { background: #18181c; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
     .day-summary-header { font-weight: bold; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 8px; font-size: 0.95rem; }
     .log-chip { background: #252530; padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
+    
+    .badge-zona { background: #333342; color: var(--accent); font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px; border: 1px solid var(--border); }
   </style>
 
   <!-- Módulos de Firebase -->
@@ -147,9 +149,9 @@
     // Banco de Ejercicios Base
     async function loadGlobalExercises() {
       window.globalExercises = [];
-      const selectEx = document.getElementById('selectGlobalExercise');
       const listContainer = document.getElementById('globalExercisesList');
-      selectEx.innerHTML = '<option value="">-- Selecciona un ejercicio --</option>';
+      const filterZone = document.getElementById('filterGlobalZone') ? document.getElementById('filterGlobalZone').value : "";
+      
       listContainer.innerHTML = '';
 
       try {
@@ -157,19 +159,31 @@
         querySnapshot.forEach((docSnap) => {
           const data = docSnap.data();
           const images = data.imageUrls || (data.imageUrl ? [data.imageUrl] : []);
-          const item = { id: docSnap.id, name: data.nombre, imageUrls: images };
+          const zona = data.zona || "General";
+          const item = { id: docSnap.id, name: data.nombre, zona: zona, imageUrls: images };
           window.globalExercises.push(item);
-
-          const opt = document.createElement('option');
-          opt.value = data.nombre;
-          opt.textContent = data.nombre;
-          selectEx.appendChild(opt);
-
-          const chip = document.createElement('div');
-          chip.className = 'item-chip';
-          chip.innerHTML = `<span>🏋️ <strong>${data.nombre}</strong> ${images.length > 0 ? `(🖼️ ${images.length})` : ''}</span> <button class="btn-danger" onclick="deleteGlobalExercise('${docSnap.id}')">Eliminar</button>`;
-          listContainer.appendChild(chip);
         });
+
+        // Filtrar y renderizar en la lista del banco
+        window.globalExercises.forEach((ex) => {
+          if (!filterZone || filterZone === "TODAS" || ex.zona.toLowerCase() === filterZone.toLowerCase()) {
+            const chip = document.createElement('div');
+            chip.className = 'item-chip';
+            chip.innerHTML = `
+              <div>
+                <span>🏋️ <strong>${ex.name}</strong></span>
+                <span class="badge-zona">${ex.zona}</span>
+                ${ex.imageUrls.length > 0 ? `<span style="font-size:0.8rem; color:var(--muted); margin-left:6px;">🖼️ (${ex.imageUrls.length})</span>` : ''}
+              </div>
+              <button class="btn-danger" onclick="deleteGlobalExercise('${ex.id}')">Eliminar</button>
+            `;
+            listContainer.appendChild(chip);
+          }
+        });
+
+        // Actualizar el dropdown filtrado en el editor de rutina
+        updateFilteredGlobalExercisesSelect();
+
       } catch (e) {
         console.error("Error cargando ejercicios base:", e);
       }
@@ -177,8 +191,11 @@
 
     window.addGlobalExercise = async function() {
       const nameInput = document.getElementById('newGlobalExInput');
+      const zonaSelect = document.getElementById('newGlobalExZona');
       const fileInput = document.getElementById('newGlobalExFiles');
+      
       const name = nameInput.value.trim();
+      const zona = zonaSelect.value;
       const files = Array.from(fileInput.files).slice(0, 3);
 
       if (!name) return alert("Escribe el nombre del ejercicio.");
@@ -209,13 +226,14 @@
       try {
         await addDoc(collection(db, "ejercicios_base"), { 
           nombre: name,
+          zona: zona,
           imageUrls: uploadedUrls
         });
 
         nameInput.value = '';
         fileInput.value = '';
         await loadGlobalExercises();
-        alert("✅ Ejercicio e imágenes guardados en el banco.");
+        alert(`✅ Ejercicio "${name}" (${zona}) guardado en el banco.`);
       } catch (e) {
         console.error("Error al guardar en Firestore:", e);
       }
@@ -224,13 +242,37 @@
     window.deleteGlobalExercise = async function(id) {
       if (confirm("¿Seguro que deseas eliminar este ejercicio del banco de ejercicios?")) {
         try {
-          await deleteDoc(doc(db, "ejercicios_base", id));
+          await deleteDoc(doc(doc(db, "ejercicios_base", id)));
           await loadGlobalExercises();
         } catch (e) {
           console.error("Error eliminando ejercicio:", e);
         }
       }
     };
+
+    // Filtra el dropdown de ejercicios al armar la rutina según la zona seleccionada
+    function updateFilteredGlobalExercisesSelect() {
+      const selectedZone = document.getElementById('selectZoneForEx') ? document.getElementById('selectZoneForEx').value : "";
+      const selectEx = document.getElementById('selectGlobalExercise');
+      if (!selectEx) return;
+
+      selectEx.innerHTML = '<option value="">-- Selecciona un ejercicio precargado --</option>';
+
+      // Normalizar nombre de zona para la comparación (ej: "Pecho / Tríceps" -> busca "Pecho")
+      window.globalExercises.forEach(ex => {
+        const matchesZone = !selectedZone || 
+                            ex.zona.toLowerCase() === selectedZone.toLowerCase() ||
+                            selectedZone.toLowerCase().includes(ex.zona.toLowerCase()) ||
+                            ex.zona.toLowerCase().includes(selectedZone.toLowerCase());
+
+        if (matchesZone || ex.zona === "General") {
+          const opt = document.createElement('option');
+          opt.value = ex.name;
+          opt.textContent = `${ex.name} [${ex.zona}]`;
+          selectEx.appendChild(opt);
+        }
+      });
+    }
 
     // Cargar Dropdown de Alumnos
     async function loadStudentsDropdown() {
@@ -289,7 +331,6 @@
           status.textContent = `✅ Alumno creado y planilla generada en Drive!`;
           status.style.color = "var(--accent)";
 
-          // Generar enlace para compartir
           const accessUrl = `${getStudentBaseUrl()}index.html?id=${id}`;
           resultLinkInput.value = accessUrl;
           resultBox.style.display = 'block';
@@ -342,7 +383,6 @@
         document.getElementById('editStudentName').value = window.currentStudentData.nombre;
         document.getElementById('editStudentEmail').value = window.currentStudentData.email;
         
-        // Cargar enlace de acceso al alumno
         const accessUrl = `${getStudentBaseUrl()}index.html?id=${id}`;
         document.getElementById('studentAccessLinkInput').value = accessUrl;
 
@@ -354,7 +394,7 @@
       }
     };
 
-    // Función para obtener y procesar los registros semanales
+    // Registros semanales
     async function fetchWeeklyLogs(spreadsheetId) {
       const container = document.getElementById('weeklyLogsContainer');
       container.innerHTML = '<p style="color: var(--muted); font-size: 0.85rem; text-align: center;">⏳ Cargando entrenamientos de esta semana...</p>';
@@ -514,7 +554,7 @@
       }
 
       if (manualExName && !window.globalExercises.some(e => e.name.toLowerCase() === manualExName.toLowerCase())) {
-        addDoc(collection(db, "ejercicios_base"), { nombre: manualExName, imageUrls: [] }).then(() => loadGlobalExercises());
+        addDoc(collection(db, "ejercicios_base"), { nombre: manualExName, zona: zone || "General", imageUrls: [] }).then(() => loadGlobalExercises());
       }
 
       window.currentStudentData.rutina[day][zone].push({ 
@@ -575,6 +615,7 @@
           zoneSelect.appendChild(opt);
         });
       }
+      updateFilteredGlobalExercisesSelect();
       renderExercisesList();
     };
 
@@ -717,7 +758,7 @@
             <label>Día:</label>
             <select id="selectDayForZone" onchange="renderZonesList()"></select>
             <div class="flex-row">
-              <input type="text" id="newZoneInput" placeholder="Ej: Pecho, Tríceps" style="margin-bottom:0;">
+              <input type="text" id="newZoneInput" placeholder="Ej: Pecho, Tríceps, Piernas" style="margin-bottom:0;">
               <button class="btn-main" onclick="addZone()" style="width:auto; white-space:nowrap;">+ Zona</button>
             </div>
             <div id="zonesList" style="margin-top: 8px;"></div>
@@ -733,12 +774,12 @@
               </div>
               <div>
                 <label>Zona:</label>
-                <select id="selectZoneForEx" onchange="renderExercisesList()"></select>
+                <select id="selectZoneForEx" onchange="updateZoneDropdownForEx()"></select>
               </div>
             </div>
 
             <div style="background:#252530; padding:10px; border-radius:6px; margin-bottom:8px;">
-              <label>Elegir de Ejercicios Precargados:</label>
+              <label>Elegir de Ejercicios Precargados (filtrados por Zona):</label>
               <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''"></select>
 
               <label style="margin-top:6px;">O escribir uno nuevo (se guardará en el banco):</label>
@@ -793,7 +834,6 @@
         <button class="btn-main" onclick="createNewStudent()">Crear Alumno y Generar Planilla</button>
         <div class="status-msg" id="createStatus"></div>
 
-        <!-- RESULTADO DE REGISTRO CON ENLACE DE ACCESO -->
         <div id="createdStudentResult" class="link-box" style="display: none;">
           <h4 style="color: var(--accent); margin-bottom: 6px;">🎉 ¡Alumno Creado con Éxito!</h4>
           <p style="font-size: 0.85rem; color: var(--muted);">Copia y envía este enlace directo al alumno para que acceda a su rutina:</p>
@@ -809,11 +849,49 @@
     <div id="module-ejercicios" class="module-section">
       <div class="card">
         <h2>📚 Banco de Ejercicios Precargados</h2>
-        <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 12px;">Administra los ejercicios globales que estarán disponibles para asignar a cualquier alumno.</p>
-        <input type="text" id="newGlobalExInput" placeholder="Nombre: Ej. Sentadilla Búlgara">
+        <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 12px;">Administra los ejercicios globales asignando su zona muscular para facilitar la búsqueda al armar rutinas.</p>
+        
+        <div class="grid-2">
+          <div>
+            <label>Nombre del Ejercicio</label>
+            <input type="text" id="newGlobalExInput" placeholder="Ej: Sentadilla Búlgara">
+          </div>
+          <div>
+            <label>Zona Muscular / Categoría</label>
+            <select id="newGlobalExZona">
+              <option value="Pecho">Pecho</option>
+              <option value="Espalda">Espalda</option>
+              <option value="Piernas">Piernas / Glúteos</option>
+              <option value="Hombros">Hombros</option>
+              <option value="Brazos">Brazos (Bíceps/Tríceps)</option>
+
+              <option value="Zona Media">Zona Media / Abdomen</option>
+              <option value="Cardio / Funcional">Cardio / Funcional</option>
+              <option value="General">General / Otro</option>
+            </select>
+          </div>
+        </div>
+
         <label>Imágenes/GIFs ilustrativos (hasta 3):</label>
         <input type="file" id="newGlobalExFiles" accept="image/*" multiple>
         <button class="btn-main" onclick="addGlobalExercise()">+ Agregar al Banco</button>
+
+        <hr style="border:0; border-top:1px solid var(--border); margin: 16px 0;">
+
+        <!-- Filtro de vista del Banco -->
+        <label>Filtrar Banco por Zona:</label>
+        <select id="filterGlobalZone" onchange="loadGlobalExercises()">
+          <option value="TODAS">-- Ver Todas las Zonas --</option>
+          <option value="Pecho">Pecho</option>
+          <option value="Espalda">Espalda</option>
+          <option value="Piernas">Piernas / Glúteos</option>
+          <option value="Hombros">Hombros</option>
+          <option value="Brazos">Brazos (Bíceps/Tríceps)</option>
+          <option value="Zona Media">Zona Media / Abdomen</option>
+          <option value="Cardio / Funcional">Cardio / Funcional</option>
+          <option value="General">General / Otro</option>
+        </select>
+
         <div id="globalExercisesList" style="margin-top: 12px;"></div>
       </div>
     </div>
