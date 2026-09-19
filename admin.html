@@ -57,6 +57,7 @@
     /* Estilos del resumen semanal */
     .day-summary-card { background: #18181c; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
     .day-summary-header { font-weight: bold; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 8px; font-size: 0.95rem; }
+    .zone-summary-title { font-size: 0.85rem; font-weight: bold; color: var(--warning); margin: 8px 0 4px 0; display: flex; align-items: center; gap: 4px; }
     .log-chip { background: #252530; padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
     
     .badge-zona { background: #333342; color: var(--accent); font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px; border: 1px solid var(--border); }
@@ -102,7 +103,6 @@
     window.globalExercises = [];
     window.customZones = ["Pecho", "Espalda", "Piernas", "Hombros", "Brazos", "Zona Media", "General"];
 
-    // Variables de estado para edición
     window.editingGlobalExId = null;
     window.editingStudentExCtx = null;
 
@@ -111,7 +111,6 @@
       return url.endsWith('/') ? url : url + '/';
     }
 
-    // Control de Sesión
     onAuthStateChanged(auth, async (user) => {
       const loginBox = document.getElementById('loginBox');
       const adminApp = document.getElementById('adminApp');
@@ -148,7 +147,6 @@
       signOut(auth);
     };
 
-    // Control de Navegación
     window.switchModule = function(moduleName) {
       document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.module-section').forEach(sec => sec.classList.remove('active-module'));
@@ -157,7 +155,6 @@
       document.getElementById(`module-${moduleName}`).classList.add('active-module');
     };
 
-    // --- GESTIÓN DE ZONAS MUSCULARES ---
     async function loadCustomZones() {
       try {
         const querySnapshot = await getDocs(collection(db, "zonas_musculares"));
@@ -223,7 +220,6 @@
       }
     };
 
-    // --- BANCO DE EJERCICIOS ---
     async function loadGlobalExercises() {
       window.globalExercises = [];
       const listContainer = document.getElementById('globalExercisesList');
@@ -398,7 +394,6 @@
       });
     }
 
-    // --- GESTIÓN DE ALUMNOS Y RUTINAS ---
     async function loadStudentsDropdown() {
       const select = document.getElementById('selectStudent');
       select.innerHTML = '<option value="">-- Selecciona un alumno --</option>';
@@ -517,6 +512,7 @@
       }
     };
 
+    // --- REGISTROS SEMANALES AGRUPADOS POR DÍA Y ZONA ---
     async function fetchWeeklyLogs(spreadsheetId) {
       const container = document.getElementById('weeklyLogsContainer');
       container.innerHTML = '<p style="color: var(--muted); font-size: 0.85rem; text-align: center;">⏳ Cargando entrenamientos de esta semana...</p>';
@@ -531,37 +527,47 @@
         const data = await response.json();
 
         if (data.status === "success" && data.logs && data.logs.length > 0) {
-          const groupedByDay = {};
+          // Estructura: { "20/09/2026 (Lunes - Día A)": { "Pecho": [registros...], "Tríceps": [registros...] } }
+          const groupedData = {};
+
           data.logs.forEach(row => {
             const dayKey = `${row.Fecha} (${row.Día})`;
-            if (!groupedByDay[dayKey]) groupedByDay[dayKey] = [];
-            groupedByDay[dayKey].push(row);
+            const zoneKey = row.Zona || "General";
+
+            if (!groupedData[dayKey]) groupedData[dayKey] = {};
+            if (!groupedData[dayKey][zoneKey]) groupedData[dayKey][zoneKey] = [];
+
+            groupedData[dayKey][zoneKey].push(row);
           });
 
           container.innerHTML = '';
-          Object.keys(groupedByDay).forEach(dayLabel => {
+          Object.keys(groupedData).forEach(dayLabel => {
             const dayCard = document.createElement('div');
             dayCard.className = 'day-summary-card';
             
-            let itemsHTML = '';
-            groupedByDay[dayLabel].forEach(log => {
-              itemsHTML += `
-                <div class="log-chip">
-                  <div>
-                    <strong>🏋️ ${log.Ejercicio}</strong> (Serie ${log.Serie})
-                    ${log.Comentarios ? `<div style="font-size:0.75rem; color:var(--accent);">💬 <em>"${log.Comentarios}"</em></div>` : ''}
+            let zonesHTML = '';
+            Object.keys(groupedData[dayLabel]).forEach(zoneName => {
+              zonesHTML += `<div class="zone-summary-title">💪 Categoría / Zona: ${zoneName}</div>`;
+
+              groupedData[dayLabel][zoneName].forEach(log => {
+                zonesHTML += `
+                  <div class="log-chip">
+                    <div>
+                      <strong>🏋️ ${log.Ejercicio}</strong> (Serie ${log.Serie})
+                      ${log.Comentarios ? `<div style="font-size:0.75rem; color:var(--accent);">💬 <em>"${log.Comentarios}"</em></div>` : ''}
+                    </div>
+                    <div style="text-align: right;">
+                      <span style="color:var(--accent); font-weight:bold;">${log["Peso (kg)"]} kg × ${log.Repeticiones} reps</span>
+                      <div style="font-size:0.75rem; color:var(--muted);">${log.Hora}</div>
+                    </div>
                   </div>
-                  <div style="text-align: right;">
-                    <span style="color:var(--accent); font-weight:bold;">${log["Peso (kg)"]} kg × ${log.Repeticiones} reps</span>
-                    <div style="font-size:0.75rem; color:var(--muted);">${log.Hora}</div>
-                  </div>
-                </div>
-              `;
+                `;
+              });
             });
 
             dayCard.innerHTML = `
               <div class="day-summary-header">📅 ${dayLabel}</div>
-              ${itemsHTML}
+              ${zonesHTML}
             `;
             container.appendChild(dayCard);
           });
@@ -694,7 +700,6 @@
       }
     }
 
-    // --- EDICIÓN DE EJERCICIO EN RUTINA DEL ALUMNO ---
     window.openEditStudentExModal = function(day, zone, idx) {
       const ex = window.currentStudentData.rutina[day][zone][idx];
       if (!ex) return;
@@ -897,7 +902,7 @@
           <a id="sheetUrlDisplay" href="#" target="_blank" style="color: var(--accent); font-weight: bold; font-size: 0.9rem;">Abrir Planilla en Google Drive ↗</a>
         </div>
 
-        <!-- RESUMEN DE REGISTROS DE LA SEMANA -->
+        <!-- RESUMEN DE REGISTROS DE LA SEMANA AGRUPADOS POR DÍA Y ZONA -->
         <div class="card">
           <h2>📊 Entrenamientos Realizados esta Semana</h2>
           <div id="weeklyLogsContainer"></div>
