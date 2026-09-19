@@ -3,17 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flor Sol Trainer - Portal Alumnos</title>
+  <title>Flor Sol Trainer - Tu Mejor Versión</title>
   <style>
     :root {
-      --bg: #f4f4f7;
-      --card: #ffffff;
+      --bg: #ffffff;
+      --card: #f8f9fa;
       --text: #1a1a1a;
       --muted: #666666;
       --border: #e0e0e0;
       --accent: #5e5a56;
       --accent-hover: #45423f;
       --danger: #e53935;
+      --shadow: rgba(0,0,0,0.08);
     }
 
     @media (prefers-color-scheme: dark) {
@@ -26,29 +27,100 @@
         --accent: #8e8983;
         --accent-hover: #a8a29c;
         --danger: #ff5252;
+        --shadow: rgba(0,0,0,0.4);
       }
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 600px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      font-family: system-ui, -apple-system, sans-serif; 
+    }
 
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-    .logo { max-width: 240px; height: auto; margin-bottom: 20px; }
-    
-    button.btn-google { background: #4285F4; color: #fff; font-weight: bold; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; font-size: 1rem; margin-top: 16px; }
-    button.btn-google:hover { background: #3367d6; }
-    
-    .status-msg { margin-top: 16px; font-size: 0.9rem; font-weight: 500; }
-    .error-msg { color: var(--danger); }
+    body { 
+      background-color: var(--bg); 
+      color: var(--text); 
+      padding: 20px; 
+      min-height: 100vh; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+    }
+
+    .container { 
+      width: 100%; 
+      max-width: 420px; 
+      background: var(--card); 
+      border: 1px solid var(--border); 
+      border-radius: 20px; 
+      padding: 32px 24px; 
+      text-align: center; 
+      box-shadow: 0 10px 30px var(--shadow); 
+    }
+
+    .logo { 
+      width: 100%; 
+      max-width: 280px; 
+      height: auto; 
+      margin-bottom: 28px; 
+    }
+
+    .btn-container { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 14px; 
+    }
+
+    button { 
+      width: 100%; 
+      padding: 14px 20px; 
+      border-radius: 12px; 
+      font-size: 1rem; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.2s ease; 
+      border: none; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 10px; 
+    }
+
+    .btn-student { 
+      background-color: #4285F4; 
+      color: #ffffff; 
+    }
+    .btn-student:hover { 
+      background-color: #3367d6; 
+    }
+
+    .btn-admin { 
+      background-color: transparent; 
+      color: var(--text); 
+      border: 1px solid var(--border); 
+    }
+    .btn-admin:hover { 
+      background-color: var(--border); 
+    }
+
+    .status-msg { 
+      margin-top: 18px; 
+      font-size: 0.9rem; 
+      font-weight: 500; 
+    }
+    .error-msg { 
+      color: var(--danger); 
+    }
   </style>
 
-  <!-- Firebase JavaScript SDK -->
+  <!-- Módulos de Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // ⚠️ COMPLETA CON TUS CLAVES REALES DE FIREBASE
+    // ⚠️ COLOCA AQUÍ TUS CREDENCIALES REALES DE FIREBASE
     const firebaseConfig = {
       apiKey: "PEGA_AQUI_TU_API_KEY",
       authDomain: "PEGA_AQUI_TU_PROJECT_ID.firebaseapp.com",
@@ -63,87 +135,75 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // Detección automática al iniciar sesión con Google
-    onAuthStateChanged(auth, async (user) => {
+    window.loginStudentWithGoogle = async function() {
       const statusMsg = document.getElementById('statusMsg');
-      const loginBtn = document.getElementById('loginBtn');
+      statusMsg.className = "status-msg";
+      statusMsg.textContent = "⏳ Conectando con Google...";
 
-      if (user) {
-        const userEmail = user.email.toLowerCase().trim();
-        statusMsg.className = "status-msg";
-        statusMsg.textContent = `⏳ Buscando la cuenta de ${userEmail}...`;
-        loginBtn.style.display = 'none';
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const userEmail = result.user.email.toLowerCase().trim();
 
-        try {
-          // BÚSQUEDA AUTOMÁTICA EN FIRESTORE POR EMAIL
-          const alumnosRef = collection(db, "alumnos");
-          const q = query(alumnosRef, where("email", "==", userEmail));
-          const querySnapshot = await getDocs(q);
+        statusMsg.textContent = `🔍 Buscando perfil para ${userEmail}...`;
 
-          if (!querySnapshot.empty) {
-            let studentData = null;
-            querySnapshot.forEach((doc) => {
-              studentData = doc.data();
-            });
+        // Búsqueda en la colección "alumnos" por el correo de Gmail
+        const alumnosRef = collection(db, "alumnos");
+        const q = query(alumnosRef, where("email", "==", userEmail));
+        const querySnapshot = await getDocs(q);
 
-            // Verificar si el alumno tiene un link asignado (google_sheet_url o similar)
-            const targetUrl = studentData.google_sheet_url || studentData.sheet_url || studentData.link_personal;
+        if (!querySnapshot.empty) {
+          let studentData = null;
+          querySnapshot.forEach((doc) => {
+            studentData = doc.data();
+          });
 
-            if (targetUrl) {
-              statusMsg.textContent = `✅ ¡Hola ${studentData.nombre || user.displayName}! Redirigiendo a tu perfil...`;
-              setTimeout(() => {
-                window.location.href = targetUrl;
-              }, 1200);
-            } else {
-              statusMsg.className = "status-msg error-msg";
-              statusMsg.textContent = "⚠️ Tu cuenta existe, pero aún no tienes un link personal cargado. Consulta a la entrenadora.";
-              signOut(auth);
-              loginBtn.style.display = 'flex';
-            }
+          // Obtener la URL personal asignada
+          const targetUrl = studentData.google_sheet_url || studentData.sheet_url || studentData.link_personal;
+
+          if (targetUrl) {
+            statusMsg.textContent = `✅ ¡Hola ${studentData.nombre || result.user.displayName}! Redirigiendo...`;
+            setTimeout(() => {
+              window.location.href = targetUrl;
+            }, 1000);
           } else {
             statusMsg.className = "status-msg error-msg";
-            statusMsg.textContent = `❌ El correo (${userEmail}) no está registrado como alumno. Consulta a la entrenadora.`;
+            statusMsg.textContent = "⚠️ Tu cuenta está registrada pero aún no se le asignó un enlace personal. Consulta a la entrenadora.";
             signOut(auth);
-            loginBtn.style.display = 'flex';
           }
-        } catch (error) {
-          console.error("Error al consultar la base de datos:", error);
+        } else {
           statusMsg.className = "status-msg error-msg";
-          statusMsg.textContent = "❌ Error de conexión al verificar tus datos.";
-          loginBtn.style.display = 'flex';
+          statusMsg.textContent = `❌ El correo (${userEmail}) no está registrado. Consulta a la entrenadora.`;
+          signOut(auth);
         }
-      } else {
-        statusMsg.textContent = "";
-        loginBtn.style.display = 'flex';
-      }
-    });
-
-    window.loginStudent = async function() {
-      try {
-        await signInWithPopup(auth, provider);
       } catch (error) {
-        console.error("Error al autenticar:", error);
-        document.getElementById('statusMsg').textContent = "Error al conectar con Google: " + error.message;
+        console.error("Error en autenticación:", error);
+        statusMsg.className = "status-msg error-msg";
+        statusMsg.textContent = "❌ Error de inicio de sesión: " + error.message;
       }
     };
   </script>
 </head>
 <body>
 
-  <div class="card">
-    <img src="logo fst.png" alt="Flor Sol Trainer" class="logo">
-    <h2>Portal de Alumnos</h2>
-    <p style="color: var(--muted); margin-top: 6px; font-size: 0.95rem;">Ingresa con tu cuenta de Google para acceder a tu plan personalizado.</p>
+  <div class="container">
+    <!-- LOGO CENTRADO -->
+    <img src="logo fst.png" alt="Flor Sol Trainer - Tu mejor versión" class="logo">
 
-    <button id="loginBtn" class="btn-google" onclick="loginStudent()">
-      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
-      Acceso Alumnos
-    </button>
+    <!-- BOTONES DE ACCESO -->
+    <div class="btn-container">
+      <button class="btn-student" onclick="loginStudentWithGoogle()">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#ffffff" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#ffffff" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#ffffff" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#ffffff" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+        Acceso Alumnos
+      </button>
 
+      <button class="btn-admin" onclick="window.location.href='./admin.html'">
+        🔐 Acceso Administrador
+      </button>
+    </div>
+
+    <!-- MENSAJES DE ESTADO -->
     <div id="statusMsg" class="status-msg"></div>
   </div>
 
-</body>
-</html>
 </body>
 </html>
