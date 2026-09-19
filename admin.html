@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel de Entrenador - Login Google</title>
+  <title>Panel de Entrenador - Gestión de Rutinas</title>
   <style>
     :root {
       --bg: #121214;
@@ -18,13 +18,15 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 700px; margin: 0 auto; }
 
-    h1, h2, h3 { margin-bottom: 12px; }
+    h1, h2, h3, h4 { margin-bottom: 12px; }
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
 
     label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
     input, select, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: #252530; color: var(--text); margin-bottom: 12px; font-size: 1rem; }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
     button.btn-main { background: var(--accent); color: #000; font-weight: bold; cursor: pointer; border: none; margin-bottom: 0; }
     button.btn-sec { background: transparent; color: var(--accent); border: 1px solid var(--accent); cursor: pointer; }
     button.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 6px; font-size: 0.8rem; margin-bottom: 0; }
@@ -40,7 +42,7 @@
   <!-- Módulos de Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, getDocs, collection, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     // ⚠️ REEMPLAZA CON TUS CLAVES REALES DE FIREBASE
@@ -66,9 +68,10 @@
 
     window.currentStudentData = { nombre: "", google_sheet_url: "", spreadsheet_id: "", rutina: {} };
     window.currentStudentId = "";
+    window.globalExercises = [];
 
     // Control de Sesión
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       const loginBox = document.getElementById('loginBox');
       const adminApp = document.getElementById('adminApp');
       const authError = document.getElementById('authError');
@@ -78,7 +81,8 @@
           loginBox.style.display = 'none';
           adminApp.style.display = 'block';
           document.getElementById('adminEmailDisplay').textContent = user.email;
-          loadStudentsDropdown();
+          await loadGlobalExercises();
+          await loadStudentsDropdown();
         } else {
           authError.textContent = `❌ Acceso denegado. (${user.email}) no es administrador.`;
           signOut(auth);
@@ -102,7 +106,63 @@
       signOut(auth);
     };
 
-    // Cargar alumnos desde Firestore
+    // Cargar Ejercicios Globales desde Firebase
+    async function loadGlobalExercises() {
+      window.globalExercises = [];
+      const selectEx = document.getElementById('selectGlobalExercise');
+      const listContainer = document.getElementById('globalExercisesList');
+      selectEx.innerHTML = '<option value="">-- Selecciona un ejercicio --</option>';
+      listContainer.innerHTML = '';
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "ejercicios_base"));
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const item = { id: docSnap.id, name: data.nombre };
+          window.globalExercises.push(item);
+
+          const opt = document.createElement('option');
+          opt.value = data.nombre;
+          opt.textContent = data.nombre;
+          selectEx.appendChild(opt);
+
+          const chip = document.createElement('div');
+          chip.className = 'item-chip';
+          chip.innerHTML = `<span>🏋️ ${data.nombre}</span> <button class="btn-danger" style="width:auto;" onclick="deleteGlobalExercise('${docSnap.id}')">Eliminar</button>`;
+          listContainer.appendChild(chip);
+        });
+      } catch (e) {
+        console.error("Error cargando ejercicios base:", e);
+      }
+    }
+
+    // Agregar Ejercicio Nuevo al Banco Global
+    window.addGlobalExercise = async function() {
+      const input = document.getElementById('newGlobalExInput');
+      const name = input.value.trim();
+      if (!name) return alert("Escribe el nombre del ejercicio.");
+
+      try {
+        await addDoc(collection(db, "ejercicios_base"), { nombre: name });
+        input.value = '';
+        await loadGlobalExercises();
+      } catch (e) {
+        console.error("Error agregando ejercicio global:", e);
+      }
+    };
+
+    window.deleteGlobalExercise = async function(id) {
+      if (confirm("¿Borrar este ejercicio del banco global?")) {
+        try {
+          await deleteDoc(doc(db, "ejercicios_base", id));
+          await loadGlobalExercises();
+        } catch (e) {
+          console.error("Error eliminando ejercicio:", e);
+        }
+      }
+    };
+
+    // Cargar Lista de Alumnos
     async function loadStudentsDropdown() {
       const select = document.getElementById('selectStudent');
       select.innerHTML = '<option value="">-- Selecciona un alumno --</option>';
@@ -120,7 +180,7 @@
       }
     }
 
-    // Crear alumno y planilla de Google Sheets automática
+    // Crear Alumno y Planilla
     window.createNewStudent = async function() {
       const name = document.getElementById('newStudentName').value.trim();
       const id = document.getElementById('newStudentId').value.trim().toLowerCase().replace(/\s+/g, '-');
@@ -133,7 +193,6 @@
       status.style.color = "var(--muted)";
 
       try {
-        // Solicitud al Script Maestro para crear la planilla
         const response = await fetch(MASTER_SCRIPT_URL, {
           method: "POST",
           body: JSON.stringify({ action: "CREATE_SHEET", nombre: name })
@@ -261,13 +320,25 @@
     window.addExercise = function() {
       const day = document.getElementById('selectDayForEx').value;
       const zone = document.getElementById('selectZoneForEx').value;
-      const exName = document.getElementById('newExName').value.trim();
+      
+      const selectedExSelect = document.getElementById('selectGlobalExercise').value;
+      const manualExInput = document.getElementById('manualExName').value.trim();
+      
+      const exName = selectedExSelect || manualExInput;
+      const sets = Number(document.getElementById('newExSets').value) || 3;
       const weight = Number(document.getElementById('newExWeight').value);
       const reps = Number(document.getElementById('newExReps').value);
 
-      if (!day || !zone || !exName) return;
-      window.currentStudentData.rutina[day][zone].push({ name: exName, weight, reps });
-      document.getElementById('newExName').value = '';
+      if (!day || !zone || !exName) return alert("Selecciona o escribe el nombre del ejercicio.");
+
+      // Si el ejercicio no estaba en la base global y se escribió a mano, lo guardamos en la base global
+      if (manualExInput && !window.globalExercises.some(e => e.name.toLowerCase() === manualExInput.toLowerCase())) {
+        addDoc(collection(db, "ejercicios_base"), { nombre: manualExInput }).then(() => loadGlobalExercises());
+      }
+
+      window.currentStudentData.rutina[day][zone].push({ name: exName, sets: sets, weight: weight, reps: reps });
+      document.getElementById('manualExName').value = '';
+      document.getElementById('selectGlobalExercise').value = '';
       renderEditor();
     };
 
@@ -347,7 +418,7 @@
       window.currentStudentData.rutina[day][zone].forEach((ex, idx) => {
         const div = document.createElement('div');
         div.className = 'item-chip';
-        div.innerHTML = `<span>🏋️ <strong>${ex.name}</strong> (${ex.weight} kg, ${ex.reps} reps)</span> <button class="btn-danger" style="width:auto;" onclick="deleteExercise('${day}', '${zone}', ${idx})">Eliminar</button>`;
+        div.innerHTML = `<span>🏋️ <strong>${ex.name}</strong> (${ex.sets || 3} series x ${ex.reps} reps @ ${ex.weight} kg)</span> <button class="btn-danger" style="width:auto;" onclick="deleteExercise('${day}', '${zone}', ${idx})">Eliminar</button>`;
         container.appendChild(div);
       });
     }
@@ -371,6 +442,20 @@
     <div class="flex-row" style="justify-content: space-between; margin-bottom: 16px;">
       <span style="font-size: 0.9rem; color: var(--muted);">Conectado como: <strong id="adminEmailDisplay" style="color:var(--text);"></strong></span>
       <button class="btn-danger" onclick="logout()" style="width: auto;">Cerrar Sesión</button>
+    </div>
+
+    <!-- 0. Gestor de Ejercicios Base -->
+    <div class="card">
+      <details>
+        <summary style="cursor: pointer; color: var(--accent); font-weight: bold;">📚 Banco de Ejercicios Precargados</summary>
+        <div style="margin-top: 12px;">
+          <div class="flex-row">
+            <input type="text" id="newGlobalExInput" placeholder="Ej: Sentadilla Búlgara" style="margin-bottom:0;">
+            <button class="btn-main" onclick="addGlobalExercise()" style="width:auto; white-space:nowrap;">+ Agregar al Banco</button>
+          </div>
+          <div id="globalExercisesList" style="margin-top: 10px;"></div>
+        </div>
+      </details>
     </div>
 
     <!-- 1. Crear Nuevo Alumno -->
@@ -458,19 +543,27 @@
           </div>
 
           <div style="background:#252530; padding:10px; border-radius:6px; margin-bottom:8px;">
-            <label>Nombre Ejercicio:</label>
-            <input type="text" id="newExName" placeholder="Ej: Press de Banca Plano">
-            <div class="grid-2">
+            <label>Elegir de Ejercicios Precargados:</label>
+            <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''"></select>
+
+            <label style="margin-top:6px;">O escribir uno nuevo (se guardará en el banco):</label>
+            <input type="text" id="manualExName" placeholder="Ej: Press Francés" oninput="document.getElementById('selectGlobalExercise').value=''">
+
+            <div class="grid-3">
               <div>
-                <label>Peso Objetivo (kg)</label>
+                <label>Series Target</label>
+                <input type="number" id="newExSets" value="3" min="1">
+              </div>
+              <div>
+                <label>Peso Target (kg)</label>
                 <input type="number" id="newExWeight" value="50" step="0.5">
               </div>
               <div>
-                <label>Reps Objetivo</label>
+                <label>Reps Target</label>
                 <input type="number" id="newExReps" value="10">
               </div>
             </div>
-            <button class="btn-sec" onclick="addExercise()" style="margin-bottom:0;">+ Añadir Ejercicio</button>
+            <button class="btn-sec" onclick="addExercise()" style="margin-bottom:0;">+ Añadir Ejercicio a la Rutina</button>
           </div>
           <div id="exercisesList"></div>
         </div>
