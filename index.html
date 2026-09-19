@@ -34,6 +34,10 @@
     .timer-display { font-size: 2.5rem; font-weight: bold; text-align: center; color: var(--accent); margin: 8px 0; }
     .sync-status { font-size: 0.85rem; text-align: center; color: var(--accent); margin-top: 6px; font-weight: 500; }
     .loading-overlay { text-align: center; padding: 40px 20px; font-size: 1rem; color: var(--muted); }
+
+    /* Estilos Galería de Imágenes */
+    .image-gallery { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 6px; scroll-snap-type: x mandatory; }
+    .image-gallery img { flex: 0 0 100%; max-height: 250px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); scroll-snap-align: center; }
   </style>
 
   <!-- Módulos de Firebase -->
@@ -54,7 +58,6 @@
 
     // ⚠️ PEGA AQUÍ LA URL DE TU SCRIPT MAESTRO DE GOOGLE APPS SCRIPT
     const MASTER_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwM7ktiN4QF_GdT5ZFoOhtov-BwvO5wAjLFv54nY-1jge0eFwtjWL9CelV0Xi8NLpQh/exec";
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
@@ -92,7 +95,6 @@
           if (docSnap.exists()) {
             const data = docSnap.data();
 
-            // Validar que el email de Google del usuario sea el asignado en el panel (si está configurado)
             if (!data.email || data.email.toLowerCase() === user.email.toLowerCase()) {
               window.workoutData = data.rutina || {};
               window.spreadsheetId = data.spreadsheet_id || "";
@@ -188,9 +190,17 @@
       <label for="exerciseSelect">3. Ejercicio</label>
       <select id="exerciseSelect" onchange="onExerciseChange()"></select>
 
+      <!-- Contenedor Galería de Imágenes (hasta 3) -->
+      <div id="exerciseGallery" class="image-gallery" style="display: none;"></div>
+
+      <!-- Observaciones/Notas del Entrenador -->
+      <div id="exerciseNotesDisplay" style="display: none; background: #252530; border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 0.9rem; color: var(--text);">
+        📌 <strong style="color: var(--accent);">Nota:</strong> <span id="exerciseNotesText"></span>
+      </div>
+
       <div class="grid-3">
         <div>
-          <label for="setNum">Serie Nº</label>
+          <label for="setNum" id="setNumLabel">Serie Nº</label>
           <input type="number" id="setNum" value="1" min="1">
         </div>
         <div>
@@ -267,6 +277,14 @@
       const day = document.getElementById('daySelect').value;
       const zone = document.getElementById('zoneSelect').value;
       const exName = document.getElementById('exerciseSelect').value;
+      const setLabel = document.getElementById('setNumLabel');
+      const gallery = document.getElementById('exerciseGallery');
+      const notesDisplay = document.getElementById('exerciseNotesDisplay');
+      const notesText = document.getElementById('exerciseNotesText');
+
+      gallery.innerHTML = '';
+      gallery.style.display = 'none';
+      notesDisplay.style.display = 'none';
 
       if (day && zone && exName && window.workoutData[day][zone]) {
         const ex = window.workoutData[day][zone].find(e => e.name === exName);
@@ -274,6 +292,27 @@
           document.getElementById('weight').value = ex.weight || 0;
           document.getElementById('reps').value = ex.reps || 0;
           document.getElementById('setNum').value = 1;
+          
+          const targetSets = ex.sets || 3;
+          setLabel.textContent = `Serie Nº (de ${targetSets})`;
+
+          // Cargar imágenes si existen
+          const images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
+          if (images.length > 0) {
+            images.forEach(url => {
+              const img = document.createElement('img');
+              img.src = url;
+              img.alt = "Técnica del ejercicio";
+              gallery.appendChild(img);
+            });
+            gallery.style.display = 'flex';
+          }
+
+          // Cargar observaciones si existen
+          if (ex.notes && ex.notes.trim() !== '') {
+            notesText.textContent = ex.notes;
+            notesDisplay.style.display = 'block';
+          }
         }
       }
     }
