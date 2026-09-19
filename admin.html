@@ -619,51 +619,15 @@
       <button class="btn-danger" onclick="logout()" style="width: auto; padding: 4px 10px;">Salir</button>
     </div>
 
-    <!-- Pestañas Principales -->
+    <!-- Pestañas Principales en Nuevo Orden -->
     <div class="nav-tabs">
-      <button class="nav-btn active" id="btn-ejercicios" onclick="switchModule('ejercicios')">📚 Banco Ejercicios</button>
+      <button class="nav-btn active" id="btn-alumnos" onclick="switchModule('alumnos')">👥 Mis Alumnos</button>
       <button class="nav-btn" id="btn-nuevo-alumno" onclick="switchModule('nuevo-alumno')">➕ Nuevo Alumno</button>
-      <button class="nav-btn" id="btn-alumnos" onclick="switchModule('alumnos')">👥 Mis Alumnos</button>
+      <button class="nav-btn" id="btn-ejercicios" onclick="switchModule('ejercicios')">📚 Banco Ejercicios</button>
     </div>
 
-    <!-- MÓDULO 1: BANCO DE EJERCICIOS -->
-    <div id="module-ejercicios" class="module-section active-module">
-      <div class="card">
-        <h2>📚 Banco de Ejercicios Precargados</h2>
-        <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 12px;">Administra los ejercicios globales que estarán disponibles para asignar a cualquier alumno.</p>
-        <input type="text" id="newGlobalExInput" placeholder="Nombre: Ej. Sentadilla Búlgara">
-        <label>Imágenes/GIFs ilustrativos (hasta 3):</label>
-        <input type="file" id="newGlobalExFiles" accept="image/*" multiple>
-        <button class="btn-main" onclick="addGlobalExercise()">+ Agregar al Banco</button>
-        <div id="globalExercisesList" style="margin-top: 12px;"></div>
-      </div>
-    </div>
-
-    <!-- MÓDULO 2: CREAR NUEVO ALUMNO -->
-    <div id="module-nuevo-alumno" class="module-section">
-      <div class="card">
-        <h2>➕ Registrar Nuevo Alumno</h2>
-        <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 12px;">Al registrarlo se creará automáticamente su planilla propia en Google Drive.</p>
-        <div class="grid-2">
-          <div>
-            <label>Nombre Completo</label>
-            <input type="text" id="newStudentName" placeholder="Ej: Juan Pérez">
-          </div>
-          <div>
-            <label>ID para Enlace (sin espacios)</label>
-            <input type="text" id="newStudentId" placeholder="Ej: juan">
-          </div>
-        </div>
-        <label>Email de Google del Alumno</label>
-        <input type="email" id="newStudentEmail" placeholder="juan.perez@gmail.com">
-        
-        <button class="btn-main" onclick="createNewStudent()">Crear Alumno y Generar Planilla</button>
-        <div class="status-msg" id="createStatus"></div>
-      </div>
-    </div>
-
-    <!-- MÓDULO 3: LISTADO Y EDICIÓN DE ALUMNOS -->
-    <div id="module-alumnos" class="module-section">
+    <!-- PESTAÑA 1: MIS ALUMNOS (LISTADO, EDICIÓN Y REGISTROS) -->
+    <div id="module-alumnos" class="module-section active-module">
       <div class="card">
         <h2>👥 Seleccionar Alumno</h2>
         <label for="selectStudent">Elige un alumno registrado para ver o editar su rutina:</label>
@@ -768,6 +732,43 @@
         </div>
       </div>
     </div>
+
+    <!-- PESTAÑA 2: NUEVO ALUMNO -->
+    <div id="module-nuevo-alumno" class="module-section">
+      <div class="card">
+        <h2>➕ Registrar Nuevo Alumno</h2>
+        <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 12px;">Al registrarlo se creará automáticamente su planilla propia en Google Drive.</p>
+        <div class="grid-2">
+          <div>
+            <label>Nombre Completo</label>
+            <input type="text" id="newStudentName" placeholder="Ej: Juan Pérez">
+          </div>
+          <div>
+            <label>ID para Enlace (sin espacios)</label>
+            <input type="text" id="newStudentId" placeholder="Ej: juan">
+          </div>
+        </div>
+        <label>Email de Google del Alumno</label>
+        <input type="email" id="newStudentEmail" placeholder="juan.perez@gmail.com">
+        
+        <button class="btn-main" onclick="createNewStudent()">Crear Alumno y Generar Planilla</button>
+        <div class="status-msg" id="createStatus"></div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 3: BANCO DE EJERCICIOS -->
+    <div id="module-ejercicios" class="module-section">
+      <div class="card">
+        <h2>📚 Banco de Ejercicios Precargados</h2>
+        <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 12px;">Administra los ejercicios globales que estarán disponibles para asignar a cualquier alumno.</p>
+        <input type="text" id="newGlobalExInput" placeholder="Nombre: Ej. Sentadilla Búlgara">
+        <label>Imágenes/GIFs ilustrativos (hasta 3):</label>
+        <input type="file" id="newGlobalExFiles" accept="image/*" multiple>
+        <button class="btn-main" onclick="addGlobalExercise()">+ Agregar al Banco</button>
+        <div id="globalExercisesList" style="margin-top: 12px;"></div>
+      </div>
+    </div>
+
   </div>
 
 </body>
