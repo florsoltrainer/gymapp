@@ -35,7 +35,7 @@
     .sync-status { font-size: 0.85rem; text-align: center; color: var(--accent); margin-top: 6px; font-weight: 500; }
     .loading-overlay { text-align: center; padding: 40px 20px; font-size: 1rem; color: var(--muted); }
 
-    /* Estilos Galería de Imágenes */
+    /* Galería Deslizable */
     .image-gallery { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 6px; scroll-snap-type: x mandatory; }
     .image-gallery img { flex: 0 0 100%; max-height: 250px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); scroll-snap-align: center; }
   </style>
@@ -58,6 +58,7 @@
 
     // ⚠️ PEGA AQUÍ LA URL DE TU SCRIPT MAESTRO DE GOOGLE APPS SCRIPT
     const MASTER_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwM7ktiN4QF_GdT5ZFoOhtov-BwvO5wAjLFv54nY-1jge0eFwtjWL9CelV0Xi8NLpQh/exec";
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
@@ -190,10 +191,10 @@
       <label for="exerciseSelect">3. Ejercicio</label>
       <select id="exerciseSelect" onchange="onExerciseChange()"></select>
 
-      <!-- Contenedor Galería de Imágenes (hasta 3) -->
+      <!-- Galería de Imágenes -->
       <div id="exerciseGallery" class="image-gallery" style="display: none;"></div>
 
-      <!-- Observaciones/Notas del Entrenador -->
+      <!-- Nota del Entrenador -->
       <div id="exerciseNotesDisplay" style="display: none; background: #252530; border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 0.9rem; color: var(--text);">
         📌 <strong style="color: var(--accent);">Nota:</strong> <span id="exerciseNotesText"></span>
       </div>
@@ -201,7 +202,7 @@
       <div class="grid-3">
         <div>
           <label for="setNum" id="setNumLabel">Serie Nº</label>
-          <input type="number" id="setNum" value="1" min="1">
+          <input type="number" id="setNum" value="1" min="1" onchange="updateWeightForSet()">
         </div>
         <div>
           <label for="weight">Peso (kg)</label>
@@ -289,14 +290,16 @@
       if (day && zone && exName && window.workoutData[day][zone]) {
         const ex = window.workoutData[day][zone].find(e => e.name === exName);
         if (ex) {
-          document.getElementById('weight').value = ex.weight || 0;
-          document.getElementById('reps').value = ex.reps || 0;
           document.getElementById('setNum').value = 1;
+          
+          const initialWeight = (ex.weights && ex.weights[0] !== undefined) ? ex.weights[0] : (ex.weight || 0);
+          document.getElementById('weight').value = initialWeight;
+          document.getElementById('reps').value = ex.reps || 0;
           
           const targetSets = ex.sets || 3;
           setLabel.textContent = `Serie Nº (de ${targetSets})`;
 
-          // Cargar imágenes si existen
+          // Cargar imágenes
           const images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
           if (images.length > 0) {
             images.forEach(url => {
@@ -308,11 +311,25 @@
             gallery.style.display = 'flex';
           }
 
-          // Cargar observaciones si existen
+          // Cargar notas
           if (ex.notes && ex.notes.trim() !== '') {
             notesText.textContent = ex.notes;
             notesDisplay.style.display = 'block';
           }
+        }
+      }
+    }
+
+    function updateWeightForSet() {
+      const day = document.getElementById('daySelect').value;
+      const zone = document.getElementById('zoneSelect').value;
+      const exName = document.getElementById('exerciseSelect').value;
+      const currentSet = Number(document.getElementById('setNum').value) || 1;
+
+      if (day && zone && exName && window.workoutData[day][zone]) {
+        const ex = window.workoutData[day][zone].find(e => e.name === exName);
+        if (ex && ex.weights && ex.weights.length >= currentSet) {
+          document.getElementById('weight').value = ex.weights[currentSet - 1];
         }
       }
     }
@@ -358,12 +375,13 @@
           statusDiv.textContent = "⚠️ Falló la conexión con el Script Maestro";
           statusDiv.style.color = "var(--danger)";
         }
-      } else {
-        statusDiv.textContent = "⚠️ El alumno no tiene planilla asociada";
-        statusDiv.style.color = "var(--danger)";
       }
 
-      document.getElementById('setNum').value = Number(setNum) + 1;
+      // Avanzar de serie y actualizar peso
+      const nextSet = Number(setNum) + 1;
+      document.getElementById('setNum').value = nextSet;
+      updateWeightForSet();
+
       startTimer(90);
     }
 
