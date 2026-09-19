@@ -37,9 +37,8 @@
     body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 800px; margin: 0 auto; min-height: 100vh; }
 
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-    h1 { font-size: 1.4rem; }
+    .logo-header { max-width: 180px; height: auto; }
     
-    /* Pestañas Principales */
     .tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
     .tab-btn { padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.95rem; }
     .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
@@ -58,6 +57,7 @@
 
     button.btn-main { background: var(--accent); color: #fff; font-weight: bold; cursor: pointer; border: none; }
     button.btn-main:hover { background: var(--accent-hover); }
+    button.btn-sec { background: transparent; color: var(--accent); border: 1px solid var(--accent); font-weight: 600; cursor: pointer; }
     button.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-weight: 600; cursor: pointer; }
     button.btn-danger:hover { background: var(--danger); color: #fff; }
     button.btn-google { background: #4285F4; color: #fff; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; border-radius: 10px; }
@@ -78,7 +78,7 @@
     import { getFirestore, doc, getDoc, setDoc, getDocs, collection, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // ⚠️ REEMPLAZA CON TUS CLAVES REALES DE FIREBASE
+    // ⚠️ REEMPLAZA CON TUS CLAVES REALES DE FIREBASE, APPS SCRIPT Y CLOUDINARY
     const firebaseConfig = {
       apiKey: "AIzaSyDC3Wvw3E8IhSnkSKg5Qk98NivuqK-FNzM",
       authDomain: "florsoltrainer-f22c2.firebaseapp.com",
@@ -88,15 +88,10 @@
       appId: "1:36053648611:web:34f519fc41a12024f4f1d6"
     };
 
-    // ⚠️ PEGA AQUÍ LA URL DE TU SCRIPT MAESTRO DE GOOGLE APPS SCRIPT
     const MASTER_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwM7ktiN4QF_GdT5ZFoOhtov-BwvO5wAjLFv54nY-1jge0eFwtjWL9CelV0Xi8NLpQh/exec";
-
-    // ⚠️ PEGA AQUÍ TU CORREO DE GMAIL DE ADMINISTRADOR
     const ADMIN_EMAIL = "florsoltrainer@gmail.com";
-
-    // ⚠️ REEMPLAZA CON TUS DATOS DE CLOUDINARY PARA IMÁGENES/GIFS
-    const CLOUD_NAME = "wnlwm0dj";       
-    const UPLOAD_PRESET = "y5kna9cn"; 
+    const CLOUD_NAME = "wnlwm0dj";
+    const UPLOAD_PRESET = "y5kna9cn";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -137,6 +132,88 @@
       
       document.getElementById(`tab-${moduleName}`).classList.add('active');
       document.getElementById(`module-${moduleName}`).classList.add('active');
+    };
+
+    // --- Cargar Banco Global de Ejercicios desde Firebase ---
+    async function loadGlobalExercises() {
+      window.globalExercises = [];
+      const selectEx = document.getElementById('selectGlobalExercise');
+      const listContainer = document.getElementById('globalExercisesList');
+      selectEx.innerHTML = '<option value="">-- Selecciona un ejercicio del banco --</option>';
+      listContainer.innerHTML = '';
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "ejercicios_base"));
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const images = data.imageUrls || (data.imageUrl ? [data.imageUrl] : []);
+          const item = { id: docSnap.id, name: data.nombre, imageUrls: images };
+          window.globalExercises.push(item);
+
+          const opt = document.createElement('option');
+          opt.value = data.nombre;
+          opt.textContent = data.nombre;
+          selectEx.appendChild(opt);
+
+          const chip = document.createElement('div');
+          chip.className = 'item-chip';
+          chip.innerHTML = `
+            <span>🏋️ <strong>${data.nombre}</strong> ${images.length > 0 ? `(🖼️ ${images.length} imágenes)` : ''}</span>
+            <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteGlobalExercise('${docSnap.id}')">Eliminar</button>
+          `;
+          listContainer.appendChild(chip);
+        });
+      } catch (e) {
+        console.error("Error cargando banco de ejercicios:", e);
+      }
+    }
+
+    // Agregar Ejercicio Nuevo al Banco Global con hasta 3 imágenes en Cloudinary
+    window.addGlobalExercise = async function() {
+      const nameInput = document.getElementById('newGlobalExInput');
+      const fileInput = document.getElementById('newGlobalExFiles');
+      const name = nameInput.value.trim();
+      const files = Array.from(fileInput.files).slice(0, 3);
+
+      if (!name) return alert("Ingresa el nombre del ejercicio.");
+
+      let uploadedUrls = [];
+
+      if (files.length > 0 && CLOUD_NAME !== "TU_CLOUD_NAME") {
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("upload_preset", UPLOAD_PRESET);
+
+          try {
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+              method: "POST",
+              body: formData
+            });
+            const resData = await response.json();
+            if (resData.secure_url) uploadedUrls.push(resData.secure_url);
+          } catch (e) {
+            console.error("Error subiendo imagen a Cloudinary:", e);
+          }
+        }
+      }
+
+      try {
+        await addDoc(collection(db, "ejercicios_base"), { nombre: name, imageUrls: uploadedUrls });
+        nameInput.value = '';
+        fileInput.value = '';
+        await loadGlobalExercises();
+        alert("✅ Ejercicio agregado al banco global.");
+      } catch (e) {
+        alert("❌ Error al guardar en Firebase.");
+      }
+    };
+
+    window.deleteGlobalExercise = async function(id) {
+      if (confirm("¿Borrar este ejercicio del banco global?")) {
+        await deleteDoc(doc(db, "ejercicios_base", id));
+        await loadGlobalExercises();
+      }
     };
 
     // --- Cargar y Buscar Alumnos ---
@@ -212,14 +289,12 @@
         renderEditor();
         document.getElementById('editorContainer').scrollIntoView({ behavior: 'smooth' });
 
-        // Cargar historial de los últimos 7 días
         if (window.currentStudentData.spreadsheet_id) {
           loadWeeklyLogs(window.currentStudentData.spreadsheet_id);
         }
       }
     };
 
-    // Consultar entrenamientos realizados en los últimos 7 días desde Google Sheets
     async function loadWeeklyLogs(spreadsheetId) {
       const container = document.getElementById('weeklyLogsContainer');
       container.innerHTML = "⏳ Consultando registros de los últimos 7 días...";
@@ -270,14 +345,11 @@
       }
     };
 
-    // ELIMINAR ALUMNO DEFINITIVAMENTE
     window.deleteCurrentStudent = async function() {
       if (!window.currentStudentId) return;
 
-      const confirmFirst = confirm(`¿Estás segura de que deseas eliminar a ${window.currentStudentData.nombre}?`);
-      if (confirmFirst) {
-        const confirmSecond = confirm("⚠️ ATENCIÓN: Esta acción eliminará al alumno de la base de datos permanentemente. ¿Continuar?");
-        if (confirmSecond) {
+      if (confirm(`¿Estás segura de que deseas eliminar a ${window.currentStudentData.nombre}?`)) {
+        if (confirm("⚠️ ATENCIÓN: Esta acción eliminará al alumno de la base de datos permanentemente.")) {
           try {
             await deleteDoc(doc(db, "alumnos", window.currentStudentId));
             alert("✅ Alumno eliminado correctamente.");
@@ -291,7 +363,7 @@
       }
     };
 
-    // --- Crear Nuevo Alumno ---
+    // Crear Nuevo Alumno
     window.createNewStudent = async function() {
       const name = document.getElementById('newStudentName').value.trim();
       const id = document.getElementById('newStudentId').value.trim().toLowerCase().replace(/\s+/g, '-');
@@ -341,49 +413,7 @@
       }
     };
 
-    // --- Banco Global de Ejercicios ---
-    async function loadGlobalExercises() {
-      window.globalExercises = [];
-      const selectEx = document.getElementById('selectGlobalExercise');
-      const listContainer = document.getElementById('globalExercisesList');
-      selectEx.innerHTML = '<option value="">-- Selecciona un ejercicio --</option>';
-      listContainer.innerHTML = '';
-
-      try {
-        const querySnapshot = await getDocs(collection(db, "ejercicios_base"));
-        querySnapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          window.globalExercises.push({ id: docSnap.id, name: data.nombre });
-
-          const opt = document.createElement('option');
-          opt.value = data.nombre;
-          opt.textContent = data.nombre;
-          selectEx.appendChild(opt);
-
-          const chip = document.createElement('div');
-          chip.className = 'item-chip';
-          chip.innerHTML = `<span>🏋️ ${data.nombre}</span> <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteGlobalExercise('${docSnap.id}')">Eliminar</button>`;
-          listContainer.appendChild(chip);
-        });
-      } catch (e) { console.error(e); }
-    }
-
-    window.addGlobalExercise = async function() {
-      const name = document.getElementById('newGlobalExInput').value.trim();
-      if (!name) return;
-      await addDoc(collection(db, "ejercicios_base"), { nombre: name });
-      document.getElementById('newGlobalExInput').value = '';
-      await loadGlobalExercises();
-    };
-
-    window.deleteGlobalExercise = async function(id) {
-      if (confirm("¿Borrar ejercicio del banco global?")) {
-        await deleteDoc(doc(db, "ejercicios_base", id));
-        await loadGlobalExercises();
-      }
-    };
-
-    // --- Lógica del Diseñador Visual ---
+    // --- Diseñador Visual de Rutinas ---
     window.renderEditor = function() {
       document.getElementById('editorContainer').style.display = 'block';
       renderDayDropdowns();
@@ -402,8 +432,10 @@
     };
 
     window.deleteDay = function(day) {
-      delete window.currentStudentData.rutina[day];
-      renderEditor();
+      if (confirm(`¿Eliminar el día ${day}?`)) {
+        delete window.currentStudentData.rutina[day];
+        renderEditor();
+      }
     };
 
     window.addZone = function() {
@@ -417,21 +449,57 @@
     };
 
     window.deleteZone = function(day, zone) {
-      delete window.currentStudentData.rutina[day][zone];
-      renderEditor();
+      if (confirm(`¿Eliminar la zona ${zone}?`)) {
+        delete window.currentStudentData.rutina[day][zone];
+        renderEditor();
+      }
     };
 
     window.addExercise = function() {
       const day = document.getElementById('selectDayForEx').value;
       const zone = document.getElementById('selectZoneForEx').value;
-      const exName = document.getElementById('selectGlobalExercise').value || document.getElementById('manualExName').value.trim();
-      const weight = Number(document.getElementById('newExWeight').value) || 0;
+      const selectedExName = document.getElementById('selectGlobalExercise').value;
+      const manualExName = document.getElementById('manualExName').value.trim();
+      const notes = document.getElementById('newExNotes').value.trim();
+
+      const exName = selectedExName || manualExName;
+      const sets = Number(document.getElementById('newExSets').value) || 3;
       const reps = Number(document.getElementById('newExReps').value) || 10;
+      const weightsInput = document.getElementById('newExWeights').value.trim();
 
       if (!day || !zone || !exName) return alert("Selecciona Día, Zona y Ejercicio.");
 
-      window.currentStudentData.rutina[day][zone].push({ name: exName, weight, reps });
+      let weightsArray = [];
+      if (weightsInput.includes(',')) {
+        weightsArray = weightsInput.split(',').map(w => Number(w.trim()) || 0);
+      } else {
+        const singleWeight = Number(weightsInput) || 0;
+        weightsArray = Array(sets).fill(singleWeight);
+      }
+
+      let imageUrls = [];
+      const foundGlobal = window.globalExercises.find(e => e.name === exName);
+      if (foundGlobal && foundGlobal.imageUrls) {
+        imageUrls = foundGlobal.imageUrls;
+      }
+
+      if (manualExName && !window.globalExercises.some(e => e.name.toLowerCase() === manualExName.toLowerCase())) {
+        addDoc(collection(db, "ejercicios_base"), { nombre: manualExName, imageUrls: [] }).then(() => loadGlobalExercises());
+      }
+
+      window.currentStudentData.rutina[day][zone].push({ 
+        name: exName, 
+        sets: sets, 
+        weights: weightsArray,
+        weight: weightsArray[0] || 0,
+        reps: reps,
+        notes: notes,
+        imageUrls: imageUrls
+      });
+
       document.getElementById('manualExName').value = '';
+      document.getElementById('newExNotes').value = '';
+      document.getElementById('newExWeights').value = '';
       document.getElementById('selectGlobalExercise').value = '';
       renderEditor();
     };
@@ -508,7 +576,15 @@
       window.currentStudentData.rutina[day][zone].forEach((ex, idx) => {
         const div = document.createElement('div');
         div.className = 'item-chip';
-        div.innerHTML = `<span>🏋️ <strong>${ex.name}</strong> (${ex.weight} kg, ${ex.reps} reps)</span> <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteExercise('${day}', '${zone}', ${idx})">Eliminar</button>`;
+        const displayWeights = ex.weights ? ex.weights.join("kg, ") + "kg" : `${ex.weight} kg`;
+        
+        div.innerHTML = `
+          <div>
+            <span>🏋️ <strong>${ex.name}</strong> (${ex.sets || 3} series x ${ex.reps} reps @ [${displayWeights}])</span>
+            ${ex.notes ? `<div style="font-size:0.8rem; color:var(--accent); margin-top:2px;">📌 <em>${ex.notes}</em></div>` : ''}
+          </div>
+          <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteExercise('${day}', '${zone}', ${idx})">Eliminar</button>
+        `;
         container.appendChild(div);
       });
     }
@@ -516,19 +592,26 @@
 </head>
 <body>
 
-  <!-- LOGIN -->
-  <div id="loginBox" class="card" style="text-align: center; padding: 40px 20px;">
-    <h1>🔐 Panel de Administrador</h1>
-    <p style="color: var(--muted); margin-bottom: 20px;">Inicia sesión con tu cuenta autorizada para acceder.</p>
-    <button class="btn-google" onclick="loginGoogle()">Iniciar Sesión con Google</button>
-    <div id="authError" style="color: var(--danger); margin-top: 16px;"></div>
+  <!-- LOGIN ADMINISTRADOR -->
+  <div id="loginBox" class="card" style="text-align: center; padding: 40px 20px; max-width: 400px; margin: 40px auto;">
+    <img src="logo fst.png" alt="Flor Sol Trainer" style="max-width: 220px; margin-bottom: 20px;">
+    <h2>Acceso Administrador</h2>
+    <p style="color: var(--muted); margin-bottom: 20px; font-size: 0.95rem;">Inicia sesión con tu cuenta de Google autorizada.</p>
+    <button class="btn-google" onclick="loginGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#ffffff" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#ffffff" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#ffffff" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#ffffff" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+      Iniciar Sesión con Google
+    </button>
+    <div id="authError" style="color: var(--danger); margin-top: 16px; font-weight: bold;"></div>
   </div>
 
   <!-- APLICACIÓN PRINCIPAL -->
   <div id="adminApp" style="display: none;">
     <header>
-      <h1>Flor Sol Trainer 🏋️‍♀️</h1>
-      <button class="btn-danger" onclick="logout()" style="width: auto; padding: 6px 12px;">Cerrar Sesión</button>
+      <img src="logo fst.png" alt="Flor Sol Trainer" class="logo-header">
+      <div>
+        <span style="font-size:0.85rem; color:var(--muted); margin-right:8px;" id="adminEmailDisplay"></span>
+        <button class="btn-danger" onclick="logout()" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">Cerrar Sesión</button>
+      </div>
     </header>
 
     <!-- NAVEGACIÓN PESTAÑAS -->
@@ -563,7 +646,7 @@
           <a id="sheetUrlDisplay" href="#" target="_blank" style="color: var(--accent); font-weight: bold; font-size: 0.85rem;">Abrir Planilla en Drive ↗</a>
         </div>
 
-        <!-- ULTIMOS ENTRENAMIENTOS REALIZADOS -->
+        <!-- HISTORIAL DE 7 DÍAS -->
         <div class="card">
           <h3>📊 Resumen de Entrenamientos (Últimos 7 Días)</h3>
           <div id="weeklyLogsContainer"></div>
@@ -593,18 +676,36 @@
           </div>
 
           <div class="tree-node">
-            <h4>3. Ejercicios</h4>
+            <h4>3. Añadir Ejercicios</h4>
             <div class="grid-2">
               <select id="selectDayForEx" onchange="updateZoneDropdown()"></select>
               <select id="selectZoneForEx" onchange="renderExercisesList()"></select>
             </div>
-            <select id="selectGlobalExercise"></select>
-            <input type="text" id="manualExName" placeholder="O escribe uno nuevo...">
-            <div class="grid-2">
-              <input type="number" id="newExWeight" placeholder="Peso Target (kg)" value="10">
-              <input type="number" id="newExReps" placeholder="Reps Target" value="10">
+
+            <label>Elegir del Banco Precargado:</label>
+            <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''"></select>
+
+            <label>O escribir uno nuevo (se guardará en el banco):</label>
+            <input type="text" id="manualExName" placeholder="Ej: Press Francés" oninput="document.getElementById('selectGlobalExercise').value=''">
+
+            <label>Observación / Nota para el alumno (opcional):</label>
+            <input type="text" id="newExNotes" placeholder="Ej: Controlar la bajada / Usar agarre neutro">
+
+            <div class="grid-3">
+              <div>
+                <label>Series Target</label>
+                <input type="number" id="newExSets" value="3" min="1">
+              </div>
+              <div>
+                <label>Pesos por Serie (kg)</label>
+                <input type="text" id="newExWeights" placeholder="Ej: 50, 55, 60">
+              </div>
+              <div>
+                <label>Reps Target</label>
+                <input type="number" id="newExReps" value="10">
+              </div>
             </div>
-            <button class="btn-main" onclick="addExercise()">+ Añadir Ejercicio</button>
+            <button class="btn-sec" onclick="addExercise()">+ Añadir Ejercicio a la Rutina</button>
             <div id="exercisesList"></div>
           </div>
 
@@ -645,9 +746,16 @@
     <div id="module-banco" class="module-section">
       <div class="card">
         <h2>📚 Banco de Ejercicios Precargados</h2>
-        <input type="text" id="newGlobalExInput" placeholder="Nombre: Ej. Press de Banca Plano">
-        <button class="btn-main" onclick="addGlobalExercise()">+ Agregar al Banco</button>
-        <div id="globalExercisesList" style="margin-top: 10px;"></div>
+        <p style="color:var(--muted); font-size:0.9rem; margin-bottom:12px;">Los ejercicios cargados aquí estarán disponibles para asignarle a cualquier alumno.</p>
+        
+        <label>Nombre del Ejercicio</label>
+        <input type="text" id="newGlobalExInput" placeholder="Ej: Sentadilla Búlgara">
+        
+        <label>Imágenes / GIFs ilustrativos (hasta 3 archivos)</label>
+        <input type="file" id="newGlobalExFiles" accept="image/*" multiple>
+        
+        <button class="btn-main" onclick="addGlobalExercise()">+ Agregar al Banco General</button>
+        <div id="globalExercisesList" style="margin-top: 16px;"></div>
       </div>
     </div>
 
