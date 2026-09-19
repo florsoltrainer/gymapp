@@ -61,6 +61,7 @@
     button.btn-sec { background: transparent; color: var(--accent); border: 1px solid var(--accent); cursor: pointer; }
     button.btn-warning { background: transparent; color: var(--warning); border: 1px solid var(--warning); padding: 6px 10px; font-size: 0.8rem; margin-bottom: 0; cursor: pointer; }
     button.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 6px 10px; font-size: 0.8rem; margin-bottom: 0; cursor: pointer; }
+    button.btn-danger-filled { background: var(--danger); color: #ffffff; font-weight: bold; border: none; cursor: pointer; }
     button.btn-google { background: #4285F4; color: #fff; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; }
 
     .flex-row { display: flex; gap: 8px; align-items: center; }
@@ -69,7 +70,7 @@
     .status-msg { text-align: center; font-weight: bold; margin-top: 8px; font-size: 0.9rem; }
     .auth-box { text-align: center; padding: 40px 20px; }
 
-    /* REGLA CLAVE PARA LAS PESTAÑAS */
+    /* Pestañas */
     .module-section { display: none; }
     .module-section.active-module { display: block; }
 
@@ -122,6 +123,7 @@
 
     window.currentStudentData = { nombre: "", google_sheet_url: "", spreadsheet_id: "", rutina: {} };
     window.currentStudentId = "";
+    window.allStudentsList = [];
     window.globalExercises = [];
     window.customZones = ["Pecho", "Espalda", "Piernas", "Hombros", "Brazos", "Zona Media", "General"];
 
@@ -145,7 +147,7 @@
           document.getElementById('adminEmailDisplay').textContent = user.email;
           await loadCustomZones();
           await loadGlobalExercises();
-          await loadStudentsDropdown();
+          await loadStudentsList();
         } else {
           authError.textContent = `❌ Acceso denegado. (${user.email}) no es administrador.`;
           signOut(auth);
@@ -169,7 +171,6 @@
       signOut(auth);
     };
 
-    // Función de cambio de pestaña
     window.switchModule = function(moduleName) {
       document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.module-section').forEach(sec => sec.classList.remove('active-module'));
@@ -178,6 +179,122 @@
       document.getElementById(`module-${moduleName}`).classList.add('active-module');
     };
 
+    // --- CARGA Y BUSCADOR DE ALUMNOS ---
+    async function loadStudentsList() {
+      const container = document.getElementById('studentsListContainer');
+      container.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; text-align:center;">⏳ Cargando lista de alumnos...</p>';
+      window.allStudentsList = [];
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "alumnos"));
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          window.allStudentsList.push({
+            id: docSnap.id,
+            nombre: data.nombre || docSnap.id,
+            email: data.email || "",
+            spreadsheet_id: data.spreadsheet_id || "",
+            google_sheet_url: data.google_sheet_url || ""
+          });
+        });
+
+        renderFilteredStudents();
+      } catch (e) {
+        console.error("Error al cargar alumnos:", e);
+        container.innerHTML = '<p style="color:var(--danger); font-size:0.85rem; text-align:center;">❌ Error al cargar la lista de alumnos.</p>';
+      }
+    }
+
+    window.renderFilteredStudents = function() {
+      const container = document.getElementById('studentsListContainer');
+      const filterText = document.getElementById('searchStudentInput').value.toLowerCase().trim();
+      container.innerHTML = '';
+
+      const filtered = window.allStudentsList.filter(s => 
+        s.nombre.toLowerCase().includes(filterText) ||
+        s.id.toLowerCase().includes(filterText) ||
+        s.email.toLowerCase().includes(filterText)
+      );
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; text-align:center;">No se encontraron alumnos.</p>';
+        return;
+      }
+
+      filtered.forEach(student => {
+        const chip = document.createElement('div');
+        chip.className = 'item-chip';
+        chip.style.marginBottom = '8px';
+        chip.innerHTML = `
+          <div>
+            <strong>👤 ${student.nombre}</strong> <span style="font-size:0.75rem; color:var(--muted);">(${student.id})</span>
+            <div style="font-size:0.75rem; color:var(--muted);">${student.email || 'Sin correo asociado'}</div>
+          </div>
+          <button class="btn-warning" style="width:auto; padding:6px 12px;" onclick="selectStudentToEdit('${student.id}')">✏️ Configurar Rutina</button>
+        `;
+        container.appendChild(chip);
+      });
+    };
+
+    window.selectStudentToEdit = async function(id) {
+      window.currentStudentId = id;
+      const docRef = doc(db, "alumnos", id);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        window.currentStudentData = {
+          nombre: data.nombre || id,
+          email: data.email || "",
+          google_sheet_url: data.google_sheet_url || "",
+          spreadsheet_id: data.spreadsheet_id || "",
+          rutina: data.rutina || {}
+        };
+        document.getElementById('editStudentName').value = window.currentStudentData.nombre;
+        document.getElementById('editStudentEmail').value = window.currentStudentData.email;
+        
+        const accessUrl = `${getStudentBaseUrl()}index.html?id=${id}`;
+        document.getElementById('studentAccessLinkInput').value = accessUrl;
+
+        document.getElementById('sheetUrlDisplay').href = window.currentStudentData.google_sheet_url || "#";
+        document.getElementById('sheetUrlDisplay').textContent = window.currentStudentData.google_sheet_url ? "Abrir Planilla en Google Drive ↗" : "Sin planilla generada";
+        
+        renderEditor();
+        fetchWeeklyLogs(window.currentStudentData.spreadsheet_id);
+
+        // Desplazarse suavemente hasta el editor
+        document.getElementById('editorContainer').scrollIntoView({ behavior: 'smooth' });
+      }
+    };
+
+    // --- ELIMINAR ALUMNO ---
+    window.deleteCurrentStudent = async function() {
+      if (!window.currentStudentId) return;
+
+      const studentName = window.currentStudentData.nombre || window.currentStudentId;
+      const confirm1 = confirm(`⚠️ ¿Estás seguro de que deseas eliminar permanentemente a "${studentName}" de la base de datos?`);
+      
+      if (confirm1) {
+        const confirm2 = confirm(`🚨 ¡ACCIÓN IRREVERSIBLE! Se borrará el perfil de "${studentName}" de Firebase. Presiona Aceptar para confirmar.`);
+        if (confirm2) {
+          try {
+            await deleteDoc(doc(db, "alumnos", window.currentStudentId));
+            alert(`✅ Alumno "${studentName}" eliminado correctamente.`);
+            
+            // Ocultar editor y recargar listado
+            document.getElementById('editorContainer').style.display = 'none';
+            window.currentStudentId = "";
+            window.currentStudentData = { nombre: "", google_sheet_url: "", spreadsheet_id: "", rutina: {} };
+            await loadStudentsList();
+          } catch (e) {
+            console.error("Error al eliminar alumno:", e);
+            alert("❌ Ocurrió un error al intentar eliminar al alumno de Firebase.");
+          }
+        }
+      }
+    };
+
+    // --- ZONAS Y BANCO DE EJERCICIOS ---
     async function loadCustomZones() {
       try {
         const querySnapshot = await getDocs(collection(db, "zonas_musculares"));
@@ -417,23 +534,6 @@
       });
     }
 
-    async function loadStudentsDropdown() {
-      const select = document.getElementById('selectStudent');
-      select.innerHTML = '<option value="">-- Selecciona un alumno --</option>';
-
-      try {
-        const querySnapshot = await getDocs(collection(db, "alumnos"));
-        querySnapshot.forEach((docSnap) => {
-          const opt = document.createElement('option');
-          opt.value = docSnap.id;
-          opt.textContent = `${docSnap.data().nombre || docSnap.id} (${docSnap.id})`;
-          select.appendChild(opt);
-        });
-      } catch (e) {
-        console.error("Error al cargar alumnos:", e);
-      }
-    }
-
     window.createNewStudent = async function() {
       const name = document.getElementById('newStudentName').value.trim();
       const id = document.getElementById('newStudentId').value.trim().toLowerCase().replace(/\s+/g, '-');
@@ -467,7 +567,7 @@
           };
 
           await saveToFirebase();
-          await loadStudentsDropdown();
+          await loadStudentsList();
           
           status.textContent = `✅ Alumno creado y planilla generada en Drive!`;
           status.style.color = "var(--accent)";
@@ -499,40 +599,6 @@
       }).catch(err => {
         alert("Error al copiar enlace: " + err);
       });
-    };
-
-    window.onSelectStudent = async function() {
-      const id = document.getElementById('selectStudent').value;
-      if (!id) {
-        document.getElementById('editorContainer').style.display = 'none';
-        return;
-      }
-
-      window.currentStudentId = id;
-      const docRef = doc(db, "alumnos", id);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        window.currentStudentData = {
-          nombre: data.nombre || id,
-          email: data.email || "",
-          google_sheet_url: data.google_sheet_url || "",
-          spreadsheet_id: data.spreadsheet_id || "",
-          rutina: data.rutina || {}
-        };
-        document.getElementById('editStudentName').value = window.currentStudentData.nombre;
-        document.getElementById('editStudentEmail').value = window.currentStudentData.email;
-        
-        const accessUrl = `${getStudentBaseUrl()}index.html?id=${id}`;
-        document.getElementById('studentAccessLinkInput').value = accessUrl;
-
-        document.getElementById('sheetUrlDisplay').href = window.currentStudentData.google_sheet_url || "#";
-        document.getElementById('sheetUrlDisplay').textContent = window.currentStudentData.google_sheet_url ? "Abrir Planilla en Google Drive ↗" : "Sin planilla generada";
-        
-        renderEditor();
-        fetchWeeklyLogs(window.currentStudentData.spreadsheet_id);
-      }
     };
 
     async function fetchWeeklyLogs(spreadsheetId) {
@@ -613,6 +679,7 @@
 
       try {
         await setDoc(doc(db, "alumnos", window.currentStudentId), window.currentStudentData);
+        await loadStudentsList();
         status.textContent = "✅ Rutina guardada correctamente.";
         status.style.color = "var(--accent)";
       } catch (e) {
@@ -881,7 +948,7 @@
       <button class="btn-danger" onclick="logout()" style="width: auto; padding: 4px 10px;">Salir</button>
     </div>
 
-    <!-- Pestañas Principales con la Navegación -->
+    <!-- Pestañas Principales -->
     <div class="nav-tabs">
       <button class="nav-btn active" id="btn-alumnos" onclick="switchModule('alumnos')">👥 Mis Alumnos</button>
       <button class="nav-btn" id="btn-nuevo-alumno" onclick="switchModule('nuevo-alumno')">➕ Nuevo Alumno</button>
@@ -890,10 +957,14 @@
 
     <!-- PESTAÑA 1: MIS ALUMNOS -->
     <div id="module-alumnos" class="module-section active-module">
+      
+      <!-- LISTADO CON BUSCADOR DE ALUMNOS -->
       <div class="card">
-        <h2>👥 Seleccionar Alumno</h2>
-        <label for="selectStudent">Elige un alumno registrado para ver o editar su rutina:</label>
-        <select id="selectStudent" onchange="onSelectStudent()"></select>
+        <h2>👥 Mis Alumnos Registrados</h2>
+        <label>Buscar Alumno por Nombre, ID o Email:</label>
+        <input type="text" id="searchStudentInput" placeholder="🔍 Escribe para buscar..." oninput="renderFilteredStudents()">
+        
+        <div id="studentsListContainer" style="margin-top: 12px;"></div>
       </div>
 
       <!-- Editor de Rutina y Ficha -->
@@ -999,6 +1070,10 @@
 
           <button class="btn-main" onclick="saveToFirebase()" style="padding: 14px; font-size: 1.1rem; margin-top: 10px;">💾 Guardar y Publicar Rutina</button>
           <div class="status-msg" id="saveStatus"></div>
+
+          <!-- BOTÓN ELIMINAR ALUMNO -->
+          <hr style="border:0; border-top:1px solid var(--border); margin: 24px 0 16px 0;">
+          <button class="btn-danger-filled" onclick="deleteCurrentStudent()" style="padding: 12px; font-size: 0.95rem;">🗑️ Eliminar Alumno de la Base de Datos</button>
         </div>
       </div>
     </div>
