@@ -1,437 +1,149 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Flor Sol Trainer - Tu mejor versión</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flor Sol Trainer - Portal Alumnos</title>
   <style>
-    /* ==========================================
-       1. COLOR SYSTEM (LIGHT & DARK ACCORDING TO SYSTEM)
-       ========================================== */
     :root {
-      /* Default Dark Mode Values */
-      --bg-color: #121214;
-      --card-bg: #1e1e24;
-      --card-border: #2a2a35;
-      --text-main: #ffffff;
-      --text-muted: #a0a0b0;
-      --accent-green: #00e676;
-      --accent-green-hover: #00c853;
-      --btn-text: #000000;
-      --google-blue: #4285F4;
-      --google-blue-hover: #3367d6;
-      --admin-btn: #333342;
-      --admin-btn-hover: #444456;
-      --admin-text: #ffffff;
-      --logo-filter: invert(100%) brightness(120%);
-      --modal-bg: rgba(0,0,0,0.85);
-      --danger: #ff5252;
-      --danger-bg: rgba(255,82,82,0.1);
-      --shadow: 0 10px 30px rgba(0,0,0,0.5);
+      --bg: #f4f4f7;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --muted: #666666;
+      --border: #e0e0e0;
+      --accent: #5e5a56;
+      --accent-hover: #45423f;
+      --danger: #e53935;
     }
 
-    @media (prefers-color-scheme: light) {
+    @media (prefers-color-scheme: dark) {
       :root {
-        /* Light Mode Overrides */
-        --bg-color: #f4f5f8;
-        --card-bg: #ffffff;
-        --card-border: #e2e4e9;
-        --text-main: #1a1a1e;
-        --text-muted: #6c707e;
-        --accent-green: #00b050;
-        --accent-green-hover: #008a3e;
-        --btn-text: #ffffff;
-        --google-blue: #4285F4;
-        --google-blue-hover: #3367d6;
-        --admin-btn: #e4e6ed;
-        --admin-btn-hover: #d0d3dc;
-        --admin-text: #1a1a1e;
-        --logo-filter: none;
-        --modal-bg: rgba(255,255,255,0.85);
-        --danger: #d32f2f;
-        --danger-bg: #ffebee;
-        --shadow: 0 10px 30px rgba(0,0,0,0.08);
+        --bg: #121214;
+        --card: #1e1e24;
+        --text: #ffffff;
+        --muted: #a0a0b0;
+        --border: #2a2a35;
+        --accent: #8e8983;
+        --accent-hover: #a8a29c;
+        --danger: #ff5252;
       }
     }
 
-    /* ==========================================
-       2. RESET & BASE STYLES
-       ========================================== */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 600px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
 
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 480px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 40px 28px;
-      width: 100%;
-      box-shadow: var(--shadow);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* Logo Wrapper & SVG Graphic Representation */
-    .logo-container {
-      margin-bottom: 32px;
-      width: 100%;
-      max-width: 320px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .logo-img {
-      width: 100%;
-      height: auto;
-      max-height: 180px;
-      object-fit: contain;
-      filter: var(--logo-filter);
-    }
-
-    .sub-tagline {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-      margin-top: -12px;
-      margin-bottom: 28px;
-      letter-spacing: 0.5px;
-      font-weight: 500;
-    }
-
-    .btn-group {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 16px 20px;
-      border-radius: 12px;
-      font-size: 1.05rem;
-      font-weight: 700;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-      text-decoration: none;
-      outline: none;
-    }
-
-    .btn:active {
-      transform: scale(0.98);
-    }
-
-    .btn-student {
-      background-color: var(--google-blue);
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
-    }
-
-    .btn-student:hover {
-      background-color: var(--google-blue-hover);
-    }
-
-    .btn-admin {
-      background-color: var(--admin-btn);
-      color: var(--admin-text);
-      border: 1px solid var(--card-border);
-    }
-
-    .btn-admin:hover {
-      background-color: var(--admin-btn-hover);
-    }
-
-    .icon {
-      width: 22px;
-      height: 22px;
-      flex-shrink: 0;
-    }
-
-    /* Status and Modal Elements */
-    .status-msg {
-      margin-top: 20px;
-      padding: 12px 16px;
-      border-radius: 10px;
-      font-size: 0.9rem;
-      width: 100%;
-      display: none;
-      align-items: center;
-      gap: 10px;
-      text-align: left;
-    }
-
-    .status-msg.error {
-      background-color: var(--danger-bg);
-      color: var(--danger);
-      border: 1px solid var(--danger);
-      display: flex;
-    }
-
-    .loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: var(--modal-bg);
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      backdrop-filter: blur(4px);
-    }
-
-    .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid var(--card-border);
-      border-top: 4px solid var(--accent-green);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 16px;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .loading-text {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--text-main);
-    }
-
-    .footer {
-      margin-top: 32px;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .logo { max-width: 240px; height: auto; margin-bottom: 20px; }
+    
+    button.btn-google { background: #4285F4; color: #fff; font-weight: bold; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; font-size: 1rem; margin-top: 16px; }
+    button.btn-google:hover { background: #3367d6; }
+    
+    .status-msg { margin-top: 16px; font-size: 0.9rem; font-weight: 500; }
+    .error-msg { color: var(--danger); }
   </style>
 
+  <!-- Firebase JavaScript SDK -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { 
-      getAuth, 
-      signInWithPopup, 
-      GoogleAuthProvider, 
-      signOut, 
-      onAuthStateChanged 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { 
-      getFirestore, 
-      collection, 
-      getDocs 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // Firebase configuration fallback logic
-    const firebaseConfig = typeof __firebase_config !== 'undefined'
-      ? JSON.parse(__firebase_config)
-      : {
-      apiKey: "AIzaSyDC3Wvw3E8IhSnkSKg5Qk98NivuqK-FNzM",
-      authDomain: "florsoltrainer-f22c2.firebaseapp.com",
-      projectId: "florsoltrainer-f22c2",
-      storageBucket: "florsoltrainer-f22c2.firebasestorage.app",
-      messagingSenderId: "36053648611",
-      appId: "1:36053648611:web:34f519fc41a12024f4f1d6"
-        };
+    // ⚠️ COMPLETA CON TUS CLAVES REALES DE FIREBASE
+    const firebaseConfig = {
+      apiKey: "PEGA_AQUI_TU_API_KEY",
+      authDomain: "PEGA_AQUI_TU_PROJECT_ID.firebaseapp.com",
+      projectId: "PEGA_AQUI_TU_PROJECT_ID",
+      storageBucket: "PEGA_AQUI_TU_PROJECT_ID.appspot.com",
+      messagingSenderId: "PEGA_AQUI_TU_SENDER_ID",
+      appId: "PEGA_AQUI_TU_APP_ID"
+    };
 
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-    // Initialize Firebase Services
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
     const db = getFirestore(app);
+    const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // DOM Elements
-    const studentBtn = document.getElementById('studentBtn');
-    const adminBtn = document.getElementById('adminBtn');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const loadingText = document.getElementById('loadingText');
-    const errorBox = document.getElementById('errorBox');
-    const errorText = document.getElementById('errorText');
+    // Detección automática al iniciar sesión con Google
+    onAuthStateChanged(auth, async (user) => {
+      const statusMsg = document.getElementById('statusMsg');
+      const loginBtn = document.getElementById('loginBtn');
 
-    function showLoading(msg) {
-      loadingText.textContent = msg || 'Cargando...';
-      loadingOverlay.style.display = 'flex';
-    }
+      if (user) {
+        const userEmail = user.email.toLowerCase().trim();
+        statusMsg.className = "status-msg";
+        statusMsg.textContent = `⏳ Buscando la cuenta de ${userEmail}...`;
+        loginBtn.style.display = 'none';
 
-    function hideLoading() {
-      loadingOverlay.style.display = 'none';
-    }
-
-    function showError(msg) {
-      errorText.textContent = msg;
-      errorBox.classList.add('error');
-    }
-
-    function hideError() {
-      errorBox.classList.remove('error');
-    }
-
-    studentBtn.addEventListener('click', async () => {
-      hideError();
-      showLoading('Iniciando sesión con Google...');
-      try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        const userEmail = user.email ? user.email.toLowerCase().trim() : '';
-
-        showLoading('Verificando cuenta de alumno...');
-
-        // Fetch students collection (Rule 1 & Rule 2 compliant path)
-        const alumnosRef = collection(db, 'artifacts', appId, 'public', 'data', 'alumnos');
-        let querySnapshot;
-        
         try {
-          querySnapshot = await getDocs(alumnosRef);
-        } catch (e) {
-          // Fallback query for root-level 'alumnos' collection if legacy setup
-          const rootRef = collection(db, 'alumnos');
-          querySnapshot = await getDocs(rootRef);
-        }
+          // BÚSQUEDA AUTOMÁTICA EN FIRESTORE POR EMAIL
+          const alumnosRef = collection(db, "alumnos");
+          const q = query(alumnosRef, where("email", "==", userEmail));
+          const querySnapshot = await getDocs(q);
 
-        let matchedStudent = null;
+          if (!querySnapshot.empty) {
+            let studentData = null;
+            querySnapshot.forEach((doc) => {
+              studentData = doc.data();
+            });
 
-        querySnapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          const studentEmail = (data.email || '').toLowerCase().trim();
-          
-          if (studentEmail === userEmail) {
-            matchedStudent = {
-              id: docSnap.id,
-              ...data
-            };
+            // Verificar si el alumno tiene un link asignado (google_sheet_url o similar)
+            const targetUrl = studentData.google_sheet_url || studentData.sheet_url || studentData.link_personal;
+
+            if (targetUrl) {
+              statusMsg.textContent = `✅ ¡Hola ${studentData.nombre || user.displayName}! Redirigiendo a tu perfil...`;
+              setTimeout(() => {
+                window.location.href = targetUrl;
+              }, 1200);
+            } else {
+              statusMsg.className = "status-msg error-msg";
+              statusMsg.textContent = "⚠️ Tu cuenta existe, pero aún no tienes un link personal cargado. Consulta a la entrenadora.";
+              signOut(auth);
+              loginBtn.style.display = 'flex';
+            }
+          } else {
+            statusMsg.className = "status-msg error-msg";
+            statusMsg.textContent = `❌ El correo (${userEmail}) no está registrado como alumno. Consulta a la entrenadora.`;
+            signOut(auth);
+            loginBtn.style.display = 'flex';
           }
-        });
-
-        if (matchedStudent) {
-          showLoading(`¡Hola ${matchedStudent.nombre || user.displayName}! Redirigiendo...`);
-          
-          // Determine redirect link
-          let targetUrl = matchedStudent.link || matchedStudent.url || `index.html?id=${matchedStudent.id}`;
-          
-          setTimeout(() => {
-            window.location.href = targetUrl;
-          }, 1200);
-        } else {
-          hideLoading();
-          showError(`La cuenta (${userEmail}) no está registrada en el sistema de alumnos. Consulta a la entrenadora.`);
-          await signOut(auth);
+        } catch (error) {
+          console.error("Error al consultar la base de datos:", error);
+          statusMsg.className = "status-msg error-msg";
+          statusMsg.textContent = "❌ Error de conexión al verificar tus datos.";
+          loginBtn.style.display = 'flex';
         }
-
-      } catch (err) {
-        console.error('Auth Error:', err);
-        hideLoading();
-        if (err.code !== 'auth/popup-closed-by-user') {
-          showError('Error al iniciar sesión: ' + (err.message || 'Intente nuevamente.'));
-        }
+      } else {
+        statusMsg.textContent = "";
+        loginBtn.style.display = 'flex';
       }
     });
 
-    // Admin Access Navigation
-    adminBtn.addEventListener('click', () => {
-      window.location.href = 'admin.html';
-    });
+    window.loginStudent = async function() {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        console.error("Error al autenticar:", error);
+        document.getElementById('statusMsg').textContent = "Error al conectar con Google: " + error.message;
+      }
+    };
   </script>
 </head>
 <body>
 
-  <!-- Loading Animation Overlay -->
-  <div class="loading-overlay" id="loadingOverlay">
-    <div class="spinner"></div>
-    <div class="loading-text" id="loadingText">Cargando...</div>
+  <div class="card">
+    <img src="logo fst.png" alt="Flor Sol Trainer" class="logo">
+    <h2>Portal de Alumnos</h2>
+    <p style="color: var(--muted); margin-top: 6px; font-size: 0.95rem;">Ingresa con tu cuenta de Google para acceder a tu plan personalizado.</p>
+
+    <button id="loginBtn" class="btn-google" onclick="loginStudent()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+      Acceso Alumnos
+    </button>
+
+    <div id="statusMsg" class="status-msg"></div>
   </div>
 
-  <main class="container">
-    <div class="card">
-      
-      <!-- LOGO CENTERED -->
-      <div class="logo-container">
-        <!-- Embedded SVG version of Flor Sol Trainer logo -->
-        <svg class="logo-img" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
-          <g fill="#5c5552">
-            <!-- FLOR SOL -->
-            <path d="M40 30h90v25H75v25h50v25H75v50H40V30zm100 0h35v100h55v25h-90V30zm105 0h80v125h-35V55h-45V30zm95 0h90v25h-55v25h50v25h-50v50h-35V30z"/>
-            <path d="M500 30h80v30h-45v18h40v28h-40v19h45v30h-80V30zm100 0h80v125h-35V55h-45V30zm95 0h35v125h-35V30z"/>
-            <!-- TRAINER -->
-            <path d="M50 160h130v30h-48v95h-35v-95H50v-30zm138 0h85v30h-50v18h45v28h-45v49h-35V160zm93 0h85v125h-35v-22h-50v22h-35V160zm35 30h-20v45h20v-45zm60-30h35v125h-35V160zm45 0h85v125h-35v-60h-50v60h-35V160zm35 25h15v25h-15v-25zm60-25h85v30h-50v18h45v28h-45v19h50v30h-85V160z"/>
-            <!-- tu mejor version -->
-            <text x="300" y="370" font-family="'Impact', 'Arial Black', sans-serif" font-size="64" font-style="italic">tu mejor version</text>
-          </g>
-        </svg>
-      </div>
-
-      <p class="sub-tagline">Plataforma de Entrenamiento Personalizado</p>
-
-      <div class="btn-group">
-        
-        <!-- ACCESO ALUMNO BUTTON -->
-        <button class="btn btn-student" id="studentBtn">
-          <svg class="icon" viewBox="0 0 18 18">
-            <path fill="#ffffff" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/>
-            <path fill="#ffffff" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
-            <path fill="#ffffff" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
-            <path fill="#ffffff" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
-          </svg>
-          Acceso Alumno
-        </button>
-
-        <!-- ACCESO ADMINISTRADOR BUTTON -->
-        <button class="btn btn-admin" id="adminBtn">
-          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-          </svg>
-          Acceso Administrador
-        </button>
-
-      </div>
-
-      <!-- ERROR MESSAGE CONTAINER -->
-      <div class="status-msg" id="errorBox">
-        <span>⚠️</span>
-        <span id="errorText"></span>
-      </div>
-
-    </div>
-
-    <footer class="footer">
-      © 2026 Flor Sol Trainer. Todos los derechos reservados.
-    </footer>
-  </main>
-
+</body>
+</html>
 </body>
 </html>
