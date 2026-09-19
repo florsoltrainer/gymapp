@@ -38,6 +38,11 @@
     /* Galería Deslizable */
     .image-gallery { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 6px; scroll-snap-type: x mandatory; }
     .image-gallery img { flex: 0 0 100%; max-height: 250px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); scroll-snap-align: center; }
+
+    /* Lista de ejercicios realizados */
+    .history-item { background: #252530; border-left: 4px solid var(--accent); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; font-size: 0.9rem; }
+    .history-item-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 4px; }
+    .history-item-details { color: var(--muted); font-size: 0.85rem; }
   </style>
 
   <!-- Módulos de Firebase -->
@@ -67,6 +72,7 @@
     window.workoutData = {};
     window.spreadsheetId = "";
     window.alumnoId = "";
+    window.todayLog = []; // Almacena el historial de la sesión de hoy
 
     // Leer ID de la URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -220,6 +226,14 @@
       <button class="btn-main" id="btnLogSet" onclick="logSet()">Completar Serie y Descansar</button>
       <div class="sync-status" id="syncStatus">☁️ Sincronizado automáticamente</div>
     </div>
+
+    <!-- Historial de Ejercicios del Día -->
+    <div class="card">
+      <h2>✅ Ejercicios Realizados Hoy</h2>
+      <div id="todayLogContainer">
+        <p style="color: var(--muted); font-size: 0.85rem; text-align: center; margin-top: 10px;">Aún no registrante ninguna serie hoy.</p>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -355,11 +369,13 @@
 
       if (!exercise) return alert("Selecciona un ejercicio válido.");
 
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
       const entry = {
         action: "LOG_SET",
         spreadsheetId: window.spreadsheetId,
         Fecha: new Date().toLocaleDateString('es-AR'),
-        Hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        Hora: timeStr,
         Día: day,
         Zona: zone,
         Ejercicio: exercise,
@@ -368,6 +384,10 @@
         Repeticiones: Number(reps),
         Comentarios: comments
       };
+
+      // Agregar a la lista local para mostrar en pantalla
+      window.todayLog.unshift(entry);
+      renderTodayLog();
 
       if (window.MASTER_SCRIPT_URL && window.spreadsheetId) {
         statusDiv.textContent = "⏳ Guardando en la planilla del alumno...";
@@ -386,12 +406,39 @@
         }
       }
 
+      // Limpiar comentarios opcionales
+      document.getElementById('workoutComments').value = '';
+
       // Avanzar de serie y actualizar objetivos (peso y reps)
       const nextSet = Number(setNum) + 1;
       document.getElementById('setNum').value = nextSet;
       updateTargetsForSet();
 
       startTimer(90);
+    }
+
+    function renderTodayLog() {
+      const container = document.getElementById('todayLogContainer');
+      if (window.todayLog.length === 0) {
+        container.innerHTML = '<p style="color: var(--muted); font-size: 0.85rem; text-align: center; margin-top: 10px;">Aún no registrante ninguna serie hoy.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      window.todayLog.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+          <div class="history-item-header">
+            <span>🏋️ ${item.Ejercicio} (Serie ${item.Serie})</span>
+            <span style="color: var(--accent);">${item["Peso (kg)"]} kg × ${item.Repeticiones} reps</span>
+          </div>
+          <div class="history-item-details">
+            📅 ${item.Día} | 🕒 ${item.Hora} ${item.Comentarios ? `<br>💬 <em>"${item.Comentarios}"</em>` : ''}
+          </div>
+        `;
+        container.appendChild(div);
+      });
     }
 
     function startTimer(seconds) {
