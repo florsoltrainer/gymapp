@@ -146,7 +146,7 @@
       const nameInput = document.getElementById('newGlobalExInput');
       const fileInput = document.getElementById('newGlobalExFiles');
       const name = nameInput.value.trim();
-      const files = Array.from(fileInput.files).slice(0, 3); // Máximo 3 imágenes
+      const files = Array.from(fileInput.files).slice(0, 3);
 
       if (!name) return alert("Escribe el nombre del ejercicio.");
 
@@ -368,18 +368,27 @@
 
       const exName = selectedExName || manualExName;
       const sets = Number(document.getElementById('newExSets').value) || 3;
-      const reps = Number(document.getElementById('newExReps').value);
+      const repsInput = document.getElementById('newExReps').value.trim();
       const weightsInput = document.getElementById('newExWeights').value.trim();
 
       if (!day || !zone || !exName) return alert("Selecciona o escribe el nombre del ejercicio.");
 
-      // Procesar pesos: "50, 55, 60" -> [50, 55, 60]
+      // Procesar pesos (array)
       let weightsArray = [];
       if (weightsInput.includes(',')) {
         weightsArray = weightsInput.split(',').map(w => Number(w.trim()) || 0);
       } else {
         const singleWeight = Number(weightsInput) || 0;
         weightsArray = Array(sets).fill(singleWeight);
+      }
+
+      // Procesar repeticiones (array)
+      let repsArray = [];
+      if (repsInput.includes(',')) {
+        repsArray = repsInput.split(',').map(r => Number(r.trim()) || 0);
+      } else {
+        const singleRep = Number(repsInput) || 10;
+        repsArray = Array(sets).fill(singleRep);
       }
 
       let imageUrls = [];
@@ -397,7 +406,8 @@
         sets: sets, 
         weights: weightsArray,
         weight: weightsArray[0] || 0,
-        reps: reps,
+        repsArray: repsArray,
+        reps: repsArray[0] || 10,
         notes: notes,
         imageUrls: imageUrls
       });
@@ -405,6 +415,7 @@
       document.getElementById('manualExName').value = '';
       document.getElementById('newExNotes').value = '';
       document.getElementById('newExWeights').value = '';
+      document.getElementById('newExReps').value = '';
       document.getElementById('selectGlobalExercise').value = '';
       renderEditor();
     };
@@ -489,10 +500,11 @@
         div.className = 'item-chip';
         const imgCount = ex.imageUrls ? ex.imageUrls.length : (ex.imageUrl ? 1 : 0);
         const displayWeights = ex.weights ? ex.weights.join("kg, ") + "kg" : `${ex.weight} kg`;
+        const displayReps = ex.repsArray ? ex.repsArray.join(", ") : `${ex.reps}`;
 
         div.innerHTML = `
           <div>
-            <span>🏋️ <strong>${ex.name}</strong> (${ex.sets || 3} series x ${ex.reps} reps @ [${displayWeights}]) ${imgCount > 0 ? `🖼️ (${imgCount})` : ''}</span>
+            <span>🏋️ <strong>${ex.name}</strong> (${ex.sets || 3} series x [${displayReps}] reps @ [${displayWeights}]) ${imgCount > 0 ? `🖼️ (${imgCount})` : ''}</span>
             ${ex.notes ? `<div style="font-size:0.8rem; color:var(--accent); margin-top:2px;">📌 <em>${ex.notes}</em></div>` : ''}
           </div>
           <button class="btn-danger" onclick="deleteExercise('${day}', '${zone}', ${idx})">Eliminar</button>
@@ -640,8 +652,8 @@
                 <input type="text" id="newExWeights" placeholder="Ej: 50, 55, 60">
               </div>
               <div>
-                <label>Reps Target</label>
-                <input type="number" id="newExReps" value="10">
+                <label>Reps Target por Serie</label>
+                <input type="text" id="newExReps" placeholder="Ej: 12, 10, 8">
               </div>
             </div>
             <button class="btn-sec" onclick="addExercise()" style="margin-bottom:0;">+ Añadir Ejercicio a la Rutina</button>
