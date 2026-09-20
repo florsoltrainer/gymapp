@@ -245,40 +245,40 @@
       }
     }
 
-    window.filterStudents = function() {
-      const query = document.getElementById('searchStudentInput').value.toLowerCase();
-      const filtered = window.allStudentsList.filter(s => 
-        (s.nombre && s.nombre.toLowerCase().includes(query)) ||
-        (s.email && s.email.toLowerCase().includes(query)) ||
-        s.id.toLowerCase().includes(query)
-      );
-      renderStudentsList(filtered);
-    };
+window.filterStudents = function() {
+  const query = document.getElementById('searchStudentInput').value.toLowerCase();
+  const filtered = window.allStudentsList.filter(s => 
+    (s.nombre && s.nombre.toLowerCase().includes(query)) ||
+    (s.email && s.email.toLowerCase().includes(query)) ||
+    s.id.toLowerCase().includes(query)
+  );
+  renderStudentsList(filtered);
+};
 
-    function renderStudentsList(list) {
-      const container = document.getElementById('studentsListContainer');
-      container.innerHTML = "";
+function renderStudentsList(list) {
+  const container = document.getElementById('studentsListContainer');
+  container.innerHTML = "";
 
-      if (list.length === 0) {
-        container.innerHTML = "<p style='color:var(--muted); text-align:center;'>No se encontraron alumnos.</p>";
-        return;
-      }
+  if (list.length === 0) {
+    container.innerHTML = "<p style='color:var(--muted); text-align:center;'>No se encontraron alumnos registrados.</p>";
+    return;
+  }
 
-      list.forEach(student => {
-        const div = document.createElement('div');
-        div.className = 'student-item';
-        div.innerHTML = `
-          <div>
-            <strong>${student.nombre || student.id}</strong>
-            <div style="font-size: 0.85rem; color: var(--muted);">${student.email || 'Sin mail'}</div>
-          </div>
-          <div style="display:flex; gap:8px;">
-            <button class="btn-main" style="width: auto; padding: 6px 14px; font-size: 0.85rem;" onclick="selectStudentToEdit('${student.id}')">✏️ Abrir Ficha</button>
-          </div>
-        `;
-        container.appendChild(div);
-      });
-    }
+  list.forEach(student => {
+    const div = document.createElement('div');
+    div.className = 'student-item';
+    div.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); gap: 10px;";
+    
+    div.innerHTML = `
+      <div>
+        <strong>${student.nombre || student.id}</strong>
+        <div style="font-size: 0.85rem; color: var(--muted);">${student.email || 'Sin mail registrado'}</div>
+      </div>
+      <button class="btn-main" style="width: auto; padding: 6px 14px; font-size: 0.85rem;" onclick="selectStudentToEdit('${student.id}')">✏️ Configurar Rutina</button>
+    `;
+    container.appendChild(div);
+  });
+}
 
     window.selectStudentToEdit = async function(id) {
       document.getElementById('newStudentForm').style.display = 'none';
@@ -286,9 +286,9 @@
       const docRef = doc(db, "alumnos", id);
       const docSnap = await getDoc(docRef);
 
-      if (docSnap.exists()) {
-        window.currentStudentData = { id, ...docSnap.data() };
-        if (!window.currentStudentData.rutina) window.currentStudentData.rutina = {};
+if (docSnap.exists()) {
+    window.currentStudentData = { id, ...docSnap.data() };
+    if (!window.currentStudentData.rutina) window.currentStudentData.rutina = {};
 
         document.getElementById('editStudentName').value = window.currentStudentData.nombre || "";
         document.getElementById('editStudentEmail').value = window.currentStudentData.email || "";
@@ -303,7 +303,8 @@
         document.getElementById('studentNotesDisplay').textContent = window.currentStudentData.notas_alumno || "El alumno no ha dejado notas aún.";
 
         renderEditor();
-        document.getElementById('editorContainer').style.display = 'block';
+document.getElementById('studentsListCard').style.display = 'none';
+    document.getElementById('editorContainer').style.display = 'block';
         document.getElementById('editorContainer').scrollIntoView({ behavior: 'smooth' });
 
         if (window.currentStudentData.spreadsheet_id) {
