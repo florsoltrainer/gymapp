@@ -677,26 +677,6 @@ window.addGlobalExercise = async function() {
       delete window.currentStudentData.rutina[day];
       renderEditor();
     };
-
-window.addZone = function() {
-      const day = document.getElementById('selectDayForZone').value;
-      const zoneSelect = document.getElementById('newZoneSelect').value;
-      const manualZone = document.getElementById('newZoneManualInput').value.trim();
-      const zone = zoneSelect || manualZone; // Usa el desplegable o el texto manual
-      
-      if (day && zone && !window.currentStudentData.rutina[day][zone]) {
-        window.currentStudentData.rutina[day][zone] = [];
-        document.getElementById('newZoneSelect').value = '';
-        document.getElementById('newZoneManualInput').value = '';
-        renderEditor();
-      }
-    };
-
-    window.deleteZone = function(day, zone) {
-      delete window.currentStudentData.rutina[day][zone];
-      renderEditor();
-    };
-
 window.addExercise = function() {
       const day = document.getElementById('selectDayForEx').value;
       const zone = document.getElementById('selectZoneForEx').value;
@@ -780,23 +760,107 @@ function populateZoneDropdowns() {
           select.appendChild(opt);
         });
       });
-      updateZoneDropdown();
+    }
+window.renderEditor = function() {
+      renderDayDropdowns();
+      renderDaysList();
+      populateZoneDropdowns(); 
+      renderExercisesList();
+    };
+
+    function renderDayDropdowns() {
+      const dayForEx = document.getElementById('selectDayForEx');
+      const days = Object.keys(window.currentStudentData.rutina || {});
+      dayForEx.innerHTML = '';
+      days.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d; opt.textContent = d;
+        dayForEx.appendChild(opt);
+      });
+      renderExercisesList();
     }
 
-    window.updateZoneDropdown = function() {
-  const day = document.getElementById('selectDayForEx').value;
-  const zoneSelect = document.getElementById('selectZoneForEx');
-  zoneSelect.innerHTML = '';
-  if (day && window.currentStudentData.rutina[day]) {
-    Object.keys(window.currentStudentData.rutina[day]).forEach(z => {
-      const opt = document.createElement('option');
-      opt.value = z; opt.textContent = z;
-      zoneSelect.appendChild(opt);
-    });
-  }
-  updateGlobalExerciseDropdown();
-  renderExercisesList();
-};
+    function populateZoneDropdowns() {
+      const uniqueZones = [...new Set(window.globalExercises.map(ex => ex.zona).filter(Boolean))];
+      
+      const selects = ['newGlobalExZoneSelect', 'filterZoneExercise', 'selectZoneForEx'];
+      
+      selects.forEach(id => {
+        const selectElement = document.getElementById(id);
+        if (selectElement) {
+          const currentVal = selectElement.value;
+          const defaultLabel = id === 'filterZoneExercise' ? '-- Todas las Zonas --' : '-- Seleccionar Categoría --';
+          
+          selectElement.innerHTML = `<option value="">${defaultLabel}</option>`;
+          uniqueZones.forEach(z => {
+            selectElement.innerHTML += `<option value="${z}">${z}</option>`;
+          });
+          
+          if (currentVal) selectElement.value = currentVal;
+        }
+      });
+    }
+
+    window.addExercise = function() {
+      const day = document.getElementById('selectDayForEx').value;
+      const zone = document.getElementById('selectZoneForEx').value;
+      const exName = document.getElementById('selectGlobalExercise').value || document.getElementById('manualExName').value.trim();
+      const notes = document.getElementById('newExNotes').value.trim();
+      const sets = Number(document.getElementById('newExSets').value) || 3;
+      const weightsInput = document.getElementById('newExWeights').value.trim();
+      const repsInput = document.getElementById('newExRepsSequence').value.trim();
+      
+      const workTimer = document.getElementById('newExTimerWork').value.trim();
+      const restTimer = document.getElementById('newExTimerRest').value.trim();
+      const timerVal = (workTimer || restTimer) ? `${workTimer || 0}s / ${restTimer || 0}s` : "";
+
+      if (!day || !zone || !exName) return alert("Selecciona Día, Grupo Muscular y Ejercicio.");
+
+      if (!window.currentStudentData.rutina[day][zone]) {
+        window.currentStudentData.rutina[day][zone] = [];
+      }
+
+      window.currentStudentData.rutina[day][zone].push({ 
+        name: exName, sets: sets, weights_seq: weightsInput, reps_seq: repsInput, timer: timerVal, notes: notes
+      });
+
+      document.getElementById('manualExName').value = '';
+      document.getElementById('newExNotes').value = '';
+      document.getElementById('newExWeights').value = '';
+      document.getElementById('newExRepsSequence').value = '';
+      document.getElementById('newExTimerWork').value = '';
+      document.getElementById('newExTimerRest').value = '';
+      document.getElementById('selectGlobalExercise').value = '';
+      
+      renderExercisesList();
+    };
+
+    function renderExercisesList() {
+      const day = document.getElementById('selectDayForEx').value;
+      const container = document.getElementById('exercisesList');
+      container.innerHTML = '';
+      
+      if (!day || !window.currentStudentData.rutina[day]) return;
+
+      Object.keys(window.currentStudentData.rutina[day]).forEach(zone => {
+        window.currentStudentData.rutina[day][zone].forEach((ex, idx) => {
+          const div = document.createElement('div');
+          div.className = 'item-chip';
+          div.innerHTML = `
+            <div>
+              🏋️ <strong>${ex.name}</strong> <span style="color:var(--accent); font-size:0.85rem;">[${zone}]</span><br>
+              <small style="color:var(--muted)">Series: ${ex.sets} | Pesos: [${ex.weights_seq || 'N/A'}] | Reps: [${ex.reps_seq || 'N/A'}] ${ex.timer ? `| Timer: ${ex.timer}` : ''}</small>
+              ${ex.notes ? `<br>📌 <em>${ex.notes}</em>` : ''}
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-sec" style="width:auto; padding:4px 8px;" onclick="editStudentExercise('${day}', '${zone}', ${idx})">Editar</button>
+              <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteExercise('${day}', '${zone}', ${idx})">Eliminar</button>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      });
+    }
 window.updateGlobalExerciseDropdown = function() {
   const selectedZone = document.getElementById('selectZoneForEx').value;
   const selectGlobal = document.getElementById('selectGlobalExercise');
@@ -822,19 +886,6 @@ window.updateGlobalExerciseDropdown = function() {
         const div = document.createElement('div');
         div.className = 'item-chip';
         div.innerHTML = `<span>📅 ${day}</span> <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteDay('${day}')">Eliminar</button>`;
-        container.appendChild(div);
-      });
-    }
-
-    function renderZonesList() {
-      const day = document.getElementById('selectDayForZone').value;
-      const container = document.getElementById('zonesList');
-      container.innerHTML = '';
-      if (!day || !window.currentStudentData.rutina[day]) return;
-      Object.keys(window.currentStudentData.rutina[day]).forEach(zone => {
-        const div = document.createElement('div');
-        div.className = 'item-chip';
-        div.innerHTML = `<span>💪 ${zone}</span> <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteZone('${day}', '${zone}')">Eliminar</button>`;
         container.appendChild(div);
       });
     }
@@ -962,22 +1013,18 @@ window.updateGlobalExerciseDropdown = function() {
               <div id="daysList"></div>
             </div>
 <div class="tree-node">
-              <h4>2. Zona Muscular</h4>
-              <select id="selectDayForZone" onchange="renderZonesList()"></select>
-              <div style="display: flex; gap: 8px;">
-                <select id="newZoneSelect" style="margin: 0;"></select>
-                <input type="text" id="newZoneManualInput" placeholder="O escribe otra zona..." style="margin: 0;">
-                <button class="btn-main" onclick="addZone()" style="width: auto;">+ Zona</button>
-              </div>
-              <div id="zonesList"></div>
-            </div>
-            
-            <div class="tree-node">
-              <h4>3. Añadir Ejercicios</h4>
+              <h4>2. Añadir Ejercicios</h4>
               <div class="grid-2">
-                <select id="selectDayForEx" onchange="updateZoneDropdown()"></select>
-                <select id="selectZoneForEx" onchange="updateGlobalExerciseDropdown(); renderExercisesList();"></select>
+                <div>
+                  <label>Seleccionar Día:</label>
+                  <select id="selectDayForEx" onchange="renderExercisesList()"></select>
+                </div>
+                <div>
+                  <label>Grupo Muscular (Categoría):</label>
+                  <select id="selectZoneForEx" onchange="updateGlobalExerciseDropdown()"></select>
+                </div>
               </div>
+              
               <label>Elegir de la Categoría Seleccionada:</label>
               <select id="selectGlobalExercise"></select>
               
