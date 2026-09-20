@@ -545,6 +545,7 @@
         `;
         listContainer.appendChild(chip);
       });
+      populateZoneDropdowns();
     }
 
     window.filterGlobalExercises = function() {
@@ -669,12 +670,16 @@
       renderEditor();
     };
 
-    window.addZone = function() {
+window.addZone = function() {
       const day = document.getElementById('selectDayForZone').value;
-      const zone = document.getElementById('newZoneInput').value.trim();
+      const zoneSelect = document.getElementById('newZoneSelect').value;
+      const manualZone = document.getElementById('newZoneManualInput').value.trim();
+      const zone = zoneSelect || manualZone; // Usa el desplegable o el texto manual
+      
       if (day && zone && !window.currentStudentData.rutina[day][zone]) {
         window.currentStudentData.rutina[day][zone] = [];
-        document.getElementById('newZoneInput').value = '';
+        document.getElementById('newZoneSelect').value = '';
+        document.getElementById('newZoneManualInput').value = '';
         renderEditor();
       }
     };
@@ -684,7 +689,7 @@
       renderEditor();
     };
 
-    window.addExercise = function() {
+window.addExercise = function() {
       const day = document.getElementById('selectDayForEx').value;
       const zone = document.getElementById('selectZoneForEx').value;
       const exName = document.getElementById('selectGlobalExercise').value || document.getElementById('manualExName').value.trim();
@@ -692,7 +697,10 @@
       const sets = Number(document.getElementById('newExSets').value) || 3;
       const weightsInput = document.getElementById('newExWeights').value.trim();
       const repsInput = document.getElementById('newExRepsSequence').value.trim();
-      const timerVal = document.getElementById('newExTimer').value;
+      
+      const workTimer = document.getElementById('newExTimerWork').value.trim();
+      const restTimer = document.getElementById('newExTimerRest').value.trim();
+      const timerVal = (workTimer || restTimer) ? `${workTimer || 0}s / ${restTimer || 0}s` : "";
 
       if (!day || !zone || !exName) return alert("Selecciona Día, Zona y Ejercicio.");
 
@@ -704,10 +712,36 @@
       document.getElementById('newExNotes').value = '';
       document.getElementById('newExWeights').value = '';
       document.getElementById('newExRepsSequence').value = '';
+      document.getElementById('newExTimerWork').value = '';
+      document.getElementById('newExTimerRest').value = '';
       document.getElementById('selectGlobalExercise').value = '';
       renderEditor();
     };
+function populateZoneDropdowns() {
+      const uniqueZones = [...new Set(window.globalExercises.map(ex => ex.zona).filter(Boolean))];
+      const zoneSelect = document.getElementById('newZoneSelect');
+      
+      if (zoneSelect) {
+        zoneSelect.innerHTML = '<option value="">-- Seleccionar Categoría del Banco --</option>';
+        uniqueZones.forEach(z => {
+          zoneSelect.innerHTML += `<option value="${z}">${z}</option>`;
+        });
+      }
+    }
 
+    window.updateGlobalExerciseDropdown = function() {
+      const zone = document.getElementById('selectZoneForEx').value;
+      const selectEx = document.getElementById('selectGlobalExercise');
+      selectEx.innerHTML = '<option value="">-- Seleccionar Ejercicio --</option>';
+      
+      if (!zone) return;
+      
+      // Filtra los ejercicios para mostrar solo los de la zona seleccionada
+      const filtered = window.globalExercises.filter(e => e.zona === zone);
+      filtered.forEach(e => {
+        selectEx.innerHTML += `<option value="${e.nombre}">${e.nombre}</option>`;
+      });
+    };
     window.deleteExercise = function(day, zone, idx) {
       window.currentStudentData.rutina[day][zone].splice(idx, 1);
       renderEditor();
@@ -750,6 +784,7 @@
           zoneSelect.appendChild(opt);
         });
       }
+      updateGlobalExerciseDropdown();
       renderExercisesList();
     };
 
@@ -899,36 +934,41 @@
               </div>
               <div id="daysList"></div>
             </div>
-            <div class="tree-node">
+<div class="tree-node">
               <h4>2. Zona Muscular</h4>
               <select id="selectDayForZone" onchange="renderZonesList()"></select>
               <div style="display: flex; gap: 8px;">
-                <input type="text" id="newZoneInput" placeholder="Ej: Pecho" style="margin: 0;">
+                <select id="newZoneSelect" style="margin: 0;"></select>
+                <input type="text" id="newZoneManualInput" placeholder="O escribe otra zona..." style="margin: 0;">
                 <button class="btn-main" onclick="addZone()" style="width: auto;">+ Zona</button>
               </div>
               <div id="zonesList"></div>
             </div>
+            
             <div class="tree-node">
               <h4>3. Añadir Ejercicios</h4>
               <div class="grid-2">
                 <select id="selectDayForEx" onchange="updateZoneDropdown()"></select>
-                <select id="selectZoneForEx" onchange="renderExercisesList()"></select>
+                <select id="selectZoneForEx" onchange="updateGlobalExerciseDropdown(); renderExercisesList();"></select>
               </div>
-              <label>Elegir del Banco Precargado:</label>
+              <label>Elegir de la Categoría Seleccionada:</label>
               <select id="selectGlobalExercise"></select>
-              <label>O escribir uno nuevo:</label>
+              
+              <label>O escribir uno nuevo para esta rutina:</label>
               <input type="text" id="manualExName" placeholder="Ej: Press Francés">
+              
               <div class="grid-3">
                 <div><label>Series</label><input type="number" id="newExSets" value="3" min="1"></div>
                 <div><label>Pesos (ej: 50, 55)</label><input type="text" id="newExWeights"></div>
                 <div><label>Reps (ej: 12, 10)</label><input type="text" id="newExRepsSequence"></div>
               </div>
-              <label>Timer de Intervalos (opcional):</label>
-              <select id="newExTimer">
-                <option value="">-- Sin Timer --</option>
-                <option value="30s/30s">30s Trabajo / 30s Descanso</option>
-                <option value="40s/20s">40s Trabajo / 20s Descanso</option>
-              </select>
+              
+              <label>Timer de Intervalos (manual y opcional):</label>
+              <div class="grid-2">
+                <div><input type="number" id="newExTimerWork" placeholder="Trabajo (segs)"></div>
+                <div><input type="number" id="newExTimerRest" placeholder="Descanso (segs)"></div>
+              </div>
+              
               <label>Notas explicativas:</label>
               <input type="text" id="newExNotes" placeholder="Ej: Controlar la bajada">
               <button class="btn-sec" onclick="addExercise()">+ Añadir Ejercicio</button>
