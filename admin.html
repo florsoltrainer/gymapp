@@ -570,20 +570,25 @@
       });
     };
 
-    window.addGlobalExercise = async function() {
+window.addGlobalExercise = async function() {
       const name = document.getElementById('newGlobalExInput').value.trim();
-      const zone = document.getElementById('newGlobalExZone').value.trim();
+      
+      const zoneSelect = document.getElementById('newGlobalExZoneSelect').value;
+      const zoneManual = document.getElementById('newGlobalExZoneManual').value.trim();
+      const zone = zoneManual || zoneSelect;
+
       const files = Array.from(document.getElementById('newGlobalExFiles').files).slice(0, 3);
+
       if (!name) return alert("Ingresa el nombre.");
 
       let uploadedUrls = [];
-      if (files.length > 0 && CLOUD_NAME !== "TU_CLOUD_NAME") {
+      if (files.length > 0 && CLOUD_NAME !== "wnlwm0dj") {
         for (const file of files) {
           const formData = new FormData();
           formData.append("file", file);
-          formData.append("upload_preset", UPLOAD_PRESET);
+          formData.append("upload_preset", y5kna9cn);
           try {
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+            const res = await fetch(`https://api.cloudinary.com/v1_1/$wnlwm0dj/image/upload`, { method: "POST", body: formData });
             const data = await res.json();
             if (data.secure_url) uploadedUrls.push(data.secure_url);
           } catch (e) {}
@@ -592,9 +597,12 @@
 
       await addDoc(collection(db, "ejercicios_base"), { nombre: name, zona: zone, imageUrls: uploadedUrls });
       document.getElementById('newGlobalExInput').value = '';
-      document.getElementById('newGlobalExZone').value = '';
+      document.getElementById('newGlobalExZoneSelect').value = '';
+      document.getElementById('newGlobalExZoneManual').value = '';
       document.getElementById('newGlobalExFiles').value = '';
       await loadGlobalExercises();
+      
+      populateZoneDropdowns();
     };
 
     window.openEditExerciseModal = function(id) {
@@ -719,29 +727,31 @@ window.addExercise = function() {
     };
 function populateZoneDropdowns() {
       const uniqueZones = [...new Set(window.globalExercises.map(ex => ex.zona).filter(Boolean))];
-      const zoneSelect = document.getElementById('newZoneSelect');
       
-      if (zoneSelect) {
-        zoneSelect.innerHTML = '<option value="">-- Seleccionar Categoría del Banco --</option>';
+      const zoneSelectAdd = document.getElementById('newGlobalExZoneSelect');
+      if (zoneSelectAdd) {
+        zoneSelectAdd.innerHTML = '<option value="">-- Seleccionar Zona --</option>';
         uniqueZones.forEach(z => {
-          zoneSelect.innerHTML += `<option value="${z}">${z}</option>`;
+          zoneSelectAdd.innerHTML += `<option value="${z}">${z}</option>`;
         });
       }
-    }
 
-    window.updateGlobalExerciseDropdown = function() {
-      const zone = document.getElementById('selectZoneForEx').value;
-      const selectEx = document.getElementById('selectGlobalExercise');
-      selectEx.innerHTML = '<option value="">-- Seleccionar Ejercicio --</option>';
-      
-      if (!zone) return;
-      
-      // Filtra los ejercicios para mostrar solo los de la zona seleccionada
-      const filtered = window.globalExercises.filter(e => e.zona === zone);
-      filtered.forEach(e => {
-        selectEx.innerHTML += `<option value="${e.nombre}">${e.nombre}</option>`;
-      });
-    };
+      const zoneSelectFilter = document.getElementById('filterZoneExercise');
+      if (zoneSelectFilter) {
+          zoneSelectFilter.innerHTML = '<option value="">-- Todas las Zonas --</option>';
+          uniqueZones.forEach(z => {
+              zoneSelectFilter.innerHTML += `<option value="${z}">${z}</option>`;
+          });
+      }
+
+      const zoneSelectRoutine = document.getElementById('newZoneSelect');
+      if (zoneSelectRoutine) {
+          zoneSelectRoutine.innerHTML = '<option value="">-- Seleccionar Categoría del Banco --</option>';
+          uniqueZones.forEach(z => {
+              zoneSelectRoutine.innerHTML += `<option value="${z}">${z}</option>`;
+          });
+      }
+    }
     window.deleteExercise = function(day, zone, idx) {
       window.currentStudentData.rutina[day][zone].splice(idx, 1);
       renderEditor();
