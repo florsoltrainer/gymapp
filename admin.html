@@ -1041,41 +1041,38 @@ function populateZoneDropdowns() {
     </div>
 
     <!-- MÓDULO 2: BANCO Y PLANTILLAS -->
-    <div id="module-ejercicios" class="module-section">
-      <div class="sub-tabs">
-        <button id="subtab-ej-btn-banco" class="subtab-ej-btn active sub-tab-btn" onclick="switchSubTabEjercicios('banco')">📚 Banco de Ejercicios</button>
-        <button id="subtab-ej-btn-plantillas" class="subtab-ej-btn sub-tab-btn" onclick="switchSubTabEjercicios('plantillas')">📋 Plantillas de Rutinas</button>
-      </div>
+<div id="module-ejercicios" class="module-section">
+      <div class="card">
+        <h2>📚 Ejercicios (Banco Global)</h2>
+        
+        <div class="tree-node" style="margin-top: 14px;">
+          <h4>➕ Agregar Nuevo Ejercicio al Banco</h4>
+          <label>Nombre del Ejercicio</label>
+          <input type="text" id="newGlobalExInput" placeholder="Ej: Sentadilla Búlgara">
+          
+          <label>Zona Muscular</label>
+          <select id="newGlobalExZoneSelect">
+            <option value="">-- Seleccionar Zona --</option>
+          </select>
+          <input type="text" id="newGlobalExZoneManual" placeholder="O escribe una zona nueva...">
 
-      <!-- Banco de Ejercicios -->
-      <div id="subtab-ej-content-banco" class="subtab-ej-content">
-        <div class="card">
-          <h2>📚 Banco Global de Ejercicios</h2>
-          <div class="grid-2">
-            <div>
-              <label>Filtrar por Zona Muscular:</label>
-              <select id="filterZoneExercise" onchange="filterGlobalExercises()">
-                <option value="">-- Todas las Zonas --</option>
-                <option value="Pecho">Pecho</option>
-                <option value="Espalda">Espalda</option>
-                <option value="Piernas">Piernas</option>
-                <option value="Hombros">Hombros</option>
-                <option value="Brazos">Brazos</option>
-                <option value="Core">Core</option>
-                <option value="Cardio">Cardio</option>
-              </select>
-            </div>
-          </div>
-          <div class="tree-node" style="margin-top: 14px;">
-            <h4>➕ Agregar Ejercicio al Banco</h4>
-            <label>Nombre del Ejercicio</label><input type="text" id="newGlobalExInput">
-            <label>Zona Muscular</label><input type="text" id="newGlobalExZone">
-            <label>Fotos/GIFs (hasta 3)</label><input type="file" id="newGlobalExFiles" accept="image/*" multiple>
-            <button class="btn-main" onclick="addGlobalExercise()">+ Agregar</button>
-          </div>
-          <div id="globalExercisesList" style="margin-top: 16px;"></div>
+          <label>Fotos / GIFs demostrativos (hasta 3 archivos)</label>
+          <input type="file" id="newGlobalExFiles" accept="image/*" multiple>
+          <button class="btn-main" onclick="addGlobalExercise()">+ Agregar al Banco</button>
         </div>
+
+        <div class="grid-2" style="margin-top: 16px;">
+          <div>
+            <label>Filtrar por Zona Muscular:</label>
+            <select id="filterZoneExercise" onchange="filterGlobalExercises()">
+              <option value="">-- Todas las Zonas --</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="globalExercisesList" style="margin-top: 16px;"></div>
       </div>
+    </div>
 
       <!-- Plantillas de Rutinas -->
       <div id="subtab-ej-content-plantillas" class="subtab-ej-content" style="display: none;">
