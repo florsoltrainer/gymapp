@@ -89,7 +89,7 @@
     
     .menu-email { font-size: 0.85rem; color: var(--muted); text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; word-break: break-all; }
 
-    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
     .tab-btn { padding: 12px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.95rem; }
     .tab-btn.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 
@@ -212,6 +212,16 @@
     };
 
     // --- MÓDULO 1: MIS ALUMNOS ---
+    window.toggleNewStudentForm = function() {
+      const form = document.getElementById('newStudentForm');
+      if (form.style.display === 'none') {
+        form.style.display = 'block';
+        document.getElementById('editorContainer').style.display = 'none';
+      } else {
+        form.style.display = 'none';
+      }
+    };
+
     async function fetchAndRenderStudents() {
       const container = document.getElementById('studentsListContainer');
       container.innerHTML = "⏳ Cargando alumnos...";
@@ -264,6 +274,7 @@
     }
 
     window.selectStudentToEdit = async function(id) {
+      document.getElementById('newStudentForm').style.display = 'none';
       window.currentStudentId = id;
       const docRef = doc(db, "alumnos", id);
       const docSnap = await getDoc(docRef);
@@ -329,7 +340,6 @@
       alert("✅ Enlace copiado al portapapeles");
     };
 
-    // --- MÓDULO 2: CREACIÓN DE NUEVO ALUMNO ---
     window.createNewStudent = async function() {
       const name = document.getElementById('newStudentName').value.trim();
       const id = document.getElementById('newStudentId').value.trim().toLowerCase().replace(/\s+/g, '-');
@@ -372,10 +382,10 @@
           document.getElementById('newStudentAge').value = '';
           document.getElementById('newStudentNotes').value = '';
           
+          document.getElementById('newStudentForm').style.display = 'none';
           await fetchAndRenderStudents();
           
-          // Redirigir automáticamente a la pestaña alumnos y abrir su ficha
-          switchModule('alumnos');
+          // Abrir la ficha del nuevo alumno directamente
           selectStudentToEdit(id);
 
         } else {
@@ -544,9 +554,12 @@
           ul.style.marginTop = '4px';
           
           rut[day][zone].forEach(ex => {
-            const w = ex.weights ? ex.weights.join(', ') : (ex.weight || 0);
+            // Ajustamos para leer las nuevas variables de secuencia
+            const w = ex.weights_seq || ex.weight || ex.weights || '0';
+            const r = ex.reps_seq || ex.reps || '0';
+            
             ul.innerHTML += `<li style="margin-bottom:6px;">
-              <span style="color: var(--text);">🏋️ <strong>${ex.name}</strong></span> - ${ex.sets}x${ex.reps} @ [${w} kg]
+              <span style="color: var(--text);">🏋️ <strong>${ex.name}</strong></span> - ${ex.sets} series x [${r}] reps @ [${w} kg]
               ${ex.timer ? ` | ⏱️ ${ex.timer}` : ''}
               ${ex.notes ? `<br><span style="color:var(--accent); font-size:0.85rem;">📌 <i>${ex.notes}</i></span>` : ''}
             </li>`;
@@ -577,8 +590,11 @@
       for (const day in rut) {
         for (const zone in rut[day]) {
           rut[day][zone].forEach(ex => {
-            const w = ex.weights ? ex.weights.join(', ') : (ex.weight || 0);
-            tableData.push([day, zone, ex.name, `${ex.sets}x${ex.reps}`, `${w} kg`, ex.timer || '-', ex.notes || '-']);
+            // Ajustamos para leer las nuevas variables de secuencia
+            const w = ex.weights_seq || ex.weight || ex.weights || '0';
+            const r = ex.reps_seq || ex.reps || '0';
+            
+            tableData.push([day, zone, ex.name, `${ex.sets}x [${r}]`, `${w} kg`, ex.timer || '-', ex.notes || '-']);
           });
         }
       }
@@ -609,7 +625,7 @@
       }
     };
 
-    // --- MÓDULO 3: EJERCICIOS Y PLANTILLAS ---
+    // --- MÓDULO 2: EJERCICIOS Y PLANTILLAS ---
     async function loadGlobalExercises() {
       window.globalExercises = [];
       const selectEx = document.getElementById('selectGlobalExercise');
@@ -954,21 +970,44 @@
       </div>
     </header>
 
-    <!-- Pestañas Principales en el Orden Solicitado -->
     <div class="tabs">
       <div id="tab-alumnos" class="tab-btn active" onclick="switchModule('alumnos')">👥 Mis Alumnos</div>
-      <div id="tab-nuevo" class="tab-btn" onclick="switchModule('nuevo')">➕ Nuevo Alumno</div>
       <div id="tab-ejercicios" class="tab-btn" onclick="switchModule('ejercicios')">📚 Banco de Ejercicios</div>
     </div>
 
     <!-- MÓDULO 1: MIS ALUMNOS -->
     <div id="module-alumnos" class="module-section active">
+      
       <div class="card">
-        <h2>👥 Listado de Alumnos Registrados</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+          <h2 style="margin: 0;">👥 Listado de Alumnos</h2>
+          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="toggleNewStudentForm()">➕ Registrar Nuevo</button>
+        </div>
         <input type="text" id="searchStudentInput" placeholder="🔍 Buscar por nombre, mail o ID..." oninput="filterStudents()">
         <div id="studentsListContainer" style="margin-top: 10px;"></div>
       </div>
 
+      <!-- Formulario para Nuevo Alumno (Integrado aquí) -->
+      <div id="newStudentForm" class="card" style="display: none; border-left: 4px solid var(--accent);">
+        <h3>➕ Registrar Nuevo Alumno</h3>
+        <div class="grid-2">
+          <div><label>Nombre Completo</label><input type="text" id="newStudentName" placeholder="Ej: Maria Gomez"></div>
+          <div><label>ID Enlace (sin espacios)</label><input type="text" id="newStudentId" placeholder="Ej: maria"></div>
+        </div>
+        <div class="grid-2">
+          <div><label>Email de Google</label><input type="email" id="newStudentEmail" placeholder="maria@gmail.com"></div>
+          <div><label>Edad</label><input type="number" id="newStudentAge" placeholder="28"></div>
+        </div>
+        <label>Notas Adicionales</label>
+        <textarea id="newStudentNotes" placeholder="Objetivos, antecedentes..."></textarea>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn-main" onclick="createNewStudent()">Crear Alumno</button>
+          <button class="btn-sec" onclick="toggleNewStudentForm()">Cancelar</button>
+        </div>
+        <div id="createStatus" class="status-msg"></div>
+      </div>
+
+      <!-- Panel de Edición del Alumno Seleccionado -->
       <div id="editorContainer" style="display: none;">
         <div class="sub-tabs">
           <button id="subtab-btn-datos" class="sub-tab-btn active" onclick="switchSubTab('datos')">👤 Datos y Resumen</button>
@@ -1009,7 +1048,7 @@
             </div>
           </div>
 
-          <!-- Formulario de Edición de Datos (Oculto por defecto) -->
+          <!-- Formulario de Edición de Datos -->
           <div class="card" id="studentDataEdit" style="display: none; border-left: 4px solid var(--accent);">
             <h3>✏️ Editando Datos</h3>
             <div class="grid-2">
@@ -1140,26 +1179,7 @@
       </div>
     </div>
 
-    <!-- MÓDULO 2: NUEVO ALUMNO -->
-    <div id="module-nuevo" class="module-section">
-      <div class="card">
-        <h2>➕ Registrar Nuevo Alumno</h2>
-        <div class="grid-2">
-          <div><label>Nombre Completo</label><input type="text" id="newStudentName" placeholder="Ej: Maria Gomez"></div>
-          <div><label>ID Enlace (sin espacios)</label><input type="text" id="newStudentId" placeholder="Ej: maria"></div>
-        </div>
-        <div class="grid-2">
-          <div><label>Email de Google</label><input type="email" id="newStudentEmail" placeholder="maria@gmail.com"></div>
-          <div><label>Edad</label><input type="number" id="newStudentAge" placeholder="28"></div>
-        </div>
-        <label>Notas Adicionales</label>
-        <textarea id="newStudentNotes" placeholder="Objetivos, antecedentes..."></textarea>
-        <button class="btn-main" onclick="createNewStudent()">Crear Alumno</button>
-        <div id="createStatus" class="status-msg"></div>
-      </div>
-    </div>
-
-    <!-- MÓDULO 3: BANCO Y PLANTILLAS -->
+    <!-- MÓDULO 2: BANCO Y PLANTILLAS -->
     <div id="module-ejercicios" class="module-section">
       <div class="card">
         <h2>📚 Ejercicios (Banco Global)</h2>
