@@ -506,16 +506,32 @@ document.getElementById('studentsListCard').style.display = 'none';
       docPDF.autoTable({ startY: 40, head: [['Fecha', 'Día', 'Zona', 'Ejercicio', 'Serie', 'Peso (kg)', 'Reps']], body: tableData });
       docPDF.save(`Reporte_${window.currentStudentData.nombre || 'Alumno'}.pdf`);
     };
-
-    window.deleteCurrentStudent = async function() {
-      if (!window.currentStudentId) return;
-      if (confirm(`¿Eliminar a ${window.currentStudentData.nombre}?`) && confirm("⚠️ ATENCIÓN: Esta acción no se puede deshacer.")) {
-        await deleteDoc(doc(db, "alumnos", window.currentStudentId));
-        alert("✅ Alumno eliminado.");
-        document.getElementById('editorContainer').style.display = 'none';
-        await fetchAndRenderStudents();
-      }
-    };
+window.backToStudentsList = function() {
+  document.getElementById('editorContainer').style.display = 'none';
+  document.getElementById('studentsListCard').style.display = 'block';
+  window.currentStudentId = "";
+  window.currentStudentData = null;
+};
+window.deleteCurrentStudent = async function() {
+  if (!window.currentStudentId) return;
+  
+  const studentName = window.currentStudentData?.nombre || window.currentStudentId;
+  
+  if (confirm(`¿Estás segura de que deseas eliminar a ${studentName} de la base de datos?`) && 
+      confirm("⚠️ ADVERTENCIA: Esta acción borrará permanentemente sus datos y acceso. No se puede deshacer.")) {
+    try {
+      await deleteDoc(doc(db, "alumnos", window.currentStudentId));
+      alert("✅ Alumno eliminado correctamente de la base de datos.");
+      
+      // Volver al listado y actualizar la tabla
+      backToStudentsList();
+      await fetchAndRenderStudents();
+    } catch (error) {
+      console.error("Error al eliminar alumno:", error);
+      alert("❌ Ocurrió un error al intentar eliminar al alumno.");
+    }
+  }
+};
 
     // --- MÓDULO 2: EJERCICIOS Y PLANTILLAS ---
     async function loadGlobalExercises() {
