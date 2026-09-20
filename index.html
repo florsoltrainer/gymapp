@@ -5,112 +5,154 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Flor Sol Trainer - Tu Mejor Versión</title>
   <style>
+    /* =========================================================
+       1. VARIABLES: MODO OSCURO (DARK MODE) POR DEFECTO
+       ========================================================= */
     :root {
-      --bg: #ffffff;
-      --card: #f8f9fa;
-      --text: #1a1a1a;
-      --muted: #666666;
-      --border: #e0e0e0;
-      --accent: #5e5a56;
-      --accent-hover: #45423f;
-      --danger: #e53935;
-      --shadow: rgba(0,0,0,0.08);
+      --bg: #121214;
+      --card: #1e1e24;
+      --accent: #00e676; /* Verde neón con alto contraste sobre oscuro */
+      --accent-hover: #00c853;
+      --text: #ffffff;
+      --muted: #a0a0b0;
+      --border: #2a2a35;
+      --danger: #ff5252;
+      --shadow: rgba(0, 0, 0, 0.5);
     }
 
-    @media (prefers-color-scheme: dark) {
+    /* =========================================================
+       2. MODO CLARO (LIGHT MODE): DETECCIÓN AUTOMÁTICA
+       ========================================================= */
+    @media (prefers-color-scheme: light) {
       :root {
-        --bg: #121214;
-        --card: #1e1e24;
-        --text: #ffffff;
-        --muted: #a0a0b0;
-        --border: #2a2a35;
-        --accent: #8e8983;
-        --accent-hover: #a8a29c;
-        --danger: #ff5252;
-        --shadow: rgba(0,0,0,0.4);
+        --bg: #f4f5f8;
+        --card: #ffffff;
+        --accent: #00b050; /* Verde accesible y legible sobre claro */
+        --accent-hover: #008a3e;
+        --text: #1a1a1e;
+        --muted: #6c707e;
+        --border: #e2e4e9;
+        --danger: #e53935;
+        --shadow: rgba(0, 0, 0, 0.08);
       }
     }
 
-    * { 
-      box-sizing: border-box; 
-      margin: 0; 
-      padding: 0; 
-      font-family: system-ui, -apple-system, sans-serif; 
+    /* =========================================================
+       3. ESTILOS BASE Y MAQUETACIÓN
+       ========================================================= */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
-    body { 
-      background-color: var(--bg); 
-      color: var(--text); 
-      padding: 20px; 
-      min-height: 100vh; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    .container { 
-      width: 100%; 
-      max-width: 420px; 
-      background: var(--card); 
-      border: 1px solid var(--border); 
-      border-radius: 20px; 
-      padding: 32px 24px; 
-      text-align: center; 
-      box-shadow: 0 10px 30px var(--shadow); 
+    .container {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px 24px;
+      text-align: center;
+      box-shadow: 0 10px 30px var(--shadow);
+      transition: background-color 0.3s ease, border-color 0.3s ease;
     }
 
-    .logo { 
-      width: 100%; 
-      max-width: 280px; 
-      height: auto; 
-      margin-bottom: 28px; 
+    /* LOGO CENTRADO */
+    .logo {
+      width: 100%;
+      max-width: 260px;
+      height: auto;
+      margin-bottom: 24px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
     }
 
-    .btn-container { 
-      display: flex; 
-      flex-direction: column; 
-      gap: 14px; 
+    .welcome-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text);
     }
 
-    button { 
-      width: 100%; 
-      padding: 14px 20px; 
-      border-radius: 12px; 
-      font-size: 1rem; 
-      font-weight: 600; 
-      cursor: pointer; 
-      transition: all 0.2s ease; 
-      border: none; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      gap: 10px; 
+    .welcome-sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 28px;
     }
 
-    .btn-student { 
-      background-color: #4285F4; 
-      color: #ffffff; 
-    }
-    .btn-student:hover { 
-      background-color: #3367d6; 
-    }
-
-    .btn-admin { 
-      background-color: transparent; 
-      color: var(--text); 
-      border: 1px solid var(--border); 
-    }
-    .btn-admin:hover { 
-      background-color: var(--border); 
+    /* CONTENEDOR DE BOTONES */
+    .btn-container {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
     }
 
-    .status-msg { 
-      margin-top: 18px; 
-      font-size: 0.9rem; 
-      font-weight: 500; 
+    button {
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
     }
-    .error-msg { 
-      color: var(--danger); 
+
+    /* Botón Alumnos con Acento Verde */
+    .btn-student {
+      background-color: var(--accent);
+      color: #000000; /* Texto negro para contraste máximo con el verde */
+    }
+    
+    @media (prefers-color-scheme: light) {
+      .btn-student {
+        color: #ffffff; /* Texto blanco para lectura sobre verde en modo claro */
+      }
+    }
+
+    .btn-student:hover {
+      background-color: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    /* Botón Administrador Neutro/Gris */
+    .btn-admin {
+      background-color: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-admin:hover {
+      background-color: var(--border);
+    }
+
+    .status-msg {
+      margin-top: 20px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .error-msg {
+      color: var(--danger);
     }
   </style>
 
@@ -120,7 +162,7 @@
     import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // ⚠️ COLOCA AQUÍ TUS CREDENCIALES REALES DE FIREBASE
+    // ⚠️ REEMPLAZA CON TUS CREDENCIALES REALES DE FIREBASE
     const firebaseConfig = {
       apiKey: "AIzaSyDC3Wvw3E8IhSnkSKg5Qk98NivuqK-FNzM",
       authDomain: "florsoltrainer-f22c2.firebaseapp.com",
@@ -144,9 +186,9 @@
         const result = await signInWithPopup(auth, provider);
         const userEmail = result.user.email.toLowerCase().trim();
 
-        statusMsg.textContent = `🔍 Buscando perfil para ${userEmail}...`;
+        statusMsg.textContent = `🔍 Verificando cuenta (${userEmail})...`;
 
-        // Búsqueda en la colección "alumnos" por el correo de Gmail
+        // Búsqueda en la colección "alumnos" por la dirección de Gmail
         const alumnosRef = collection(db, "alumnos");
         const q = query(alumnosRef, where("email", "==", userEmail));
         const querySnapshot = await getDocs(q);
@@ -157,11 +199,10 @@
             studentData = doc.data();
           });
 
-          // Obtener la URL personal asignada
           const targetUrl = studentData.google_sheet_url || studentData.sheet_url || studentData.link_personal;
 
           if (targetUrl) {
-            statusMsg.textContent = `✅ ¡Hola ${studentData.nombre || result.user.displayName}! Redirigiendo...`;
+            statusMsg.textContent = `✅ ¡Hola ${studentData.nombre || result.user.displayName}! Redirigiendo a tu rutina...`;
             setTimeout(() => {
               window.location.href = targetUrl;
             }, 1000);
@@ -172,13 +213,13 @@
           }
         } else {
           statusMsg.className = "status-msg error-msg";
-          statusMsg.textContent = `❌ El correo (${userEmail}) no está registrado. Consulta a la entrenadora.`;
+          statusMsg.textContent = `❌ El correo (${userEmail}) no está registrado en el sistema. Consulta a la entrenadora.`;
           signOut(auth);
         }
       } catch (error) {
         console.error("Error en autenticación:", error);
         statusMsg.className = "status-msg error-msg";
-        statusMsg.textContent = "❌ Error de inicio de sesión: " + error.message;
+        statusMsg.textContent = "❌ Error al iniciar sesión: " + error.message;
       }
     };
   </script>
@@ -189,10 +230,13 @@
     <!-- LOGO CENTRADO -->
     <img src="logo fst.png" alt="Flor Sol Trainer - Tu mejor versión" class="logo">
 
+    <h1 class="welcome-title">Portal de Acceso</h1>
+    <p class="welcome-sub">Selecciona tu tipo de usuario para ingresar</p>
+
     <!-- BOTONES DE ACCESO -->
     <div class="btn-container">
       <button class="btn-student" onclick="loginStudentWithGoogle()">
-        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#ffffff" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#ffffff" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#ffffff" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#ffffff" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="currentColor" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="currentColor" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="currentColor" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="currentColor" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
         Acceso Alumnos
       </button>
 
@@ -201,7 +245,7 @@
       </button>
     </div>
 
-    <!-- MENSAJES DE ESTADO -->
+    <!-- MENSAJE DE ESTADO -->
     <div id="statusMsg" class="status-msg"></div>
   </div>
 
