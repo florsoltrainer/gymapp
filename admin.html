@@ -89,7 +89,7 @@
     
     .menu-email { font-size: 0.85rem; color: var(--muted); text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; word-break: break-all; }
 
-    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
     .tab-btn { padding: 12px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.95rem; }
     .tab-btn.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 
@@ -212,16 +212,6 @@
     };
 
     // --- MÓDULO 1: MIS ALUMNOS ---
-    window.toggleNewStudentForm = function() {
-      const form = document.getElementById('newStudentForm');
-      if (form.style.display === 'none') {
-        form.style.display = 'block';
-        document.getElementById('editorContainer').style.display = 'none';
-      } else {
-        form.style.display = 'none';
-      }
-    };
-
     async function fetchAndRenderStudents() {
       const container = document.getElementById('studentsListContainer');
       container.innerHTML = "⏳ Cargando alumnos...";
@@ -266,7 +256,7 @@
             <div style="font-size: 0.85rem; color: var(--muted);">${student.email || 'Sin mail'}</div>
           </div>
           <div style="display:flex; gap:8px;">
-            <button class="btn-main" style="width: auto; padding: 6px 14px; font-size: 0.85rem;" onclick="selectStudentToEdit('${student.id}')">✏️ Abrir Ficha</button>
+            <button class="btn-main" style="width: auto; padding: 6px 14px; font-size: 0.85rem;" onclick="selectStudentToEdit('${student.id}')">✏️ Configurar</button>
           </div>
         `;
         container.appendChild(div);
@@ -274,7 +264,6 @@
     }
 
     window.selectStudentToEdit = async function(id) {
-      document.getElementById('newStudentForm').style.display = 'none';
       window.currentStudentId = id;
       const docRef = doc(db, "alumnos", id);
       const docSnap = await getDoc(docRef);
@@ -283,25 +272,52 @@
         window.currentStudentData = { id, ...docSnap.data() };
         if (!window.currentStudentData.rutina) window.currentStudentData.rutina = {};
 
+        // Rellenar Vista (Datos Estáticos)
+        document.getElementById('lblNombre').textContent = window.currentStudentData.nombre || "-";
+        document.getElementById('lblEmail').textContent = window.currentStudentData.email || "-";
+        document.getElementById('lblEdad').textContent = window.currentStudentData.edad || "-";
+        document.getElementById('lblPago').textContent = window.currentStudentData.fecha_pago || "-";
+        document.getElementById('lblNotasAdmin').textContent = window.currentStudentData.notas_admin || "Sin notas.";
+        document.getElementById('sheetUrlDisplay').href = window.currentStudentData.google_sheet_url || "#";
+        
+        const personalLink = window.currentStudentData.link_personal || `https://florsoltrainer.github.io/gymapp/?id=${id}`;
+        document.getElementById('studentLinkCopy').value = personalLink;
+
+        // Rellenar Formularios (Edición)
         document.getElementById('editStudentName').value = window.currentStudentData.nombre || "";
         document.getElementById('editStudentEmail').value = window.currentStudentData.email || "";
         document.getElementById('editStudentAge').value = window.currentStudentData.edad || "";
         document.getElementById('editStudentPayDate').value = window.currentStudentData.fecha_pago || "";
         document.getElementById('editStudentNotes').value = window.currentStudentData.notas_admin || "";
-        document.getElementById('sheetUrlDisplay').href = window.currentStudentData.google_sheet_url || "#";
         
-        const linkInput = document.getElementById('studentLinkCopy');
-        linkInput.value = window.currentStudentData.link_personal || `https://florsoltrainer.github.io/gymapp/?id=${id}`;
-
         document.getElementById('studentNotesDisplay').textContent = window.currentStudentData.notas_alumno || "El alumno no ha dejado notas aún.";
 
+        // Restaurar modo vista si estaba en edición
+        document.getElementById('studentDataView').style.display = 'block';
+        document.getElementById('studentDataEdit').style.display = 'none';
+
         renderEditor();
+        renderRoutineDetails();
+        
         document.getElementById('editorContainer').style.display = 'block';
         document.getElementById('editorContainer').scrollIntoView({ behavior: 'smooth' });
+
+        // Activar la pestaña de Datos por defecto
+        switchSubTab('datos');
 
         if (window.currentStudentData.spreadsheet_id) {
           loadWeeklyLogs(window.currentStudentData.spreadsheet_id);
         }
+      }
+    };
+
+    window.toggleEditData = function(showEdit) {
+      if(showEdit) {
+        document.getElementById('studentDataView').style.display = 'none';
+        document.getElementById('studentDataEdit').style.display = 'block';
+      } else {
+        document.getElementById('studentDataView').style.display = 'block';
+        document.getElementById('studentDataEdit').style.display = 'none';
       }
     };
 
@@ -313,7 +329,7 @@
       alert("✅ Enlace copiado al portapapeles");
     };
 
-    // CREACIÓN DE NUEVO ALUMNO
+    // --- MÓDULO 2: CREACIÓN DE NUEVO ALUMNO ---
     window.createNewStudent = async function() {
       const name = document.getElementById('newStudentName').value.trim();
       const id = document.getElementById('newStudentId').value.trim().toLowerCase().replace(/\s+/g, '-');
@@ -356,10 +372,12 @@
           document.getElementById('newStudentAge').value = '';
           document.getElementById('newStudentNotes').value = '';
           
-          document.getElementById('newStudentForm').style.display = 'none';
-
           await fetchAndRenderStudents();
+          
+          // Redirigir automáticamente a la pestaña alumnos y abrir su ficha
+          switchModule('alumnos');
           selectStudentToEdit(id);
+
         } else {
           status.textContent = "❌ Error al crear la planilla en Drive.";
         }
@@ -368,7 +386,7 @@
       }
     };
 
-    // LOGS SEMANALES
+    // --- LOGS SEMANALES ---
     async function loadWeeklyLogs(spreadsheetId) {
       const container = document.getElementById('weeklyLogsContainer');
       container.innerHTML = "⏳ Consultando registros...";
@@ -465,9 +483,10 @@
 
     window.saveToFirebase = async function() {
       if (!window.currentStudentId) return alert("Selecciona un alumno.");
-      const status = document.getElementById('saveStatus');
-      status.textContent = "⏳ Guardando cambios...";
+      const status = document.getElementById('saveStatus') || document.getElementById('saveDataStatus');
+      if(status) status.textContent = "⏳ Guardando...";
 
+      // Actualizar datos desde el form
       window.currentStudentData.nombre = document.getElementById('editStudentName').value.trim();
       window.currentStudentData.email = document.getElementById('editStudentEmail').value.trim().toLowerCase();
       window.currentStudentData.edad = document.getElementById('editStudentAge').value.trim();
@@ -476,26 +495,108 @@
 
       try {
         await setDoc(doc(db, "alumnos", window.currentStudentId), window.currentStudentData);
-        status.textContent = "✅ Guardado correctamente.";
-        status.style.color = "var(--accent)";
+        if(status) {
+          status.textContent = "✅ Guardado correctamente.";
+          status.style.color = "var(--accent)";
+        }
+        
+        // Actualizar UI vista estática
+        document.getElementById('lblNombre').textContent = window.currentStudentData.nombre || "-";
+        document.getElementById('lblEmail').textContent = window.currentStudentData.email || "-";
+        document.getElementById('lblEdad').textContent = window.currentStudentData.edad || "-";
+        document.getElementById('lblPago').textContent = window.currentStudentData.fecha_pago || "-";
+        document.getElementById('lblNotasAdmin').textContent = window.currentStudentData.notas_admin || "Sin notas.";
+        
+        toggleEditData(false);
+        renderRoutineDetails();
         await fetchAndRenderStudents();
       } catch (e) {
-        status.textContent = "❌ Error al guardar.";
+        if(status) status.textContent = "❌ Error al guardar.";
       }
     };
 
-    window.generatePDFReport = function() {
-      if (!window.currentStudentData) return;
+    // Renderizar Detalle Estático de la Rutina
+    window.renderRoutineDetails = function() {
+      const container = document.getElementById('routineDetailsDisplay');
+      if(!container) return;
+      container.innerHTML = '';
+      
+      const rut = window.currentStudentData.rutina;
+      if (!rut || Object.keys(rut).length === 0) {
+        container.innerHTML = '<p style="color:var(--muted)">No hay rutina configurada aún.</p>';
+        return;
+      }
+      
+      for (const day in rut) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'tree-node';
+        dayDiv.innerHTML = `<h4 style="color:var(--accent); margin-bottom:8px;">📅 ${day}</h4>`;
+        
+        for (const zone in rut[day]) {
+          const zoneDiv = document.createElement('div');
+          zoneDiv.style.marginBottom = '8px';
+          zoneDiv.innerHTML = `<strong>💪 ${zone}</strong>`;
+          
+          const ul = document.createElement('ul');
+          ul.style.paddingLeft = '20px';
+          ul.style.color = 'var(--muted)';
+          ul.style.fontSize = '0.9rem';
+          ul.style.marginTop = '4px';
+          
+          rut[day][zone].forEach(ex => {
+            const w = ex.weights ? ex.weights.join(', ') : (ex.weight || 0);
+            ul.innerHTML += `<li style="margin-bottom:6px;">
+              <span style="color: var(--text);">🏋️ <strong>${ex.name}</strong></span> - ${ex.sets}x${ex.reps} @ [${w} kg]
+              ${ex.timer ? ` | ⏱️ ${ex.timer}` : ''}
+              ${ex.notes ? `<br><span style="color:var(--accent); font-size:0.85rem;">📌 <i>${ex.notes}</i></span>` : ''}
+            </li>`;
+          });
+          
+          zoneDiv.appendChild(ul);
+          dayDiv.appendChild(zoneDiv);
+        }
+        container.appendChild(dayDiv);
+      }
+    };
+
+    // PDF de la RUTINA COMPLETA
+    window.generateRoutinePDF = function() {
+      if (!window.currentStudentData || !window.currentStudentData.rutina) {
+          alert("No hay rutina configurada para generar PDF.");
+          return;
+      }
       const { jsPDF } = window.jspdf;
       const docPDF = new jsPDF();
+      
       docPDF.setFontSize(18);
-      docPDF.text("Flor Sol Trainer - Reporte de Rendimiento", 14, 20);
-      docPDF.setFontSize(11);
-      docPDF.text(`Alumno: ${window.currentStudentData.nombre || ''}`, 14, 30);
-      const logs = window.currentStudentData.logs || [];
-      const tableData = logs.map(l => [l.Fecha, l.Día, l.Zona, l.Ejercicio, l.Serie, l["Peso (kg)"], l.Repeticiones]);
-      docPDF.autoTable({ startY: 40, head: [['Fecha', 'Día', 'Zona', 'Ejercicio', 'Serie', 'Peso (kg)', 'Reps']], body: tableData });
-      docPDF.save(`Reporte_${window.currentStudentData.nombre || 'Alumno'}.pdf`);
+      docPDF.text(`Rutina de Entrenamiento - ${window.currentStudentData.nombre || 'Alumno'}`, 14, 20);
+      
+      const rut = window.currentStudentData.rutina;
+      const tableData = [];
+      
+      for (const day in rut) {
+        for (const zone in rut[day]) {
+          rut[day][zone].forEach(ex => {
+            const w = ex.weights ? ex.weights.join(', ') : (ex.weight || 0);
+            tableData.push([day, zone, ex.name, `${ex.sets}x${ex.reps}`, `${w} kg`, ex.timer || '-', ex.notes || '-']);
+          });
+        }
+      }
+      
+      if(tableData.length === 0) {
+          alert("La rutina está vacía.");
+          return;
+      }
+
+      docPDF.autoTable({
+        startY: 30,
+        head: [['Día', 'Zona', 'Ejercicio', 'Series x Reps', 'Peso', 'Timer', 'Notas']],
+        body: tableData,
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [0, 230, 118], textColor: [0,0,0] }
+      });
+      
+      docPDF.save(`Rutina_${window.currentStudentData.nombre || 'Alumno'}.pdf`);
     };
 
     window.deleteCurrentStudent = async function() {
@@ -508,7 +609,7 @@
       }
     };
 
-    // --- MÓDULO 2: EJERCICIOS Y PLANTILLAS ---
+    // --- MÓDULO 3: EJERCICIOS Y PLANTILLAS ---
     async function loadGlobalExercises() {
       window.globalExercises = [];
       const selectEx = document.getElementById('selectGlobalExercise');
@@ -649,6 +750,7 @@
       if (found && window.currentStudentData) {
         window.currentStudentData.rutina = JSON.parse(JSON.stringify(found.rutina));
         renderEditor();
+        renderRoutineDetails(); // Refrescar vista estática
         alert("✅ Plantilla aplicada.");
       }
     };
@@ -667,12 +769,14 @@
         window.currentStudentData.rutina[name] = {};
         document.getElementById('newDayInput').value = '';
         renderEditor();
+        renderRoutineDetails();
       }
     };
 
     window.deleteDay = function(day) {
       delete window.currentStudentData.rutina[day];
       renderEditor();
+      renderRoutineDetails();
     };
 
     window.addExercise = function() {
@@ -706,17 +810,17 @@
       document.getElementById('newExTimerRest').value = '';
       document.getElementById('selectGlobalExercise').value = '';
       
-      // Actualizamos solo la lista para no resetear el selector
       renderEditor(); 
+      renderRoutineDetails();
     };
 
     window.deleteExercise = function(day, zone, idx) {
       window.currentStudentData.rutina[day][zone].splice(idx, 1);
-      // Elimina la zona completa si se quedó sin ejercicios
       if (window.currentStudentData.rutina[day][zone].length === 0) {
         delete window.currentStudentData.rutina[day][zone];
       }
       renderEditor();
+      renderRoutineDetails();
     };
 
     window.editStudentExercise = function(day, zone, idx) {
@@ -728,24 +832,21 @@
       const newReps = prompt("Nuevas Reps (ej: 12, 10, 8):", ex.reps_seq || "");
       if (newReps !== null) ex.reps_seq = newReps;
       renderEditor();
+      renderRoutineDetails();
     };
 
     function renderDayDropdowns() {
       const dayForEx = document.getElementById('selectDayForEx');
-      
-      // Guardar el día que el usuario tiene actualmente seleccionado
       const currentSelectedDay = dayForEx.value;
-      
       const days = Object.keys(window.currentStudentData.rutina || {});
-      dayForEx.innerHTML = '';
       
+      dayForEx.innerHTML = '';
       days.forEach(d => {
         const opt = document.createElement('option');
         opt.value = d; opt.textContent = d;
         dayForEx.appendChild(opt);
       });
 
-      // Si el día que estaba seleccionado aún existe, volver a seleccionarlo
       if (currentSelectedDay && days.includes(currentSelectedDay)) {
         dayForEx.value = currentSelectedDay;
       }
@@ -799,7 +900,6 @@
       });
     }
 
-    // Esta función se ejecuta al cambiar el selector "selectDayForEx" y también es llamada por renderEditor()
     window.renderExercisesList = function() {
       const day = document.getElementById('selectDayForEx').value;
       const container = document.getElementById('exercisesList');
@@ -854,52 +954,96 @@
       </div>
     </header>
 
+    <!-- Pestañas Principales en el Orden Solicitado -->
     <div class="tabs">
       <div id="tab-alumnos" class="tab-btn active" onclick="switchModule('alumnos')">👥 Mis Alumnos</div>
-      <div id="tab-ejercicios" class="tab-btn" onclick="switchModule('ejercicios')">📚 Banco de ejercicios</div>
+      <div id="tab-nuevo" class="tab-btn" onclick="switchModule('nuevo')">➕ Nuevo Alumno</div>
+      <div id="tab-ejercicios" class="tab-btn" onclick="switchModule('ejercicios')">📚 Banco de Ejercicios</div>
     </div>
 
     <!-- MÓDULO 1: MIS ALUMNOS -->
     <div id="module-alumnos" class="module-section active">
       <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-          <h2 style="margin: 0;">Listado de Alumnos</h2>
-          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="toggleNewStudentForm()">➕ Registrar Nuevo</button>
-        </div>
+        <h2>👥 Listado de Alumnos Registrados</h2>
         <input type="text" id="searchStudentInput" placeholder="🔍 Buscar por nombre, mail o ID..." oninput="filterStudents()">
         <div id="studentsListContainer" style="margin-top: 10px;"></div>
       </div>
 
-      <div id="newStudentForm" class="card" style="display: none; border-left: 4px solid var(--accent);">
-        <h3>➕ Registrar Nuevo Alumno</h3>
-        <div class="grid-2">
-          <div><label>Nombre Completo</label><input type="text" id="newStudentName" placeholder="Ej: Maria Gomez"></div>
-          <div><label>ID Enlace (sin espacios)</label><input type="text" id="newStudentId" placeholder="Ej: maria"></div>
-        </div>
-        <div class="grid-2">
-          <div><label>Email de Google</label><input type="email" id="newStudentEmail" placeholder="maria@gmail.com"></div>
-          <div><label>Edad</label><input type="number" id="newStudentAge" placeholder="28"></div>
-        </div>
-        <label>Notas Adicionales</label>
-        <textarea id="newStudentNotes" placeholder="Objetivos, antecedentes..."></textarea>
-        <div style="display: flex; gap: 10px;">
-          <button class="btn-main" onclick="createNewStudent()">Crear Alumno</button>
-          <button class="btn-sec" onclick="toggleNewStudentForm()">Cancelar</button>
-        </div>
-        <div id="createStatus" class="status-msg"></div>
-      </div>
-
       <div id="editorContainer" style="display: none;">
         <div class="sub-tabs">
-          <button id="subtab-btn-rutina" class="sub-tab-btn active" onclick="switchSubTab('rutina')">⚙️ Diseñar Rutina</button>
-          <button id="subtab-btn-datos" class="sub-tab-btn" onclick="switchSubTab('datos')">👤 Datos y Link</button>
+          <button id="subtab-btn-datos" class="sub-tab-btn active" onclick="switchSubTab('datos')">👤 Datos y Resumen</button>
+          <button id="subtab-btn-rutina" class="sub-tab-btn" onclick="switchSubTab('rutina')">⚙️ Diseñar Rutina</button>
           <button id="subtab-btn-avance" class="sub-tab-btn" onclick="switchSubTab('avance')">📈 Avance</button>
           <button id="subtab-btn-notas" class="sub-tab-btn" onclick="switchSubTab('notas')">💬 Notas</button>
           <button id="subtab-btn-historial" class="sub-tab-btn" onclick="switchSubTab('historial')">📊 Historial (7 Días)</button>
         </div>
 
+        <!-- Pestaña Datos (Activa por defecto y estática) -->
+        <div id="subtab-content-datos" class="sub-tab-content" style="display: block;">
+          
+          <!-- Vista Estática de Datos -->
+          <div class="card" id="studentDataView">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="margin: 0;">👤 Datos del Alumno</h3>
+              <button class="btn-sec" onclick="toggleEditData(true)" style="width: auto; padding: 6px 12px;">✏️ Editar Datos</button>
+            </div>
+            
+            <div class="grid-2">
+              <div><label>Nombre</label><div class="item-chip" id="lblNombre">...</div></div>
+              <div><label>Email</label><div class="item-chip" id="lblEmail">...</div></div>
+              <div><label>Edad</label><div class="item-chip" id="lblEdad">...</div></div>
+              <div><label>Pago última cuota</label><div class="item-chip" id="lblPago">...</div></div>
+            </div>
+            <label style="margin-top:12px;">Notas del Entrenador</label>
+            <div class="item-chip" id="lblNotasAdmin" style="min-height: 50px; font-style: italic;">...</div>
+            
+            <div style="margin-top:16px;">
+              <label>Enlace de Acceso Personal</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="studentLinkCopy" readonly style="margin: 0;">
+                <button class="btn-main" style="width: auto;" onclick="copyStudentLink('studentLinkCopy')">Copiar</button>
+              </div>
+              <div style="margin-top: 10px;">
+                <a id="sheetUrlDisplay" href="#" target="_blank" style="color: var(--accent); font-weight: bold; font-size: 0.85rem;">Abrir Google Sheet de este Alumno ↗</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Formulario de Edición de Datos (Oculto por defecto) -->
+          <div class="card" id="studentDataEdit" style="display: none; border-left: 4px solid var(--accent);">
+            <h3>✏️ Editando Datos</h3>
+            <div class="grid-2">
+              <div><label>Nombre</label><input type="text" id="editStudentName"></div>
+              <div><label>Email de Google</label><input type="email" id="editStudentEmail"></div>
+            </div>
+            <div class="grid-2">
+              <div><label>Edad</label><input type="number" id="editStudentAge"></div>
+              <div><label>Pago última cuota</label><input type="date" id="editStudentPayDate"></div>
+            </div>
+            <label>Notas del Entrenador</label>
+            <textarea id="editStudentNotes"></textarea>
+            
+            <div style="margin-top: 16px; display: flex; gap: 10px;">
+              <button class="btn-main" onclick="saveToFirebase()">💾 Guardar Cambios</button>
+              <button class="btn-sec" onclick="toggleEditData(false)">Cancelar</button>
+            </div>
+            <div id="saveDataStatus" class="status-msg"></div>
+          </div>
+
+          <!-- Resumen de la Rutina y Exportación PDF -->
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap:10px;">
+              <h3 style="margin:0;">📋 Resumen de la Rutina Asignada</h3>
+              <button class="btn-main" onclick="generateRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">📄 Descargar Rutina PDF</button>
+            </div>
+            <div id="routineDetailsDisplay" style="margin-top: 10px; padding: 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border);">
+              <!-- Aquí se inyecta la rutina detallada por JS -->
+            </div>
+          </div>
+        </div>
+
         <!-- Pestaña Rutina -->
-        <div id="subtab-content-rutina" class="sub-tab-content">
+        <div id="subtab-content-rutina" class="sub-tab-content" style="display: none;">
           <div class="card">
             <h3>⚙️ Diseñar y Publicar Rutina</h3>
             <div style="margin-bottom: 16px;">
@@ -965,33 +1109,6 @@
           </div>
         </div>
 
-        <!-- Pestaña Datos -->
-        <div id="subtab-content-datos" class="sub-tab-content" style="display: none;">
-          <div class="card">
-            <h3>👤 Datos y Enlace de Acceso</h3>
-            <label>Enlace de Acceso Personal</label>
-            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-              <input type="text" id="studentLinkCopy" readonly style="margin: 0;">
-              <button class="btn-main" style="width: auto;" onclick="copyStudentLink('studentLinkCopy')">Copiar</button>
-            </div>
-            <div class="grid-2">
-              <div><label>Nombre</label><input type="text" id="editStudentName"></div>
-              <div><label>Email de Google</label><input type="email" id="editStudentEmail"></div>
-            </div>
-            <div class="grid-2">
-              <div><label>Edad</label><input type="number" id="editStudentAge"></div>
-              <div><label>Pago última cuota</label><input type="date" id="editStudentPayDate"></div>
-            </div>
-            <label>Notas del Entrenador</label>
-            <textarea id="editStudentNotes"></textarea>
-            <a id="sheetUrlDisplay" href="#" target="_blank" style="color: var(--accent); font-weight: bold; font-size: 0.85rem;">Abrir Google Sheet ↗</a>
-            <div style="margin-top: 16px; display: flex; gap: 10px;">
-              <button class="btn-main" onclick="saveToFirebase()">💾 Guardar Datos</button>
-              <button class="btn-sec" onclick="generatePDFReport()">📄 Generar Reporte PDF</button>
-            </div>
-          </div>
-        </div>
-
         <!-- Pestaña Avance -->
         <div id="subtab-content-avance" class="sub-tab-content" style="display: none;">
           <div class="card">
@@ -1023,7 +1140,26 @@
       </div>
     </div>
 
-    <!-- MÓDULO 2: BANCO Y PLANTILLAS -->
+    <!-- MÓDULO 2: NUEVO ALUMNO -->
+    <div id="module-nuevo" class="module-section">
+      <div class="card">
+        <h2>➕ Registrar Nuevo Alumno</h2>
+        <div class="grid-2">
+          <div><label>Nombre Completo</label><input type="text" id="newStudentName" placeholder="Ej: Maria Gomez"></div>
+          <div><label>ID Enlace (sin espacios)</label><input type="text" id="newStudentId" placeholder="Ej: maria"></div>
+        </div>
+        <div class="grid-2">
+          <div><label>Email de Google</label><input type="email" id="newStudentEmail" placeholder="maria@gmail.com"></div>
+          <div><label>Edad</label><input type="number" id="newStudentAge" placeholder="28"></div>
+        </div>
+        <label>Notas Adicionales</label>
+        <textarea id="newStudentNotes" placeholder="Objetivos, antecedentes..."></textarea>
+        <button class="btn-main" onclick="createNewStudent()">Crear Alumno</button>
+        <div id="createStatus" class="status-msg"></div>
+      </div>
+    </div>
+
+    <!-- MÓDULO 3: BANCO Y PLANTILLAS -->
     <div id="module-ejercicios" class="module-section">
       <div class="card">
         <h2>📚 Ejercicios (Banco Global)</h2>
