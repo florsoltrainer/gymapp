@@ -641,7 +641,7 @@
       await addDoc(collection(db, "plantillas_rutinas"), { nombre_plantilla: templateName, rutina: window.currentStudentData.rutina });
       alert("✅ Plantilla guardada.");
       await loadGlobalTemplates();
-    };
+    }
 
     window.applySelectedTemplate = function() {
       const tplId = document.getElementById('selectTemplateToApply').value;
@@ -706,7 +706,8 @@
       document.getElementById('newExTimerRest').value = '';
       document.getElementById('selectGlobalExercise').value = '';
       
-      renderExercisesList();
+      // Actualizamos solo la lista para no resetear el selector
+      renderEditor(); 
     };
 
     window.deleteExercise = function(day, zone, idx) {
@@ -731,14 +732,23 @@
 
     function renderDayDropdowns() {
       const dayForEx = document.getElementById('selectDayForEx');
+      
+      // Guardar el día que el usuario tiene actualmente seleccionado
+      const currentSelectedDay = dayForEx.value;
+      
       const days = Object.keys(window.currentStudentData.rutina || {});
       dayForEx.innerHTML = '';
+      
       days.forEach(d => {
         const opt = document.createElement('option');
         opt.value = d; opt.textContent = d;
         dayForEx.appendChild(opt);
       });
-      // Ya no llamamos a renderExercisesList() aquí para evitar ciclos, renderEditor() lo hace.
+
+      // Si el día que estaba seleccionado aún existe, volver a seleccionarlo
+      if (currentSelectedDay && days.includes(currentSelectedDay)) {
+        dayForEx.value = currentSelectedDay;
+      }
     }
 
     function populateZoneDropdowns() {
@@ -789,7 +799,8 @@
       });
     }
 
-    function renderExercisesList() {
+    // Esta función se ejecuta al cambiar el selector "selectDayForEx" y también es llamada por renderEditor()
+    window.renderExercisesList = function() {
       const day = document.getElementById('selectDayForEx').value;
       const container = document.getElementById('exercisesList');
       container.innerHTML = '';
@@ -908,7 +919,7 @@
               <div id="daysList"></div>
             </div>
 
-            <!-- AQUÍ EMPIEZA EL PASO 2 UNIFICADO -->
+            <!-- PASO 2 UNIFICADO -->
             <div class="tree-node">
               <h4>2. Añadir Ejercicios</h4>
               <div class="grid-2">
