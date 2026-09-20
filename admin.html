@@ -784,18 +784,37 @@ function populateZoneDropdowns() {
     }
 
     window.updateZoneDropdown = function() {
-      const day = document.getElementById('selectDayForEx').value;
-      const zoneSelect = document.getElementById('selectZoneForEx');
-      zoneSelect.innerHTML = '';
-      if (day && window.currentStudentData.rutina[day]) {
-        Object.keys(window.currentStudentData.rutina[day]).forEach(z => {
-          const opt = document.createElement('option');
-          opt.value = z; opt.textContent = z;
-          zoneSelect.appendChild(opt);
-        });
-      }
-    };
-
+  const day = document.getElementById('selectDayForEx').value;
+  const zoneSelect = document.getElementById('selectZoneForEx');
+  zoneSelect.innerHTML = '';
+  if (day && window.currentStudentData.rutina[day]) {
+    Object.keys(window.currentStudentData.rutina[day]).forEach(z => {
+      const opt = document.createElement('option');
+      opt.value = z; opt.textContent = z;
+      zoneSelect.appendChild(opt);
+    });
+  }
+  updateGlobalExerciseDropdown();
+  renderExercisesList();
+};
+window.updateGlobalExerciseDropdown = function() {
+  const selectedZone = document.getElementById('selectZoneForEx').value;
+  const selectGlobal = document.getElementById('selectGlobalExercise');
+  
+  selectGlobal.innerHTML = '<option value="">-- Selecciona del banco --</option>';
+  
+  if (selectedZone && window.globalExercises) {
+    const filtrados = window.globalExercises.filter(ex => ex.zona === selectedZone);
+    
+    // Llenamos el desplegable con los resultados
+    filtrados.forEach(ex => {
+      const opt = document.createElement('option');
+      opt.value = ex.nombre;
+      opt.textContent = `${ex.nombre}`;
+      selectGlobal.appendChild(opt);
+    });
+  }
+};
     function renderDaysList() {
       const container = document.getElementById('daysList');
       container.innerHTML = '';
@@ -957,7 +976,7 @@ function populateZoneDropdowns() {
               <h4>3. Añadir Ejercicios</h4>
               <div class="grid-2">
                 <select id="selectDayForEx" onchange="updateZoneDropdown()"></select>
-                <select id="selectZoneForEx" onchange="renderExercisesList();"></select>
+                <select id="selectZoneForEx" onchange="updateGlobalExerciseDropdown(); renderExercisesList();"></select>
               </div>
               <label>Elegir de la Categoría Seleccionada:</label>
               <select id="selectGlobalExercise"></select>
