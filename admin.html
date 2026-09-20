@@ -5,14 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Flor Sol Trainer - Panel Administrador</title>
   
-  <!-- Chart.js para Gráficos de Avance -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- jsPDF & autoTable para Exportación de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    /* VARIABLES CSS - MODO OSCURO (DEFAULT) */
     :root {
       --bg: #121214;
       --card: #1e1e24;
@@ -28,7 +25,6 @@
       --input-bg: #252530;
     }
 
-    /* MODO CLARO AUTOMÁTICO */
     @media (prefers-color-scheme: light) {
       :root {
         --bg: #f4f5f8;
@@ -46,7 +42,6 @@
       }
     }
 
-    /* MODO CLARO FORZADO POR EL USUARIO */
     body.light-mode {
       --bg: #f4f5f8;
       --card: #ffffff;
@@ -62,7 +57,6 @@
       --input-bg: #f0f2f5;
     }
 
-    /* MODO OSCURO FORZADO POR EL USUARIO */
     body.dark-mode {
       --bg: #121214;
       --card: #1e1e24;
@@ -82,12 +76,10 @@
     body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 900px; margin: 0 auto; min-height: 100vh; transition: all 0.3s ease; }
 
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
-    .logo-header { max-width: 160px; height: auto; }
     .header-controls { display: flex; align-items: center; gap: 10px; }
 
-    /* PESTAÑAS RESPONSIVE */
-    .tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 20px; }
-    .tab-btn { padding: 12px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.88rem; }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+    .tab-btn { padding: 12px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.95rem; }
     .tab-btn.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 
     .module-section { display: none; }
@@ -120,18 +112,17 @@
     .student-item:last-child { border-bottom: none; }
 
     .log-card { background: var(--input-bg); border-left: 4px solid var(--accent); padding: 10px 14px; margin-top: 8px; border-radius: 6px; font-size: 0.88rem; }
+    
     .sub-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; overflow-x: auto; }
     .sub-tab-btn { padding: 6px 12px; background: transparent; border: none; color: var(--muted); font-weight: 600; cursor: pointer; width: auto; margin-bottom: 0; white-space: nowrap; }
     .sub-tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
   </style>
 
-  <!-- FIREBASE SCRIPTS -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, getDoc, setDoc, getDocs, collection, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // ⚠️ REEMPLAZA CON TUS CREDENCIALES
     const firebaseConfig = {
       apiKey: "AIzaSyDC3Wvw3E8IhSnkSKg5Qk98NivuqK-FNzM",
       authDomain: "florsoltrainer-f22c2.firebaseapp.com",
@@ -158,7 +149,6 @@
     window.globalTemplates = [];
     let progressChartInstance = null;
 
-    // SEGURIDAD Y CONTROL DE SESIÓN
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
@@ -181,7 +171,6 @@
     window.loginGoogle = () => signInWithPopup(auth, provider);
     window.logout = () => signOut(auth);
 
-    // TOGGLE MANUAL MODO CLARO / MODO OSCURO
     window.toggleTheme = function() {
       const body = document.body;
       if (body.classList.contains('light-mode')) {
@@ -196,27 +185,39 @@
       }
     };
 
-    // NAVEGACIÓN MÓDULOS
     window.switchModule = function(moduleName) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.module-section').forEach(sec => sec.classList.remove('active'));
-      
       document.getElementById(`tab-${moduleName}`).classList.add('active');
       document.getElementById(`module-${moduleName}`).classList.add('active');
     };
 
-    // NAVEGACIÓN SUB-PESTAÑAS EN ALUMNO
     window.switchSubTab = function(subName) {
       document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.sub-tab-content').forEach(c => c.style.display = 'none');
-      
       document.getElementById(`subtab-btn-${subName}`).classList.add('active');
       document.getElementById(`subtab-content-${subName}`).style.display = 'block';
-
       if (subName === 'avance') renderProgressChart();
     };
 
+    window.switchSubTabEjercicios = function(subName) {
+      document.querySelectorAll('.subtab-ej-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.subtab-ej-content').forEach(c => c.style.display = 'none');
+      document.getElementById(`subtab-ej-btn-${subName}`).classList.add('active');
+      document.getElementById(`subtab-ej-content-${subName}`).style.display = 'block';
+    };
+
     // --- MÓDULO 1: MIS ALUMNOS ---
+    window.toggleNewStudentForm = function() {
+      const form = document.getElementById('newStudentForm');
+      if (form.style.display === 'none') {
+        form.style.display = 'block';
+        document.getElementById('editorContainer').style.display = 'none';
+      } else {
+        form.style.display = 'none';
+      }
+    };
+
     async function fetchAndRenderStudents() {
       const container = document.getElementById('studentsListContainer');
       container.innerHTML = "⏳ Cargando alumnos...";
@@ -258,15 +259,18 @@
         div.innerHTML = `
           <div>
             <strong>${student.nombre || student.id}</strong>
-            <div style="font-size: 0.85rem; color: var(--muted);">${student.email || 'Sin mail'} | Edad: ${student.edad || 'N/I'}</div>
+            <div style="font-size: 0.85rem; color: var(--muted);">${student.email || 'Sin mail'}</div>
           </div>
-          <button class="btn-main" style="width: auto; padding: 6px 14px; font-size: 0.85rem;" onclick="selectStudentToEdit('${student.id}')">✏️ Abrir Ficha</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-main" style="width: auto; padding: 6px 14px; font-size: 0.85rem;" onclick="selectStudentToEdit('${student.id}')">✏️ Abrir Ficha</button>
+          </div>
         `;
         container.appendChild(div);
       });
     }
 
     window.selectStudentToEdit = async function(id) {
+      document.getElementById('newStudentForm').style.display = 'none';
       window.currentStudentId = id;
       const docRef = doc(db, "alumnos", id);
       const docSnap = await getDoc(docRef);
@@ -275,15 +279,16 @@
         window.currentStudentData = { id, ...docSnap.data() };
         if (!window.currentStudentData.rutina) window.currentStudentData.rutina = {};
 
-        // Cargar campos personales
         document.getElementById('editStudentName').value = window.currentStudentData.nombre || "";
         document.getElementById('editStudentEmail').value = window.currentStudentData.email || "";
         document.getElementById('editStudentAge').value = window.currentStudentData.edad || "";
         document.getElementById('editStudentPayDate').value = window.currentStudentData.fecha_pago || "";
         document.getElementById('editStudentNotes').value = window.currentStudentData.notas_admin || "";
         document.getElementById('sheetUrlDisplay').href = window.currentStudentData.google_sheet_url || "#";
+        
+        const linkInput = document.getElementById('studentLinkCopy');
+        linkInput.value = window.currentStudentData.link_personal || `https://tu-usuario.github.io/tu-repo/?id=${id}`;
 
-        // Renderizar notas dejadas por el alumno
         document.getElementById('studentNotesDisplay').textContent = window.currentStudentData.notas_alumno || "El alumno no ha dejado notas aún.";
 
         renderEditor();
@@ -296,7 +301,70 @@
       }
     };
 
-    // RESUMEN 7 DÍAS
+    window.copyStudentLink = function(inputId) {
+      const copyText = document.getElementById(inputId);
+      copyText.select();
+      copyText.setSelectionRange(0, 99999);
+      document.execCommand("copy");
+      alert("✅ Enlace copiado al portapapeles");
+    };
+
+    // CREACIÓN DE NUEVO ALUMNO
+    window.createNewStudent = async function() {
+      const name = document.getElementById('newStudentName').value.trim();
+      const id = document.getElementById('newStudentId').value.trim().toLowerCase().replace(/\s+/g, '-');
+      const email = document.getElementById('newStudentEmail').value.trim().toLowerCase();
+      const age = document.getElementById('newStudentAge').value.trim();
+      const notes = document.getElementById('newStudentNotes').value.trim();
+      const status = document.getElementById('createStatus');
+
+      if (!name || !id || !email) return alert("Ingresa Nombre, ID y Email.");
+
+      status.textContent = "⏳ Generando planilla en Drive...";
+
+      try {
+        const response = await fetch(MASTER_SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "CREATE_SHEET", nombre: name, email: email })
+        });
+        const resData = await response.json();
+
+        if (resData.status === "success") {
+          const directLink = `https://tu-usuario.github.io/tu-repo/?id=${id}`;
+          const newStudentData = {
+            nombre: name,
+            email: email,
+            edad: age,
+            notas_admin: notes,
+            google_sheet_url: resData.sheetUrl,
+            spreadsheet_id: resData.spreadsheetId,
+            link_personal: directLink,
+            rutina: {}
+          };
+
+          await setDoc(doc(db, "alumnos", id), newStudentData);
+          status.textContent = "✅ ¡Alumno creado y planilla vinculada!";
+          status.style.color = "var(--accent)";
+
+          document.getElementById('newStudentName').value = '';
+          document.getElementById('newStudentId').value = '';
+          document.getElementById('newStudentEmail').value = '';
+          document.getElementById('newStudentAge').value = '';
+          document.getElementById('newStudentNotes').value = '';
+          
+          document.getElementById('newStudentForm').style.display = 'none';
+
+          await fetchAndRenderStudents();
+          selectStudentToEdit(id);
+        } else {
+          status.textContent = "❌ Error al crear la planilla en Drive.";
+        }
+      } catch (e) {
+        status.textContent = "❌ Error de conexión.";
+      }
+    };
+
+    // LOGS SEMANALES
     async function loadWeeklyLogs(spreadsheetId) {
       const container = document.getElementById('weeklyLogsContainer');
       container.innerHTML = "⏳ Consultando registros...";
@@ -308,16 +376,40 @@
         if (data.status === "success" && data.logs.length > 0) {
           window.currentStudentData.logs = data.logs;
           container.innerHTML = "";
+          
+          // Agrupar logs por día y zona
+          const logsByDay = {};
           data.logs.forEach(log => {
-            const div = document.createElement('div');
-            div.className = 'log-card';
-            div.innerHTML = `
-              <strong>📅 ${log.Fecha} - ${log.Día || ''} (${log.Zona || ''})</strong><br>
-              🏋️ ${log.Ejercicio}: Serie ${log.Serie} - <strong>${log["Peso (kg)"]} kg</strong> x ${log.Repeticiones} reps
-              ${log.Comentarios ? `<br>💬 <em>${log.Comentarios}</em>` : ''}
-            `;
-            container.appendChild(div);
+             const key = `${log.Fecha} - ${log.Día || 'Día'}`;
+             if (!logsByDay[key]) logsByDay[key] = {};
+             const zona = log.Zona || 'General';
+             if (!logsByDay[key][zona]) logsByDay[key][zona] = [];
+             logsByDay[key][zona].push(log);
           });
+
+          Object.keys(logsByDay).forEach(dayKey => {
+            const dayCard = document.createElement('div');
+            dayCard.className = 'tree-node';
+            dayCard.innerHTML = `<h4 style="color:var(--accent); margin-bottom:8px;">📅 ${dayKey}</h4>`;
+            
+            Object.keys(logsByDay[dayKey]).forEach(zoneKey => {
+               const zoneDiv = document.createElement('div');
+               zoneDiv.style.marginBottom = "10px";
+               zoneDiv.innerHTML = `<strong style="color:var(--muted);">💪 Zona: ${zoneKey}</strong>`;
+               
+               logsByDay[dayKey][zoneKey].forEach(log => {
+                 zoneDiv.innerHTML += `
+                   <div class="log-card">
+                     🏋️ ${log.Ejercicio}: Serie ${log.Serie} - <strong>${log["Peso (kg)"]} kg</strong> x ${log.Repeticiones} reps
+                     ${log.Comentarios ? `<br>💬 <em>${log.Comentarios}</em>` : ''}
+                   </div>
+                 `;
+               });
+               dayCard.appendChild(zoneDiv);
+            });
+            container.appendChild(dayCard);
+          });
+
           populateExerciseChartSelector(data.logs);
         } else {
           window.currentStudentData.logs = [];
@@ -328,7 +420,6 @@
       }
     }
 
-    // GRAFICAR AVANCE DEL ALUMNO
     function populateExerciseChartSelector(logs) {
       const select = document.getElementById('chartExerciseSelect');
       select.innerHTML = '';
@@ -369,10 +460,8 @@
       });
     };
 
-    // GUARDAR FICHA Y RUTINA EN FIREBASE
     window.saveToFirebase = async function() {
       if (!window.currentStudentId) return alert("Selecciona un alumno.");
-
       const status = document.getElementById('saveStatus');
       status.textContent = "⏳ Guardando cambios...";
 
@@ -389,37 +478,23 @@
         await fetchAndRenderStudents();
       } catch (e) {
         status.textContent = "❌ Error al guardar.";
-        status.style.color = "var(--danger)";
       }
     };
 
-    // REPORTES PDF
     window.generatePDFReport = function() {
       if (!window.currentStudentData) return;
       const { jsPDF } = window.jspdf;
       const docPDF = new jsPDF();
-
       docPDF.setFontSize(18);
       docPDF.text("Flor Sol Trainer - Reporte de Rendimiento", 14, 20);
-      
       docPDF.setFontSize(11);
       docPDF.text(`Alumno: ${window.currentStudentData.nombre || ''}`, 14, 30);
-      docPDF.text(`Email: ${window.currentStudentData.email || ''}`, 14, 36);
-      docPDF.text(`Fecha de Reporte: ${new Date().toLocaleDateString('es-AR')}`, 14, 42);
-
       const logs = window.currentStudentData.logs || [];
       const tableData = logs.map(l => [l.Fecha, l.Día, l.Zona, l.Ejercicio, l.Serie, l["Peso (kg)"], l.Repeticiones]);
-
-      docPDF.autoTable({
-        startY: 50,
-        head: [['Fecha', 'Día', 'Zona', 'Ejercicio', 'Serie', 'Peso (kg)', 'Reps']],
-        body: tableData
-      });
-
+      docPDF.autoTable({ startY: 40, head: [['Fecha', 'Día', 'Zona', 'Ejercicio', 'Serie', 'Peso (kg)', 'Reps']], body: tableData });
       docPDF.save(`Reporte_${window.currentStudentData.nombre || 'Alumno'}.pdf`);
     };
 
-    // ELIMINAR ALUMNO
     window.deleteCurrentStudent = async function() {
       if (!window.currentStudentId) return;
       if (confirm(`¿Eliminar a ${window.currentStudentData.nombre}?`) && confirm("⚠️ ATENCIÓN: Esta acción no se puede deshacer.")) {
@@ -430,59 +505,7 @@
       }
     };
 
-    // --- MÓDULO REGISTRO DE ALUMNOS ---
-    window.createNewStudent = async function() {
-      const name = document.getElementById('newStudentName').value.trim();
-      const id = document.getElementById('newStudentId').value.trim().toLowerCase().replace(/\s+/g, '-');
-      const email = document.getElementById('newStudentEmail').value.trim().toLowerCase();
-      const age = document.getElementById('newStudentAge').value.trim();
-      const notes = document.getElementById('newStudentNotes').value.trim();
-      const status = document.getElementById('createStatus');
-
-      if (!name || !id || !email) return alert("Ingresa Nombre, ID y Email.");
-
-      status.textContent = "⏳ Generando planilla en Drive...";
-
-      try {
-        const response = await fetch(MASTER_SCRIPT_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: "CREATE_SHEET", nombre: name, email: email })
-        });
-        const resData = await response.json();
-
-        if (resData.status === "success") {
-          const newStudentData = {
-            nombre: name,
-            email: email,
-            edad: age,
-            notas_admin: notes,
-            google_sheet_url: resData.sheetUrl,
-            spreadsheet_id: resData.spreadsheetId,
-            rutina: {}
-          };
-
-          await setDoc(doc(db, "alumnos", id), newStudentData);
-          status.textContent = "✅ ¡Alumno creado y planilla vinculada!";
-          status.style.color = "var(--accent)";
-
-          document.getElementById('newStudentName').value = '';
-          document.getElementById('newStudentId').value = '';
-          document.getElementById('newStudentEmail').value = '';
-          document.getElementById('newStudentAge').value = '';
-          document.getElementById('newStudentNotes').value = '';
-
-          await fetchAndRenderStudents();
-          switchModule('alumnos');
-          selectStudentToEdit(id);
-        } else {
-          status.textContent = "❌ Error al crear la planilla en Drive.";
-        }
-      } catch (e) {
-        status.textContent = "❌ Error de conexión.";
-      }
-    };
-
-    // --- MÓDULO 2: RUTINAS Y EJERCICIOS ---
+    // --- MÓDULO 2: EJERCICIOS Y PLANTILLAS ---
     async function loadGlobalExercises() {
       window.globalExercises = [];
       const selectEx = document.getElementById('selectGlobalExercise');
@@ -493,9 +516,7 @@
       const querySnapshot = await getDocs(collection(db, "ejercicios_base"));
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        const images = data.imageUrls || [];
         window.globalExercises.push({ id: docSnap.id, ...data });
-
         const opt = document.createElement('option');
         opt.value = data.nombre; opt.textContent = `${data.nombre} (${data.zona || 'General'})`;
         selectEx.appendChild(opt);
@@ -505,9 +526,8 @@
         chip.innerHTML = `
           <div>
             <strong>🏋️ ${data.nombre}</strong> <small style="color:var(--muted)">[${data.zona || 'Sin Zona'}]</small>
-            ${images.length > 0 ? `<br><small>🖼️ ${images.length} fotos</small>` : ''}
           </div>
-          <div>
+          <div style="display:flex; gap:8px;">
             <button class="btn-sec" style="width:auto; padding:4px 8px;" onclick="openEditExerciseModal('${docSnap.id}')">Editar</button>
             <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteGlobalExercise('${docSnap.id}')">Eliminar</button>
           </div>
@@ -529,7 +549,7 @@
           <div>
             <strong>🏋️ ${data.nombre}</strong> <small style="color:var(--muted)">[${data.zona || 'Sin Zona'}]</small>
           </div>
-          <div>
+          <div style="display:flex; gap:8px;">
             <button class="btn-sec" style="width:auto; padding:4px 8px;" onclick="openEditExerciseModal('${data.id}')">Editar</button>
             <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteGlobalExercise('${data.id}')">Eliminar</button>
           </div>
@@ -542,7 +562,6 @@
       const name = document.getElementById('newGlobalExInput').value.trim();
       const zone = document.getElementById('newGlobalExZone').value.trim();
       const files = Array.from(document.getElementById('newGlobalExFiles').files).slice(0, 3);
-
       if (!name) return alert("Ingresa el nombre.");
 
       let uploadedUrls = [];
@@ -583,7 +602,6 @@
       }
     };
 
-    // PLANTILLAS DE RUTINAS
     async function loadGlobalTemplates() {
       window.globalTemplates = [];
       const selectTpl = document.getElementById('selectTemplateToApply');
@@ -603,12 +621,8 @@
       if (!window.currentStudentData || !window.currentStudentData.rutina) return alert("No hay rutina para guardar.");
       const templateName = prompt("Nombre para la plantilla estándar:");
       if (!templateName) return;
-
-      await addDoc(collection(db, "plantillas_rutinas"), {
-        nombre_plantilla: templateName,
-        rutina: window.currentStudentData.rutina
-      });
-      alert("✅ Plantilla guardada en Firebase.");
+      await addDoc(collection(db, "plantillas_rutinas"), { nombre_plantilla: templateName, rutina: window.currentStudentData.rutina });
+      alert("✅ Plantilla guardada.");
       await loadGlobalTemplates();
     };
 
@@ -618,7 +632,7 @@
       if (found && window.currentStudentData) {
         window.currentStudentData.rutina = JSON.parse(JSON.stringify(found.rutina));
         renderEditor();
-        alert("✅ Plantilla aplicada. Puedes personalizarla ahora.");
+        alert("✅ Plantilla aplicada.");
       }
     };
 
@@ -662,11 +676,8 @@
     window.addExercise = function() {
       const day = document.getElementById('selectDayForEx').value;
       const zone = document.getElementById('selectZoneForEx').value;
-      const selectedExName = document.getElementById('selectGlobalExercise').value;
-      const manualExName = document.getElementById('manualExName').value.trim();
+      const exName = document.getElementById('selectGlobalExercise').value || document.getElementById('manualExName').value.trim();
       const notes = document.getElementById('newExNotes').value.trim();
-
-      const exName = selectedExName || manualExName;
       const sets = Number(document.getElementById('newExSets').value) || 3;
       const weightsInput = document.getElementById('newExWeights').value.trim();
       const repsInput = document.getElementById('newExRepsSequence').value.trim();
@@ -675,12 +686,7 @@
       if (!day || !zone || !exName) return alert("Selecciona Día, Zona y Ejercicio.");
 
       window.currentStudentData.rutina[day][zone].push({ 
-        name: exName, 
-        sets: sets, 
-        weights_seq: weightsInput,
-        reps_seq: repsInput,
-        timer: timerVal,
-        notes: notes
+        name: exName, sets: sets, weights_seq: weightsInput, reps_seq: repsInput, timer: timerVal, notes: notes
       });
 
       document.getElementById('manualExName').value = '';
@@ -696,11 +702,21 @@
       renderEditor();
     };
 
+    window.editStudentExercise = function(day, zone, idx) {
+      const ex = window.currentStudentData.rutina[day][zone][idx];
+      const newSets = prompt("Nuevas Series:", ex.sets);
+      if (newSets !== null) ex.sets = Number(newSets);
+      const newWeights = prompt("Nuevos Pesos (ej: 50, 55, 60):", ex.weights_seq || "");
+      if (newWeights !== null) ex.weights_seq = newWeights;
+      const newReps = prompt("Nuevas Reps (ej: 12, 10, 8):", ex.reps_seq || "");
+      if (newReps !== null) ex.reps_seq = newReps;
+      renderEditor();
+    };
+
     function renderDayDropdowns() {
       const dayForZone = document.getElementById('selectDayForZone');
       const dayForEx = document.getElementById('selectDayForEx');
       const days = Object.keys(window.currentStudentData.rutina || {});
-
       [dayForZone, dayForEx].forEach(select => {
         select.innerHTML = '';
         days.forEach(d => {
@@ -716,7 +732,6 @@
       const day = document.getElementById('selectDayForEx').value;
       const zoneSelect = document.getElementById('selectZoneForEx');
       zoneSelect.innerHTML = '';
-
       if (day && window.currentStudentData.rutina[day]) {
         Object.keys(window.currentStudentData.rutina[day]).forEach(z => {
           const opt = document.createElement('option');
@@ -743,7 +758,6 @@
       const container = document.getElementById('zonesList');
       container.innerHTML = '';
       if (!day || !window.currentStudentData.rutina[day]) return;
-
       Object.keys(window.currentStudentData.rutina[day]).forEach(zone => {
         const div = document.createElement('div');
         div.className = 'item-chip';
@@ -757,7 +771,6 @@
       const zone = document.getElementById('selectZoneForEx').value;
       const container = document.getElementById('exercisesList');
       container.innerHTML = '';
-
       if (!day || !zone || !window.currentStudentData.rutina[day] || !window.currentStudentData.rutina[day][zone]) return;
 
       window.currentStudentData.rutina[day][zone].forEach((ex, idx) => {
@@ -769,7 +782,10 @@
             <small style="color:var(--muted)">Pesos: [${ex.weights_seq || 'N/A'}] | Reps: [${ex.reps_seq || 'N/A'}] ${ex.timer ? `| Timer: ${ex.timer}` : ''}</small>
             ${ex.notes ? `<br>📌 <em>${ex.notes}</em>` : ''}
           </div>
-          <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteExercise('${day}', '${zone}', ${idx})">Eliminar</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-sec" style="width:auto; padding:4px 8px;" onclick="editStudentExercise('${day}', '${zone}', ${idx})">Editar</button>
+            <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteExercise('${day}', '${zone}', ${idx})">Eliminar</button>
+          </div>
         `;
         container.appendChild(div);
       });
@@ -778,7 +794,6 @@
 </head>
 <body>
 
-  <!-- LOGIN -->
   <div id="loginBox" class="card" style="text-align: center; padding: 40px 20px; max-width: 400px; margin: 40px auto;">
     <h2>🔐 Panel Administrador</h2>
     <p style="color: var(--muted); margin-bottom: 20px;">Inicia sesión con tu cuenta de Google autorizada.</p>
@@ -786,50 +801,69 @@
     <div id="authError" style="color: var(--danger); margin-top: 16px;"></div>
   </div>
 
-  <!-- APLICACIÓN PRINCIPAL -->
   <div id="adminApp" style="display: none;">
     <header>
       <h2>Flor Sol Trainer 🏋️‍♀️</h2>
       <div class="header-controls">
-        <button class="theme-toggle" onclick="toggleTheme()">☀️/🌙 Modo</button>
+        <button class="theme-toggle" onclick="toggleTheme()">☀️/🌙</button>
         <span style="font-size:0.85rem; color:var(--muted);" id="adminEmailDisplay"></span>
         <button class="btn-danger" onclick="logout()" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">Salir</button>
       </div>
     </header>
 
-    <!-- NAVEGACIÓN MODULAR PESTAÑAS -->
+    <!-- NAVEGACIÓN PRINCIPAL: SOLO 2 PESTAÑAS -->
     <div class="tabs">
       <div id="tab-alumnos" class="tab-btn active" onclick="switchModule('alumnos')">👥 Mis Alumnos</div>
-      <div id="tab-registro" class="tab-btn" onclick="switchModule('registro')">➕ Nuevo Alumno</div>
-      <div id="tab-ejercicios" class="tab-btn" onclick="switchModule('ejercicios')">📚 Ejercicios</div>
-      <div id="tab-plantillas" class="tab-btn" onclick="switchModule('plantillas')">📋 Plantillas</div>
+      <div id="tab-ejercicios" class="tab-btn" onclick="switchModule('ejercicios')">📚 Banco y Plantillas</div>
     </div>
 
     <!-- MÓDULO 1: MIS ALUMNOS -->
     <div id="module-alumnos" class="module-section active">
+      
+      <!-- Listado General con Botón de Nuevo Alumno Integrado -->
       <div class="card">
-        <h2>Listado de Alumnos</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+          <h2 style="margin: 0;">Listado de Alumnos</h2>
+          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="toggleNewStudentForm()">➕ Registrar Nuevo</button>
+        </div>
         <input type="text" id="searchStudentInput" placeholder="🔍 Buscar por nombre, mail o ID..." oninput="filterStudents()">
         <div id="studentsListContainer" style="margin-top: 10px;"></div>
       </div>
 
-      <!-- FICHA Y CONFIGURACIÓN DEL ALUMNO SELECCIONADO -->
+      <!-- Formulario para Registrar Nuevo Alumno (Oculto por defecto) -->
+      <div id="newStudentForm" class="card" style="display: none; border-left: 4px solid var(--accent);">
+        <h3>➕ Registrar Nuevo Alumno</h3>
+        <div class="grid-2">
+          <div><label>Nombre Completo</label><input type="text" id="newStudentName" placeholder="Ej: Maria Gomez"></div>
+          <div><label>ID Enlace (sin espacios)</label><input type="text" id="newStudentId" placeholder="Ej: maria"></div>
+        </div>
+        <div class="grid-2">
+          <div><label>Email de Google</label><input type="email" id="newStudentEmail" placeholder="maria@gmail.com"></div>
+          <div><label>Edad</label><input type="number" id="newStudentAge" placeholder="28"></div>
+        </div>
+        <label>Notas Adicionales</label>
+        <textarea id="newStudentNotes" placeholder="Objetivos, antecedentes..."></textarea>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn-main" onclick="createNewStudent()">Crear Alumno</button>
+          <button class="btn-sec" onclick="toggleNewStudentForm()">Cancelar</button>
+        </div>
+        <div id="createStatus" class="status-msg"></div>
+      </div>
+
+      <!-- Ficha del Alumno Seleccionado -->
       <div id="editorContainer" style="display: none;">
-        
-        <!-- NAVEGACIÓN DENTRO DE FICHA ALUMNO -->
         <div class="sub-tabs">
           <button id="subtab-btn-rutina" class="sub-tab-btn active" onclick="switchSubTab('rutina')">⚙️ Diseñar Rutina</button>
-          <button id="subtab-btn-datos" class="sub-tab-btn" onclick="switchSubTab('datos')">👤 Datos Personales</button>
+          <button id="subtab-btn-datos" class="sub-tab-btn" onclick="switchSubTab('datos')">👤 Datos y Link</button>
           <button id="subtab-btn-avance" class="sub-tab-btn" onclick="switchSubTab('avance')">📈 Avance</button>
-          <button id="subtab-btn-notas" class="sub-tab-btn" onclick="switchSubTab('notas')">💬 Notas Alumno</button>
+          <button id="subtab-btn-notas" class="sub-tab-btn" onclick="switchSubTab('notas')">💬 Notas</button>
           <button id="subtab-btn-historial" class="sub-tab-btn" onclick="switchSubTab('historial')">📊 Historial (7 Días)</button>
         </div>
 
-        <!-- SUB-TAB 1: DISEÑAR RUTINA -->
+        <!-- Rutina -->
         <div id="subtab-content-rutina" class="sub-tab-content">
           <div class="card">
             <h3>⚙️ Diseñar y Publicar Rutina</h3>
-
             <div style="margin-bottom: 16px;">
               <label>Aplicar Plantilla Estándar:</label>
               <div style="display: flex; gap: 8px;">
@@ -837,16 +871,14 @@
                 <button class="btn-sec" onclick="applySelectedTemplate()" style="width: auto;">Aplicar</button>
               </div>
             </div>
-
             <div class="tree-node">
               <h4>1. Día de Entrenamiento</h4>
               <div style="display: flex; gap: 8px;">
-                <input type="text" id="newDayInput" placeholder="Ej: Lunes - Día A" style="margin: 0;">
+                <input type="text" id="newDayInput" placeholder="Ej: Lunes" style="margin: 0;">
                 <button class="btn-main" onclick="addDay()" style="width: auto;">+ Día</button>
               </div>
               <div id="daysList"></div>
             </div>
-
             <div class="tree-node">
               <h4>2. Zona Muscular</h4>
               <select id="selectDayForZone" onchange="renderZonesList()"></select>
@@ -856,87 +888,60 @@
               </div>
               <div id="zonesList"></div>
             </div>
-
             <div class="tree-node">
               <h4>3. Añadir Ejercicios</h4>
               <div class="grid-2">
                 <select id="selectDayForEx" onchange="updateZoneDropdown()"></select>
                 <select id="selectZoneForEx" onchange="renderExercisesList()"></select>
               </div>
-
               <label>Elegir del Banco Precargado:</label>
               <select id="selectGlobalExercise"></select>
-
               <label>O escribir uno nuevo:</label>
               <input type="text" id="manualExName" placeholder="Ej: Press Francés">
-
               <div class="grid-3">
-                <div>
-                  <label>Series Target</label>
-                  <input type="number" id="newExSets" value="3" min="1">
-                </div>
-                <div>
-                  <label>Secuencia Pesos (kg)</label>
-                  <input type="text" id="newExWeights" placeholder="Ej: 50, 55, 60">
-                </div>
-                <div>
-                  <label>Secuencia Reps</label>
-                  <input type="text" id="newExRepsSequence" placeholder="Ej: 12, 10, 8">
-                </div>
+                <div><label>Series</label><input type="number" id="newExSets" value="3" min="1"></div>
+                <div><label>Pesos (ej: 50, 55)</label><input type="text" id="newExWeights"></div>
+                <div><label>Reps (ej: 12, 10)</label><input type="text" id="newExRepsSequence"></div>
               </div>
-
-              <label>Timer de Intervalos / Cardio (opcional):</label>
+              <label>Timer de Intervalos (opcional):</label>
               <select id="newExTimer">
                 <option value="">-- Sin Timer --</option>
                 <option value="30s/30s">30s Trabajo / 30s Descanso</option>
                 <option value="40s/20s">40s Trabajo / 20s Descanso</option>
-                <option value="45s/15s">45s Trabajo / 15s Descanso</option>
               </select>
-
               <label>Notas explicativas:</label>
-              <input type="text" id="newExNotes" placeholder="Ej: Controlar la bajada / Agarre neutro">
-
+              <input type="text" id="newExNotes" placeholder="Ej: Controlar la bajada">
               <button class="btn-sec" onclick="addExercise()">+ Añadir Ejercicio</button>
               <div id="exercisesList"></div>
             </div>
-
             <div class="grid-2" style="margin-top: 16px;">
-              <button class="btn-main" onclick="saveToFirebase()" style="padding: 12px;">💾 Guardar Cambios</button>
+              <button class="btn-main" onclick="saveToFirebase()" style="padding: 12px;">💾 Guardar Rutina</button>
               <button class="btn-sec" onclick="saveCurrentAsTemplate()" style="padding: 12px;">⭐ Guardar como Plantilla</button>
             </div>
             <div id="saveStatus" class="status-msg"></div>
           </div>
         </div>
 
-        <!-- SUB-TAB 2: DATOS PERSONALES -->
+        <!-- Datos y Link -->
         <div id="subtab-content-datos" class="sub-tab-content" style="display: none;">
           <div class="card">
-            <h3>👤 Datos Personales y Cuota</h3>
-            <div class="grid-2">
-              <div>
-                <label>Nombre Completo</label>
-                <input type="text" id="editStudentName">
-              </div>
-              <div>
-                <label>Email de Google</label>
-                <input type="email" id="editStudentEmail">
-              </div>
+            <h3>👤 Datos y Enlace de Acceso</h3>
+            <label>Enlace de Acceso Personal</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+              <input type="text" id="studentLinkCopy" readonly style="margin: 0;">
+              <button class="btn-main" style="width: auto;" onclick="copyStudentLink('studentLinkCopy')">Copiar</button>
             </div>
             <div class="grid-2">
-              <div>
-                <label>Edad</label>
-                <input type="number" id="editStudentAge">
-              </div>
-              <div>
-                <label>Fecha Vencimiento Cuota</label>
-                <input type="date" id="editStudentPayDate">
-              </div>
+              <div><label>Nombre</label><input type="text" id="editStudentName"></div>
+              <div><label>Email de Google</label><input type="email" id="editStudentEmail"></div>
             </div>
-            <label>Notas Adicionales del Entrenador</label>
-            <textarea id="editStudentNotes" placeholder="Historial médico, lesiones, objetivos..."></textarea>
-            
+            <div class="grid-2">
+              <div><label>Edad</label><input type="number" id="editStudentAge"></div>
+              <div><label>Fecha Vencimiento Cuota</label><input type="date" id="editStudentPayDate"></div>
+            </div>
+            <label>Notas del Entrenador</label>
+            <textarea id="editStudentNotes"></textarea>
             <a id="sheetUrlDisplay" href="#" target="_blank" style="color: var(--accent); font-weight: bold; font-size: 0.85rem;">Abrir Google Sheet ↗</a>
-
             <div style="margin-top: 16px; display: flex; gap: 10px;">
               <button class="btn-main" onclick="saveToFirebase()">💾 Guardar Datos</button>
               <button class="btn-sec" onclick="generatePDFReport()">📄 Generar Reporte PDF</button>
@@ -944,29 +949,24 @@
           </div>
         </div>
 
-        <!-- SUB-TAB 3: AVANCE DEL ALUMNO -->
+        <!-- Avance -->
         <div id="subtab-content-avance" class="sub-tab-content" style="display: none;">
           <div class="card">
             <h3>📈 Gráfico de Avance de Cargas</h3>
-            <label>Selecciona un ejercicio del historial:</label>
             <select id="chartExerciseSelect" onchange="renderProgressChart()"></select>
-            <div style="position: relative; height:300px; width:100%;">
-              <canvas id="progressChart"></canvas>
-            </div>
+            <div style="position: relative; height:300px; width:100%;"><canvas id="progressChart"></canvas></div>
           </div>
         </div>
 
-        <!-- SUB-TAB 4: NOTAS DEL ALUMNO -->
+        <!-- Notas Alumno -->
         <div id="subtab-content-notas" class="sub-tab-content" style="display: none;">
           <div class="card">
-            <h3>💬 Notas e Inquietudes Enviadas por el Alumno</h3>
-            <div id="studentNotesDisplay" style="background:var(--input-bg); padding:14px; border-radius:8px; border-left:4px solid var(--accent); font-style:italic;">
-              Cargando notas del alumno...
-            </div>
+            <h3>💬 Notas del Alumno</h3>
+            <div id="studentNotesDisplay" style="background:var(--input-bg); padding:14px; border-radius:8px; border-left:4px solid var(--accent); font-style:italic;"></div>
           </div>
         </div>
 
-        <!-- SUB-TAB 5: HISTORIAL -->
+        <!-- Historial -->
         <div id="subtab-content-historial" class="sub-tab-content" style="display: none;">
           <div class="card">
             <h3>📊 Resumen de los Últimos 7 Días</h3>
@@ -974,90 +974,58 @@
           </div>
         </div>
 
-        <!-- ELIMINAR DEFINITIVAMENTE -->
         <div style="margin-top: 20px; text-align: center;">
           <button class="btn-danger" onclick="deleteCurrentStudent()" style="width: auto; padding: 10px 18px;">🗑️ Eliminar Alumno de la Base de Datos</button>
         </div>
-
       </div>
     </div>
 
-    <!-- MÓDULO 2: REGISTRO DE NUEVO ALUMNO -->
-    <div id="module-registro" class="module-section">
-      <div class="card">
-        <h2>➕ Registrar Nuevo Alumno</h2>
-        <div class="grid-2">
-          <div>
-            <label>Nombre Completo</label>
-            <input type="text" id="newStudentName" placeholder="Ej: Maria Gomez">
-          </div>
-          <div>
-            <label>ID Enlace (sin espacios)</label>
-            <input type="text" id="newStudentId" placeholder="Ej: maria">
-          </div>
-        </div>
-        <div class="grid-2">
-          <div>
-            <label>Email de Google del Alumno</label>
-            <input type="email" id="newStudentEmail" placeholder="maria@gmail.com">
-          </div>
-          <div>
-            <label>Edad</label>
-            <input type="number" id="newStudentAge" placeholder="28">
-          </div>
-        </div>
-        <label>Notas Adicionales Iniciales</label>
-        <textarea id="newStudentNotes" placeholder="Objetivos, antecedentes, patologías..."></textarea>
-
-        <button class="btn-main" onclick="createNewStudent()">Crear Alumno y Generar Planilla</button>
-        <div id="createStatus" class="status-msg"></div>
-      </div>
-    </div>
-
-    <!-- MÓDULO 3: BANCO DE EJERCICIOS -->
+    <!-- MÓDULO 2: BANCO Y PLANTILLAS -->
     <div id="module-ejercicios" class="module-section">
-      <div class="card">
-        <h2>📚 Ejercicios (Banco Global)</h2>
-        <div class="grid-2">
-          <div>
-            <label>Filtrar por Zona Muscular:</label>
-            <select id="filterZoneExercise" onchange="filterGlobalExercises()">
-              <option value="">-- Todas las Zonas --</option>
-              <option value="Pecho">Pecho</option>
-              <option value="Espalda">Espalda</option>
-              <option value="Piernas">Piernas</option>
-              <option value="Hombros">Hombros</option>
-              <option value="Brazos">Brazos</option>
-              <option value="Core">Core</option>
-              <option value="Cardio">Cardio</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="tree-node" style="margin-top: 14px;">
-          <h4>➕ Agregar Nuevo Ejercicio al Banco</h4>
-          <label>Nombre del Ejercicio</label>
-          <input type="text" id="newGlobalExInput" placeholder="Ej: Sentadilla Búlgara">
-          <label>Zona Muscular</label>
-          <input type="text" id="newGlobalExZone" placeholder="Ej: Piernas">
-          <label>Fotos / GIFs demostrativos (hasta 3 archivos)</label>
-          <input type="file" id="newGlobalExFiles" accept="image/*" multiple>
-          <button class="btn-main" onclick="addGlobalExercise()">+ Agregar al Banco</button>
-        </div>
-
-        <div id="globalExercisesList" style="margin-top: 16px;"></div>
+      <div class="sub-tabs">
+        <button id="subtab-ej-btn-banco" class="subtab-ej-btn active sub-tab-btn" onclick="switchSubTabEjercicios('banco')">📚 Banco de Ejercicios</button>
+        <button id="subtab-ej-btn-plantillas" class="subtab-ej-btn sub-tab-btn" onclick="switchSubTabEjercicios('plantillas')">📋 Plantillas de Rutinas</button>
       </div>
-    </div>
 
-    <!-- MÓDULO 4: PLANTILLAS DE RUTINAS -->
-    <div id="module-plantillas" class="module-section">
-      <div class="card">
-        <h2>📋 Plantillas de Rutinas Estándar</h2>
-        <p style="color:var(--muted); font-size:0.9rem; margin-bottom:12px;">Diseña una rutina completa desde la pestaña 'Mis Alumnos' y presiona <strong>'Guardar como Plantilla'</strong> para reutilizarla aquí con cualquier persona.</p>
+      <!-- Banco de Ejercicios -->
+      <div id="subtab-ej-content-banco" class="subtab-ej-content">
+        <div class="card">
+          <h2>📚 Banco Global de Ejercicios</h2>
+          <div class="grid-2">
+            <div>
+              <label>Filtrar por Zona Muscular:</label>
+              <select id="filterZoneExercise" onchange="filterGlobalExercises()">
+                <option value="">-- Todas las Zonas --</option>
+                <option value="Pecho">Pecho</option>
+                <option value="Espalda">Espalda</option>
+                <option value="Piernas">Piernas</option>
+                <option value="Hombros">Hombros</option>
+                <option value="Brazos">Brazos</option>
+                <option value="Core">Core</option>
+                <option value="Cardio">Cardio</option>
+              </select>
+            </div>
+          </div>
+          <div class="tree-node" style="margin-top: 14px;">
+            <h4>➕ Agregar Ejercicio al Banco</h4>
+            <label>Nombre del Ejercicio</label><input type="text" id="newGlobalExInput">
+            <label>Zona Muscular</label><input type="text" id="newGlobalExZone">
+            <label>Fotos/GIFs (hasta 3)</label><input type="file" id="newGlobalExFiles" accept="image/*" multiple>
+            <button class="btn-main" onclick="addGlobalExercise()">+ Agregar</button>
+          </div>
+          <div id="globalExercisesList" style="margin-top: 16px;"></div>
+        </div>
+      </div>
+
+      <!-- Plantillas de Rutinas -->
+      <div id="subtab-ej-content-plantillas" class="subtab-ej-content" style="display: none;">
+        <div class="card">
+          <h2>📋 Plantillas de Rutinas Estándar</h2>
+          <p style="color:var(--muted); font-size:0.9rem; margin-bottom:12px;">Para crear una plantilla, diseña una rutina completa desde la ficha de cualquier alumno y presiona <strong>'Guardar como Plantilla'</strong>. Aquí se almacenarán todas para su uso futuro.</p>
+        </div>
       </div>
     </div>
 
   </div>
-
 </body>
 </html>
