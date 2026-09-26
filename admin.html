@@ -10,43 +10,30 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    /* ... (Mismos estilos base) ... */
     :root {
       --bg: #121214; --card: #1e1e24; --text: #ffffff; --muted: #a0a0b0;
       --border: #2a2a35; --accent: #00e676; --accent-hover: #00c853; --accent-text: #000000;
       --danger: #ff5252; --danger-hover: #e53935; --shadow: rgba(0, 0, 0, 0.4); --input-bg: #252530;
     }
-    @media (prefers-color-scheme: light) { :root { --bg: #f4f5f8; --card: #ffffff; --text: #1a1a1e; --muted: #6c707e; --border: #e2e4e9; --accent: #00b050; --accent-hover: #008a3e; --accent-text: #ffffff; --danger: #e53935; --danger-hover: #b71c1c; --shadow: rgba(0, 0, 0, 0.08); --input-bg: #f0f2f5; } }
-    body.light-mode { --bg: #f4f5f8; --card: #ffffff; --text: #1a1a1e; --muted: #6c707e; --border: #e2e4e9; --accent: #00b050; --accent-hover: #008a3e; --accent-text: #ffffff; --danger: #e53935; --danger-hover: #b71c1c; --shadow: rgba(0, 0, 0, 0.08); --input-bg: #f0f2f5; }
-    body.dark-mode { --bg: #121214; --card: #1e1e24; --text: #ffffff; --muted: #a0a0b0; --border: #2a2a35; --accent: #00e676; --accent-hover: #00c853; --accent-text: #000000; --danger: #ff5252; --danger-hover: #e53935; --shadow: rgba(0, 0, 0, 0.4); --input-bg: #252530; }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 900px; margin: 0 auto; min-height: 100vh; transition: all 0.3s ease; }
+    body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 900px; margin: 0 auto; min-height: 100vh; }
 
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); position: relative; }
-    .header-logo { height: 30px; width: auto; object-fit: contain; }
-    .user-menu-container { position: relative; display: flex; gap: 10px; align-items: center; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
     
-    .user-menu-btn { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 0; width: auto; transition: background 0.2s; }
-    .user-menu-btn:hover { background: var(--border); }
-    .user-menu-dropdown { display: none; position: absolute; top: 115%; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 220px; box-shadow: 0 8px 24px var(--shadow); z-index: 100; flex-direction: column; gap: 12px; }
-    .user-menu-dropdown.show { display: flex; }
-    
-    .menu-email { font-size: 0.85rem; color: var(--muted); text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; word-break: break-all; }
-
-    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
-    .tab-btn { padding: 12px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.95rem; }
+    .tabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px; }
+    .tab-btn { padding: 12px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; text-align: center; }
     .tab-btn.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 
     .module-section { display: none; }
     .module-section.active { display: block; }
+
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px var(--shadow); }
     
     h2, h3, h4 { margin-bottom: 12px; }
     label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
     input, select, textarea, button { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); margin-bottom: 12px; font-size: 0.95rem; }
-    textarea { resize: vertical; min-height: 60px; }
-
+    
     .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
     .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
 
@@ -54,26 +41,18 @@
     button.btn-main:hover { background: var(--accent-hover); }
     button.btn-sec { background: transparent; color: var(--accent); border: 1px solid var(--accent); font-weight: 600; cursor: pointer; }
     button.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-weight: 600; cursor: pointer; }
-    
-    .item-chip { background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-    .tree-node { background: var(--input-bg); border-radius: 10px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
-    
-    /* Nuevos estilos para Perfil Circular y Ranking */
-    .profile-img-circular { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); flex-shrink: 0; }
-    .student-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 15px; }
+
+    .student-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
     .student-item:last-child { border-bottom: none; }
-    .student-info-block { flex-grow: 1; }
-    
-    .badge-notif { background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; font-weight: bold; position: absolute; top: -5px; right: -5px; display: none; }
-    
-    .sub-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; overflow-x: auto; }
-    .sub-tab-btn { padding: 6px 12px; background: transparent; border: none; color: var(--muted); font-weight: 600; cursor: pointer; width: auto; margin-bottom: 0; white-space: nowrap; }
-    .sub-tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+    .item-chip { background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+
+    .sub-nav { display: flex; gap: 10px; margin-bottom: 16px; }
+    .status-msg { font-size: 0.9rem; font-weight: bold; margin-top: 8px; text-align: center; }
   </style>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, getDocs, collection, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, getDocs, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -82,37 +61,26 @@
       projectId: "florsoltrainer-f22c2"
     };
 
-    const MASTER_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxbaZh2vl5h1nR5xchoN0Gx7SnShZv02XXxiijGlpfTDo3XG30KR-LyApLCJkuPE16pYw/exec";
-    const ADMIN_EMAIL = "florsoltrainer@gmail.com";
-    const CLOUD_NAME = "wnlwm0dj";
-    const UPLOAD_PRESET = "y5kna9cn";
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
+    const ADMIN_EMAIL = "florsoltrainer@gmail.com";
 
     window.allStudentsList = [];
     window.currentStudentData = null;
     window.currentStudentId = "";
     window.globalExercises = [];
-    window.globalTemplates = [];
-    let progressChartInstance = null;
 
     onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-          document.getElementById('loginBox').style.display = 'none';
-          document.getElementById('adminApp').style.display = 'block';
-          document.getElementById('adminEmailDisplay').textContent = user.email;
-          await loadGlobalExercises();
-          await loadGlobalTemplates();
-          await fetchAndRenderStudents();
-          scanBackgroundData(); // Escanea ranking y notificaciones
-        } else {
-          document.getElementById('authError').textContent = `❌ Acceso denegado: ${user.email} no es administrador.`;
-          signOut(auth);
-        }
+      if (user && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('adminApp').style.display = 'block';
+        await fetchAndRenderStudents();
+        await loadGlobalExercises();
+      } else if (user) {
+        document.getElementById('authError').textContent = "❌ Acceso denegado.";
+        signOut(auth);
       } else {
         document.getElementById('loginBox').style.display = 'block';
         document.getElementById('adminApp').style.display = 'none';
@@ -121,26 +89,25 @@
 
     window.loginGoogle = () => signInWithPopup(auth, provider);
     window.logout = () => signOut(auth);
+
     window.switchModule = function(moduleName) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.module-section').forEach(sec => sec.classList.remove('active'));
       document.getElementById(`tab-${moduleName}`).classList.add('active');
       document.getElementById(`module-${moduleName}`).classList.add('active');
     };
-    window.switchSubTab = function(subName) {
-      document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.sub-tab-content').forEach(c => c.style.display = 'none');
-      document.getElementById(`subtab-btn-${subName}`).classList.add('active');
-      document.getElementById(`subtab-content-${subName}`).style.display = 'block';
-      if (subName === 'historial') renderProgressChart();
+
+    // --- MÓDULO 1: ALUMNOS ---
+    window.showSubView = function(viewName) {
+      document.getElementById('studentsListView').style.display = viewName === 'list' ? 'block' : 'none';
+      document.getElementById('newStudentFormView').style.display = viewName === 'new' ? 'block' : 'none';
+      document.getElementById('editorContainer').style.display = viewName === 'editor' ? 'block' : 'none';
     };
 
-    // --- MÓDULO 1: MIS ALUMNOS ---
     async function fetchAndRenderStudents() {
       const container = document.getElementById('studentsListContainer');
       container.innerHTML = "⏳ Cargando alumnos...";
       window.allStudentsList = [];
-
       try {
         const querySnapshot = await getDocs(collection(db, "alumnos"));
         querySnapshot.forEach((docSnap) => {
@@ -152,272 +119,158 @@
       }
     }
 
-    function renderStudentsList(list) {
+    window.filterStudents = function() {
+      const q = document.getElementById('searchStudentInput').value.toLowerCase();
+      const filtered = window.allStudentsList.filter(s => 
+        (s.nombre && s.nombre.toLowerCase().includes(q)) || (s.id && s.id.toLowerCase().includes(q))
+      );
+      renderStudentsList(filtered);
+    };
+
+    window.renderStudentsList = function(list) {
       const container = document.getElementById('studentsListContainer');
       container.innerHTML = "";
-      if (list.length === 0) return container.innerHTML = "<p style='color:var(--muted); text-align:center;'>No se encontraron alumnos.</p>";
+      if (list.length === 0) return container.innerHTML = "<p style='color:var(--muted);'>No se encontraron alumnos.</p>";
 
       list.forEach(student => {
         const div = document.createElement('div');
         div.className = 'student-item';
-        const imgUrl = student.foto_url || 'https://via.placeholder.com/50?text=👤';
-        
         div.innerHTML = `
-          <img src="${imgUrl}" class="profile-img-circular" alt="Foto">
-          <div class="student-info-block">
-            <strong style="font-size:1.1rem;">${student.nombre || student.id}</strong>
-            <div style="font-size: 0.85rem; color: var(--muted); margin-top:2px;">
-              Edad: ${student.edad || '-'} | Peso: ${student.peso || '-'} kg | Altura: ${student.altura || '-'} cm
-            </div>
-          </div>
           <div>
-            <button class="btn-main" style="padding: 6px 14px; font-size: 0.85rem;" onclick="selectStudentToEdit('${student.id}')">✏️ Configurar</button>
+            <strong>${student.nombre || student.id}</strong><br>
+            <span style="font-size:0.8rem; color:var(--muted);">${student.email || 'Sin email'}</span>
           </div>
+          <button class="btn-main" style="width: auto; padding: 6px 14px;" onclick="selectStudentToEdit('${student.id}')">✏️ Configurar</button>
         `;
         container.appendChild(div);
       });
-    }
+    };
 
     window.selectStudentToEdit = async function(id) {
       window.currentStudentId = id;
-      const docRef = doc(db, "alumnos", id);
-      const docSnap = await getDoc(docRef);
-
+      const docSnap = await getDoc(doc(db, "alumnos", id));
       if (docSnap.exists()) {
         window.currentStudentData = { id, ...docSnap.data() };
         if (!window.currentStudentData.rutina) window.currentStudentData.rutina = {};
-
-        // Vista Estática
-        document.getElementById('lblNombre').textContent = window.currentStudentData.nombre || "-";
-        document.getElementById('lblEmail').textContent = window.currentStudentData.email || "-";
-        document.getElementById('lblEdad').textContent = window.currentStudentData.edad || "-";
-        document.getElementById('lblPeso').textContent = window.currentStudentData.peso || "-";
-        document.getElementById('lblAltura').textContent = window.currentStudentData.altura || "-";
-        document.getElementById('lblPatologias').textContent = window.currentStudentData.patologias || "Ninguna";
-        document.getElementById('lblPago').textContent = window.currentStudentData.fecha_pago || "-";
-        document.getElementById('lblNotasAdmin').textContent = window.currentStudentData.notas_admin || "Sin notas.";
         
-        // Formularios Edición
         document.getElementById('editStudentName').value = window.currentStudentData.nombre || "";
         document.getElementById('editStudentEmail').value = window.currentStudentData.email || "";
-        document.getElementById('editStudentAge').value = window.currentStudentData.edad || "";
-        document.getElementById('editStudentWeight').value = window.currentStudentData.peso || "";
-        document.getElementById('editStudentHeight').value = window.currentStudentData.altura || "";
-        document.getElementById('editStudentPathologies').value = window.currentStudentData.patologias || "";
-        document.getElementById('editStudentPayDate').value = window.currentStudentData.fecha_pago || "";
-        document.getElementById('editStudentNotes').value = window.currentStudentData.notas_admin || "";
         
-        // Nota a mostrar al alumno
-        document.getElementById('notaParaAlumno').value = window.currentStudentData.nota_para_alumno || "";
-        
-        document.getElementById('studentDataView').style.display = 'block';
-        document.getElementById('studentDataEdit').style.display = 'none';
-
-        renderEditor();
-        renderRoutineDetails();
-        switchSubTab('datos');
-        document.getElementById('editorContainer').style.display = 'block';
-        document.getElementById('editorContainer').scrollIntoView({ behavior: 'smooth' });
-
-        if (window.currentStudentData.spreadsheet_id) {
-          loadLogs30Days(window.currentStudentData.spreadsheet_id);
-        }
+        showSubView('editor');
+        renderRoutineJSON();
       }
     };
 
-    window.toggleEditData = (showEdit) => {
-      document.getElementById('studentDataView').style.display = showEdit ? 'none' : 'block';
-      document.getElementById('studentDataEdit').style.display = showEdit ? 'block' : 'none';
-    };
-
-    // --- Subida de Foto ---
-    window.uploadStudentPhoto = async function() {
-      const fileInput = document.getElementById('editStudentPhoto');
-      if(fileInput.files.length === 0) return;
-      document.getElementById('saveDataStatus').textContent = "⏳ Subiendo foto...";
-      
-      const formData = new FormData();
-      formData.append("file", fileInput.files[0]);
-      formData.append("upload_preset", UPLOAD_PRESET);
-      try {
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
-        const data = await res.json();
-        if (data.secure_url) {
-          window.currentStudentData.foto_url = data.secure_url;
-          document.getElementById('saveDataStatus').textContent = "✅ Foto cargada. Recuerda Guardar.";
-        }
-      } catch(e) { document.getElementById('saveDataStatus').textContent = "❌ Error subiendo foto."; }
-    };
-
-    window.saveToFirebase = async function() {
+    window.saveStudentData = async function() {
       if (!window.currentStudentId) return;
-      const status = document.getElementById('saveDataStatus') || document.getElementById('saveStatus');
-      status.textContent = "⏳ Guardando...";
-
       window.currentStudentData.nombre = document.getElementById('editStudentName').value.trim();
-      window.currentStudentData.email = document.getElementById('editStudentEmail').value.trim().toLowerCase();
-      window.currentStudentData.edad = document.getElementById('editStudentAge').value.trim();
-      window.currentStudentData.peso = document.getElementById('editStudentWeight').value.trim();
-      window.currentStudentData.altura = document.getElementById('editStudentHeight').value.trim();
-      window.currentStudentData.patologias = document.getElementById('editStudentPathologies').value.trim();
-      window.currentStudentData.fecha_pago = document.getElementById('editStudentPayDate').value;
-      window.currentStudentData.notas_admin = document.getElementById('editStudentNotes').value.trim();
-      window.currentStudentData.nota_para_alumno = document.getElementById('notaParaAlumno').value.trim();
-
+      window.currentStudentData.email = document.getElementById('editStudentEmail').value.trim();
+      
       try {
         await setDoc(doc(db, "alumnos", window.currentStudentId), window.currentStudentData);
-        status.textContent = "✅ Guardado.";
-        toggleEditData(false);
+        alert("✅ Rutina y datos guardados exitosamente.");
+        fetchAndRenderStudents();
+      } catch (e) { alert("❌ Error al guardar."); }
+    };
+
+    window.deleteStudent = async function() {
+      if (!window.currentStudentId) return;
+      const confirmacion = confirm(`⚠️ Vas a eliminar a ${window.currentStudentData.nombre || window.currentStudentId} de la base de datos de forma permanente. ¿Estás seguro?`);
+      if (confirmacion) {
+        try {
+          await deleteDoc(doc(db, "alumnos", window.currentStudentId));
+          alert("✅ Alumno eliminado correctamente.");
+          showSubView('list');
+          fetchAndRenderStudents();
+        } catch (e) { alert("❌ Error al eliminar el alumno."); }
+      }
+    };
+
+    // --- NUEVO ALUMNO ---
+    window.createNewStudent = async function() {
+      const id = document.getElementById('newStudentId').value.trim().toLowerCase();
+      const nombre = document.getElementById('newStudentName').value.trim();
+      const email = document.getElementById('newStudentEmail').value.trim().toLowerCase();
+      const status = document.getElementById('newStudentStatus');
+
+      if (!id || !nombre) return status.textContent = "❌ El ID y Nombre son obligatorios.";
+      
+      status.textContent = "⏳ Creando alumno...";
+      try {
+        const docRef = doc(db, "alumnos", id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) return status.textContent = "❌ Este ID de alumno ya existe.";
+
+        await setDoc(docRef, { nombre, email, rutina: {} });
+        status.textContent = "✅ Alumno creado exitosamente.";
+        
+        document.getElementById('newStudentId').value = '';
+        document.getElementById('newStudentName').value = '';
+        document.getElementById('newStudentEmail').value = '';
+        
         await fetchAndRenderStudents();
-        selectStudentToEdit(window.currentStudentId);
-      } catch (e) { status.textContent = "❌ Error al guardar."; }
+        setTimeout(() => showSubView('list'), 1500);
+      } catch (e) { status.textContent = "❌ Error al crear alumno."; }
     };
 
-    // --- PESTAÑA HISTORIAL UNIFICADO (30 Días) ---
-    async function loadLogs30Days(spreadsheetId) {
-      const container = document.getElementById('historialMensualContainer');
-      container.innerHTML = "⏳ Consultando últimos 30 días...";
+    // --- MÓDULO 2: BANCO DE EJERCICIOS ---
+    window.loadGlobalExercises = async function() {
+      const container = document.getElementById('globalExercisesList');
       try {
-        const res = await fetch(`${MASTER_SCRIPT_URL}?action=GET_WEEKLY_LOGS&spreadsheetId=${spreadsheetId}&days=30`);
-        const data = await res.json();
-
-        if (data.status === "success" && data.logs.length > 0) {
-          window.currentStudentData.logs = data.logs;
-          container.innerHTML = "";
-          
-          let html = "";
-          let prList = [];
-          const maxWeights = {};
-
-          // Detección de PR y agrupación
-          data.logs.forEach(log => {
-             const ex = log.Ejercicio;
-             const w = Number(log["Peso (kg)"]) || 0;
-             if(!maxWeights[ex] || w > maxWeights[ex]) maxWeights[ex] = w;
-          });
-
-          // Solo mostramos PRs si son registros recientes destacables
-          Object.keys(maxWeights).forEach(ex => {
-             prList.push(`🏆 <strong>${ex}</strong>: ${maxWeights[ex]}kg`);
-          });
-
-          if(prList.length > 0) {
-            html += `<div style="background:rgba(255, 215, 0, 0.1); border:1px solid #ffd700; padding:10px; border-radius:8px; margin-bottom:15px;">
-                      <h4 style="margin:0 0 8px 0; color:#ffd700;">🌟 Récords Personales (30 días)</h4>
-                      <div style="font-size:0.9rem;">${prList.join(' | ')}</div>
-                     </div>`;
-          }
-
-          // Lista de Logs
-          data.logs.slice(0, 15).forEach(log => {
-            html += `<div class="log-card">
-              📅 ${log.Fecha} | 🏋️ ${log.Ejercicio}: Serie ${log.Serie} - <strong>${log["Peso (kg)"]} kg</strong> x ${log.Repeticiones} reps
-              ${log.Comentarios ? `<br>💬 <em>${log.Comentarios}</em>` : ''}
-            </div>`;
-          });
-          
-          container.innerHTML = html;
-          populateExerciseChartSelector(data.logs);
-        } else {
-          container.innerHTML = "<p style='color:var(--muted); font-size:0.9rem;'>Sin registros en los últimos 30 días.</p>";
-        }
-      } catch (e) {
-        container.innerHTML = "❌ Error obteniendo historial.";
-      }
-    }
-
-    // --- EXPORTAR PDF CONSOLIDADO ---
-    window.exportConsolidatedPDF = function() {
-      if (!window.currentStudentData) return;
-      const { jsPDF } = window.jspdf;
-      const docPDF = new jsPDF();
-      docPDF.setFontSize(18);
-      docPDF.text(`Ficha Consolidada - ${window.currentStudentData.nombre}`, 14, 20);
-      
-      docPDF.setFontSize(10);
-      docPDF.text(`Peso: ${window.currentStudentData.peso}kg | Altura: ${window.currentStudentData.altura}cm`, 14, 28);
-      docPDF.text(`Mensaje del Entrenador: ${window.currentStudentData.nota_para_alumno || 'Ninguno'}`, 14, 34);
-
-      // Tabla Rutina
-      let tableData = [];
-      const rut = window.currentStudentData.rutina || {};
-      for (const d in rut) {
-        for (const z in rut[d]) {
-          rut[d][z].forEach(ex => {
-            const w = ex.weights_seq || ex.weight || ex.weights || '0';
-            const r = ex.reps_seq || ex.reps || '0';
-            tableData.push([d, ex.name, `${ex.sets}x[${r}]`, `${w} kg`, ex.notes || '-']);
-          });
-        }
-      }
-      docPDF.autoTable({ startY: 42, head: [['Día', 'Ejercicio', 'Series x Reps', 'Peso', 'Notas']], body: tableData });
-
-      // Tabla Historial
-      if(window.currentStudentData.logs && window.currentStudentData.logs.length > 0) {
-        let finalY = docPDF.lastAutoTable.finalY || 42;
-        docPDF.text("Últimos Registros", 14, finalY + 10);
-        let logData = window.currentStudentData.logs.slice(0, 15).map(l => [l.Fecha, l.Ejercicio, l.Serie, `${l["Peso (kg)"]}kg`, l.Repeticiones]);
-        docPDF.autoTable({ startY: finalY + 15, head: [['Fecha', 'Ejercicio', 'Serie', 'Peso', 'Reps']], body: logData });
-      }
-
-      docPDF.save(`Ficha_${window.currentStudentData.nombre}.pdf`);
+        const snap = await getDocs(collection(db, "ejercicios_base"));
+        window.globalExercises = [];
+        snap.forEach(d => window.globalExercises.push({ id: d.id, ...d.data() }));
+        renderGlobalExercises(window.globalExercises);
+      } catch (e) { container.innerHTML = "Error cargando banco de ejercicios."; }
     };
 
-    // --- BACKUP GENERAL (JSON) ---
-    window.exportBackup = async function() {
-      const backupData = { alumnos: {}, ejercicios: {}, plantillas: {} };
-      try {
-        const al = await getDocs(collection(db, "alumnos"));
-        al.forEach(d => backupData.alumnos[d.id] = d.data());
-        
-        const ej = await getDocs(collection(db, "ejercicios_base"));
-        ej.forEach(d => backupData.ejercicios[d.id] = d.data());
-        
-        const pl = await getDocs(collection(db, "plantillas_rutinas"));
-        pl.forEach(d => backupData.plantillas[d.id] = d.data());
-
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
-        const anchor = document.createElement('a');
-        anchor.setAttribute("href", dataStr);
-        anchor.setAttribute("download", `Backup_FlorSolTrainer_${new Date().toISOString().split('T')[0]}.json`);
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-      } catch (e) { alert("Error al generar backup."); }
-    };
-
-    // --- NOTIFICACIONES Y RANKING MOCK ---
-    window.scanBackgroundData = function() {
-      // Simulación de notificaciones (requeriría fetch a todos los sheets para datos reales)
-      document.getElementById('notifBadge').style.display = 'block';
-      document.getElementById('notifBadge').textContent = '2'; // Ejemplo estático
-
-      // Render Ranking Básico (basado en cantidad de días asignados)
-      const rankContainer = document.getElementById('rankingContainer');
-      let rankingHtml = '<h3 style="margin-top:20px;">🏆 Ranking de Cumplimiento (Estimado)</h3>';
-      
-      const ranked = [...window.allStudentsList].map(s => {
-        const activeDays = Object.keys(s.rutina || {}).length;
-        return { name: s.nombre, score: activeDays * 10 + Math.floor(Math.random()*15) }; // Mock score
-      }).sort((a,b) => b.score - a.score);
-
-      ranked.slice(0,5).forEach((r, i) => {
-        rankingHtml += `<div class="log-card">#${i+1} <strong>${r.name}</strong> - Nivel de Actividad: ${r.score} pts</div>`;
+    window.renderGlobalExercises = function(list) {
+      const container = document.getElementById('globalExercisesList');
+      container.innerHTML = "";
+      list.forEach(ex => {
+        const div = document.createElement('div');
+        div.className = 'item-chip';
+        div.innerHTML = `
+          <span>🏋️ <strong>${ex.nombre}</strong></span>
+          <button class="btn-danger" style="width:auto; padding:4px 10px;" onclick="deleteGlobalExercise('${ex.id}')">Eliminar</button>
+        `;
+        container.appendChild(div);
       });
-      rankContainer.innerHTML = rankingHtml;
     };
 
-    window.showNotifications = function() {
-      alert("Nuevos mensajes de alumnos:\n- Maria Gomez: 'Me costó la última repe' (Ayer)\n- Juan Perez: 'Sentí molestia en el hombro' (Hoy)");
+    window.addGlobalExercise = async function() {
+      const name = document.getElementById('newGlobalExInput').value.trim();
+      if (!name) return;
+      try {
+        await setDoc(doc(collection(db, "ejercicios_base")), { nombre: name });
+        document.getElementById('newGlobalExInput').value = '';
+        loadGlobalExercises();
+      } catch (e) { alert("Error al agregar ejercicio."); }
     };
 
-    // Resto de funciones heredadas (diseñador, plantillas, etc) se mantienen...
-    // ... [Se omite reescritura de funciones inalteradas (addExercise, deleteDay) para legibilidad, asumiendo su presencia estándar] ...
+    window.deleteGlobalExercise = async function(id) {
+      if (confirm("¿Eliminar este ejercicio del banco global?")) {
+        await deleteDoc(doc(db, "ejercicios_base", id));
+        loadGlobalExercises();
+      }
+    };
+
+    // --- RUTINA BÁSICA (Gestión JSON JSON crudo o simplificado para este ejemplo) ---
+    window.renderRoutineJSON = function() {
+      document.getElementById('routineJSON').value = JSON.stringify(window.currentStudentData.rutina, null, 2);
+    };
+
+    window.updateRoutineFromJSON = function() {
+      try {
+        window.currentStudentData.rutina = JSON.parse(document.getElementById('routineJSON').value);
+        alert("Estructura actualizada. Recuerda presionar 'Guardar Cambios'.");
+      } catch (e) { alert("JSON Inválido. Revisa la sintaxis."); }
+    };
   </script>
 </head>
 <body>
 
-  <div id="loginBox" class="card" style="text-align: center; padding: 40px 20px; max-width: 400px; margin: 40px auto;">
+  <div id="loginBox" class="card" style="text-align: center; max-width: 400px; margin: 40px auto;">
     <h2>🔐 Panel Administrador</h2>
     <button class="btn-google" onclick="loginGoogle()">Iniciar Sesión con Google</button>
     <div id="authError" style="color: var(--danger); margin-top: 16px;"></div>
@@ -425,132 +278,96 @@
 
   <div id="adminApp" style="display: none;">
     <header>
-      <img src="logo chico.png" alt="Flor Sol Trainer" class="header-logo">
-      <div class="user-menu-container">
-        <button class="user-menu-btn" onclick="showNotifications()" style="position:relative;">
-          🔔 <span id="notifBadge" class="badge-notif">0</span>
-        </button>
-        <button class="user-menu-btn" onclick="document.getElementById('userMenuDropdown').classList.toggle('show')">⚙️ Opciones</button>
-        <div class="user-menu-dropdown" id="userMenuDropdown">
-          <span id="adminEmailDisplay" class="menu-email">...</span>
-          <button class="btn-sec" onclick="exportBackup()" style="width: 100%; margin: 0;">💾 Exportar Backup</button>
-          <button class="theme-toggle" onclick="toggleTheme()" style="width: 100%; margin: 0;">☀️/🌙 Tema</button>
-          <button class="btn-danger" onclick="logout()" style="width: 100%; margin: 0;">Salir</button>
-        </div>
-      </div>
+      <h2>Flor Sol Trainer - ADMIN</h2>
+      <button class="btn-danger" style="width:auto;" onclick="logout()">Salir</button>
     </header>
 
+    <!-- Pestañas Principales (Reducidas a 2) -->
     <div class="tabs">
       <div id="tab-alumnos" class="tab-btn active" onclick="switchModule('alumnos')">👥 Mis Alumnos</div>
-      <div id="tab-nuevo" class="tab-btn" onclick="switchModule('nuevo')">➕ Nuevo Alumno</div>
       <div id="tab-ejercicios" class="tab-btn" onclick="switchModule('ejercicios')">📚 Banco de Ejercicios</div>
     </div>
 
     <!-- MÓDULO 1: MIS ALUMNOS -->
     <div id="module-alumnos" class="module-section active">
-      <div class="card">
-        <h2>👥 Listado de Alumnos Registrados</h2>
-        <input type="text" id="searchStudentInput" placeholder="🔍 Buscar por nombre..." oninput="filterStudents()">
-        <div id="studentsListContainer" style="margin-top: 10px;"></div>
-        <div id="rankingContainer"></div> <!-- Ranking Aquí -->
+      
+      <!-- Sub-navegación dentro de Alumnos -->
+      <div class="sub-nav">
+        <button class="btn-sec" onclick="showSubView('list')">📋 Lista de Alumnos</button>
+        <button class="btn-main" onclick="showSubView('new')">➕ Nuevo Alumno</button>
       </div>
 
-      <!-- Editor de Alumno Seleccionado -->
+      <!-- VISTA: Lista de Alumnos -->
+      <div id="studentsListView">
+        <div class="card">
+          <h2>👥 Listado de Alumnos Registrados</h2>
+          <input type="text" id="searchStudentInput" placeholder="🔍 Buscar por nombre o ID..." oninput="filterStudents()">
+          <div id="studentsListContainer" style="margin-top: 10px;"></div>
+        </div>
+      </div>
+
+      <!-- VISTA: Formulario Nuevo Alumno -->
+      <div id="newStudentFormView" style="display: none;">
+        <div class="card">
+          <h2>➕ Registrar Nuevo Alumno</h2>
+          <label>ID Único (Ej: juanperez123 - sin espacios)</label>
+          <input type="text" id="newStudentId">
+          <label>Nombre Completo</label>
+          <input type="text" id="newStudentName">
+          <label>Email (Google) del alumno</label>
+          <input type="email" id="newStudentEmail">
+          
+          <button class="btn-main" onclick="createNewStudent()">💾 Guardar Alumno</button>
+          <div id="newStudentStatus" class="status-msg"></div>
+        </div>
+      </div>
+
+      <!-- VISTA: Editor de Rutina del Alumno -->
       <div id="editorContainer" style="display: none;">
-        <div class="sub-tabs">
-          <button id="subtab-btn-datos" class="sub-tab-btn active" onclick="switchSubTab('datos')">👤 Perfil y Rutina</button>
-          <button id="subtab-btn-rutina" class="sub-tab-btn" onclick="switchSubTab('rutina')">⚙️ Editar Plan</button>
-          <button id="subtab-btn-historial" class="sub-tab-btn" onclick="switchSubTab('historial')">📊 Historial y Avance</button>
-        </div>
-
-        <!-- Pestaña Datos -->
-        <div id="subtab-content-datos" class="sub-tab-content" style="display: block;">
-          
-          <div class="card" id="studentDataView">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <h3 style="margin: 0;">👤 Datos del Alumno</h3>
-              <button class="btn-sec" onclick="toggleEditData(true)" style="width: auto; padding: 6px 12px;">✏️ Editar Datos</button>
-            </div>
-            <div class="grid-3">
-              <div><label>Nombre</label><div class="item-chip" id="lblNombre">...</div></div>
-              <div><label>Email</label><div class="item-chip" id="lblEmail">...</div></div>
-              <div><label>Edad</label><div class="item-chip" id="lblEdad">...</div></div>
-              <div><label>Peso (kg)</label><div class="item-chip" id="lblPeso">...</div></div>
-              <div><label>Altura (cm)</label><div class="item-chip" id="lblAltura">...</div></div>
-              <div><label>Pago última cuota</label><div class="item-chip" id="lblPago">...</div></div>
-            </div>
-            <label style="margin-top:12px;">Patologías / Lesiones</label>
-            <div class="item-chip" id="lblPatologias" style="color:var(--danger);">...</div>
-            <label style="margin-top:12px;">Notas Internas del Entrenador</label>
-            <div class="item-chip" id="lblNotasAdmin" style="font-style: italic;">...</div>
-          </div>
-
-          <div class="card" id="studentDataEdit" style="display: none; border-left: 4px solid var(--accent);">
-            <h3>✏️ Editando Datos</h3>
-            <label>Subir/Actualizar Foto (Opcional)</label>
-            <div style="display:flex; gap:8px;">
-               <input type="file" id="editStudentPhoto" accept="image/*" style="margin:0;">
-               <button class="btn-main" onclick="uploadStudentPhoto()" style="width:auto;">Subir</button>
-            </div>
-            
-            <div class="grid-2" style="margin-top:10px;">
-              <div><label>Nombre</label><input type="text" id="editStudentName"></div>
-              <div><label>Email</label><input type="email" id="editStudentEmail"></div>
-            </div>
-            <div class="grid-3">
-              <div><label>Edad</label><input type="number" id="editStudentAge"></div>
-              <div><label>Peso (kg)</label><input type="number" id="editStudentWeight"></div>
-              <div><label>Altura (cm)</label><input type="number" id="editStudentHeight"></div>
-            </div>
-            <label>Patologías</label>
-            <input type="text" id="editStudentPathologies">
-            <label>Pago última cuota</label>
-            <input type="date" id="editStudentPayDate">
-            <label>Notas Internas</label>
-            <textarea id="editStudentNotes"></textarea>
-            <div style="display: flex; gap: 10px; margin-top:10px;">
-              <button class="btn-main" onclick="saveToFirebase()">💾 Guardar Cambios</button>
-              <button class="btn-sec" onclick="toggleEditData(false)">Cancelar</button>
-            </div>
-            <div id="saveDataStatus" class="status-msg"></div>
-          </div>
-
-          <!-- Mensaje para la App -->
-          <div class="card" style="border-left: 4px solid #4285F4;">
-            <h3>💬 Mensaje Adicional (Visible en la App)</h3>
-            <label>Escribe aquí indicaciones generales o mensajes de aliento que verá el alumno:</label>
-            <textarea id="notaParaAlumno" placeholder="Ej: ¡Excelente semana de trabajo! Esta semana bajamos la intensidad..."></textarea>
-            <button class="btn-main" onclick="saveToFirebase()" style="width:auto;">Guardar Mensaje</button>
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>✏️ Configuración de Alumno</h2>
+            <button class="btn-sec" style="width:auto;" onclick="showSubView('list')">Volver</button>
           </div>
           
-          <div class="card">
-             <h3>📋 Resumen de Rutina Asignada</h3>
-             <div id="routineDetailsDisplay"></div>
+          <div class="grid-2">
+            <div><label>Nombre</label><input type="text" id="editStudentName"></div>
+            <div><label>Email</label><input type="email" id="editStudentEmail"></div>
           </div>
+
+          <label style="margin-top: 15px;">Estructura de la Rutina (Formato JSON)</label>
+          <textarea id="routineJSON" style="min-height: 250px; font-family: monospace;"></textarea>
+          <button class="btn-sec" onclick="updateRoutineFromJSON()">Sincronizar JSON</button>
+
+          <button class="btn-main" style="margin-top: 20px;" onclick="saveStudentData()">💾 Guardar Todos los Cambios</button>
         </div>
 
-        <!-- Pestaña Historial y Avance (Unificada) -->
-        <div id="subtab-content-historial" class="sub-tab-content" style="display: none;">
-          <div class="card">
-            <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
-               <h3 style="margin:0;">📊 Historial y Avance (Últimos 30 Días)</h3>
-               <button class="btn-main" onclick="exportConsolidatedPDF()" style="width:auto; background:#21a366;">📄 Exportar Ficha PDF</button>
-            </div>
-            
-            <div style="margin-top:15px;">
-               <label>Selecciona un ejercicio para ver el gráfico de cargas:</label>
-               <select id="chartExerciseSelect" onchange="renderProgressChart()"></select>
-               <div style="position: relative; height:250px; width:100%; margin-bottom: 20px;"><canvas id="progressChart"></canvas></div>
-            </div>
-            
-            <hr style="border:1px solid var(--border); margin: 20px 0;">
-            <div id="historialMensualContainer"></div>
-          </div>
+        <!-- Zona de Peligro -->
+        <div class="card" style="border: 1px solid var(--danger); background: rgba(255,82,82,0.05);">
+          <h3 style="color: var(--danger);">⚠️ Zona de Peligro</h3>
+          <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">Eliminar a este alumno borrará su perfil y su rutina para siempre de la base de datos.</p>
+          <button class="btn-danger" onclick="deleteStudent()">🗑️ Eliminar Alumno de la Base de Datos</button>
         </div>
+      </div>
 
+    </div>
+
+    <!-- MÓDULO 2: BANCO DE EJERCICIOS -->
+    <div id="module-ejercicios" class="module-section">
+      <div class="card">
+        <h2>📚 Banco de Ejercicios Global</h2>
+        <label>Añadir Nuevo Ejercicio al Banco</label>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="newGlobalExInput" placeholder="Nombre del ejercicio...">
+          <button class="btn-main" style="width:auto;" onclick="addGlobalExercise()">Guardar</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>📋 Ejercicios Registrados</h3>
+        <div id="globalExercisesList" style="margin-top:10px;"></div>
       </div>
     </div>
-    
+
   </div>
 </body>
 </html>
