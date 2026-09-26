@@ -44,7 +44,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 900px; margin: 0 auto; min-height: 100vh; transition: all 0.3s ease; }
-    body.modal-open { overflow: hidden; } /* Bloquea scroll del fondo cuando el modal está activo */
+    body.modal-open { overflow: hidden; }
 
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); position: relative; }
     
@@ -60,7 +60,7 @@
 
     .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
     .tab-btn { padding: 12px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.95rem; }
-    .tab-btn.active { background: var(--accent); color: #000000; border-color: var(--accent); } /* Contraste arreglado */
+    .tab-btn.active { background: var(--accent); color: #000000; border-color: var(--accent); }
 
     .module-section { display: none; }
     .module-section.active { display: block; }
@@ -82,22 +82,20 @@
     button.btn-danger:hover { background: var(--danger); color: #fff; }
     button.btn-google { background: #4285F4; color: #fff; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; border-radius: 10px; }
     
-    .theme-toggle { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 20px; cursor: pointer; width: auto; font-size: 0.9rem; margin-bottom: 0; }
-
-    .item-chip { background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; word-break: break-all; overflow-wrap: anywhere; } /* Text overflow adaptado */
+    .item-chip { background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; word-break: break-all; overflow-wrap: anywhere; } 
     .tree-node { background: var(--input-bg); border-radius: 10px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
     .status-msg { text-align: center; font-weight: bold; margin-top: 10px; font-size: 0.9rem; }
     
     .student-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 15px; }
     .student-item:last-child { border-bottom: none; }
-    .student-info-block { display: flex; flex-direction: column; flex-grow: 1; word-break: break-all; overflow-wrap: anywhere; } /* Text overflow adaptado */
+    .student-info-block { display: flex; flex-direction: column; flex-grow: 1; word-break: break-all; overflow-wrap: anywhere; } 
     .profile-img-circular { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); flex-shrink: 0; }
 
     .log-card { background: var(--input-bg); border-left: 4px solid var(--accent); padding: 10px 14px; margin-top: 8px; border-radius: 6px; font-size: 0.88rem; }
     
     .sub-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; overflow-x: auto; }
     .sub-tab-btn { padding: 6px 12px; background: transparent; border: none; color: var(--text); font-weight: 600; cursor: pointer; width: auto; margin-bottom: 0; white-space: nowrap; opacity: 0.6; transition: opacity 0.2s, color 0.2s, border-bottom 0.2s; }
-    .sub-tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); opacity: 1; font-weight: bold; } /* Contraste y animación arreglado */
+    .sub-tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); opacity: 1; font-weight: bold; } 
 
     /* Modal Alerta Estilos */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 3000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
@@ -166,6 +164,7 @@
           document.getElementById('loginBox').style.display = 'none';
           document.getElementById('adminApp').style.display = 'block';
           document.getElementById('adminEmailDisplay').textContent = user.email;
+          window.updateThemeIcon(); // Inicializar icono de tema
           await loadGlobalExercises();
           await loadGlobalTemplates();
           await fetchAndRenderStudents();
@@ -183,6 +182,16 @@
     window.loginGoogle = () => signInWithPopup(auth, provider);
     window.logout = () => signOut(auth);
 
+    window.updateThemeIcon = function() {
+      const btn = document.getElementById('themeToggleBtn');
+      if (!btn) return;
+      let isDark = document.body.classList.contains('dark-mode');
+      if (!document.body.classList.contains('dark-mode') && !document.body.classList.contains('light-mode')) {
+        isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+      btn.textContent = isDark ? '🌙' : '☀️';
+    };
+
     window.toggleTheme = function() {
       const body = document.body;
       if (body.classList.contains('light-mode')) {
@@ -195,6 +204,7 @@
         const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         body.classList.add(isDark ? 'light-mode' : 'dark-mode');
       }
+      window.updateThemeIcon();
     };
 
     window.switchModule = function(moduleName) {
@@ -214,12 +224,10 @@
 
     // --- MÓDULO 1: MIS ALUMNOS ---
     window.toggleNewStudentForm = function() {
-      const form = document.getElementById('newStudentForm');
-      if (form.style.display === 'none') {
-        form.style.display = 'block';
-      } else {
-        form.style.display = 'none';
-      }
+      document.getElementById('newStudentModal').classList.add('show');
+    };
+    window.closeNewStudentForm = function() {
+      document.getElementById('newStudentModal').classList.remove('show');
     };
 
     async function fetchAndRenderStudents() {
@@ -382,7 +390,6 @@
     };
 
     window.selectStudentToEdit = async function(id) {
-      document.getElementById('newStudentForm').style.display = 'none';
       window.currentStudentId = id;
       const docRef = doc(db, "alumnos", id);
       const docSnap = await getDoc(docRef);
@@ -401,9 +408,6 @@
         document.getElementById('lblNotasAdmin').textContent = window.currentStudentData.notas_admin || "Sin notas.";
         document.getElementById('sheetUrlDisplay').href = window.currentStudentData.google_sheet_url || "#";
         document.getElementById('viewStudentPhoto').src = window.currentStudentData.foto_url || 'https://via.placeholder.com/100?text=👤';
-        
-        const personalLink = window.currentStudentData.link_personal || `https://florsoltrainer.github.io/gymapp/?id=${id}`;
-        document.getElementById('studentLinkCopy').value = personalLink;
 
         document.getElementById('editStudentName').value = window.currentStudentData.nombre || "";
         document.getElementById('editStudentEmail').value = window.currentStudentData.email || "";
@@ -422,7 +426,6 @@
         renderEditor();
         renderRoutineDetails();
         
-        // Abre el contenedor modal en pantalla completa
         document.getElementById('editorContainer').style.display = 'block';
         document.body.classList.add('modal-open'); 
         switchSubTab('datos');
@@ -448,12 +451,19 @@
       }
     };
 
-    window.copyStudentLink = function(inputId) {
-      const copyText = document.getElementById(inputId);
-      copyText.select();
-      copyText.setSelectionRange(0, 99999);
-      document.execCommand("copy");
-      alert("✅ Enlace copiado al portapapeles");
+    window.copyPersonalLink = function() {
+      const personalLink = window.currentStudentData.link_personal || `https://florsoltrainer.github.io/gymapp/?id=${window.currentStudentId}`;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(personalLink).then(() => alert("✅ Enlace copiado al portapapeles"));
+      } else {
+        const temp = document.createElement("input");
+        document.body.appendChild(temp);
+        temp.value = personalLink;
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        alert("✅ Enlace copiado al portapapeles");
+      }
     };
 
     window.createNewStudent = async function() {
@@ -516,7 +526,7 @@
           document.getElementById('newStudentPhoto').value = '';
           document.getElementById('newStudentNotes').value = '';
           
-          document.getElementById('newStudentForm').style.display = 'none';
+          closeNewStudentForm();
           await fetchAndRenderStudents();
           selectStudentToEdit(id);
         } else {
@@ -755,7 +765,6 @@
         const dayDiv = document.createElement('div');
         dayDiv.className = 'tree-node';
         
-        // Agregado el botón "Editar este día"
         dayDiv.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <h4 style="color:var(--accent); margin:0;">📅 ${day}</h4>
           <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem;" onclick="openRoutineEditorModal('${day}')">✏️ Editar este día</button>
@@ -1125,6 +1134,41 @@
       </div>
     </div>
   </div>
+  
+  <!-- MODAL REGISTRO NUEVO ALUMNO -->
+  <div id="newStudentModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px; border-left: 4px solid var(--accent);">
+      <button class="modal-close" onclick="closeNewStudentForm()">×</button>
+      <h3>➕ Registrar Nuevo Alumno</h3>
+      <div class="grid-2">
+        <div><label>Nombre Completo</label><input type="text" id="newStudentName" placeholder="Ej: Maria Gomez"></div>
+        <div><label>ID Enlace (sin espacios)</label><input type="text" id="newStudentId" placeholder="Ej: maria"></div>
+      </div>
+      <div class="grid-2">
+        <div><label>Email de Google</label><input type="email" id="newStudentEmail" placeholder="maria@gmail.com"></div>
+        <div><label>Edad</label><input type="number" id="newStudentAge" placeholder="28"></div>
+      </div>
+      <div class="grid-2">
+        <div><label>Peso (kg)</label><input type="number" id="newStudentWeight" placeholder="60"></div>
+        <div><label>Altura (cm)</label><input type="number" id="newStudentHeight" placeholder="165"></div>
+      </div>
+      
+      <label>Patologías / Lesiones</label>
+      <input type="text" id="newStudentPathologies" placeholder="Ej: Hernia discal, dolor de rodilla...">
+      
+      <label>Foto de Perfil (Opcional)</label>
+      <input type="file" id="newStudentPhoto" accept="image/*">
+      
+      <label>Notas Adicionales</label>
+      <textarea id="newStudentNotes" placeholder="Objetivos, antecedentes..."></textarea>
+      
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button class="btn-main" onclick="createNewStudent()">Crear Alumno</button>
+        <button class="btn-sec" onclick="closeNewStudentForm()">Cancelar</button>
+      </div>
+      <div id="createStatus" class="status-msg"></div>
+    </div>
+  </div>
 
   <div id="loginBox" class="card" style="text-align: center; padding: 40px 20px; max-width: 400px; margin: 40px auto;">
     <h2>🔐 Panel Administrador</h2>
@@ -1138,6 +1182,8 @@
       <img src="logo chico.png" alt="Flor Sol Trainer" class="header-logo">
       
       <div class="user-menu-container">
+        <button id="themeToggleBtn" class="user-menu-btn" onclick="toggleTheme()" style="padding: 8px 10px; font-size: 1.1rem; border-radius: 50%;">☀️</button>
+        
         <button class="user-menu-btn" onclick="openNotifModal()" style="position: relative; padding: 8px 10px;">
           🔔 <span id="notifBadge" class="badge-notif">0</span>
         </button>
@@ -1147,7 +1193,6 @@
         
         <div class="user-menu-dropdown" id="userMenuDropdown">
           <span id="adminEmailDisplay" class="menu-email">Cargando...</span>
-          <button class="theme-toggle" onclick="toggleTheme()" style="width: 100%; margin: 0;">☀️/🌙 Cambiar Tema</button>
           <hr style="border:1px solid var(--border); margin: 8px 0;">
           <button id="exportBackupBtn" class="btn-sec" onclick="exportBackup()" style="width: 100%; margin: 0; font-size:0.85rem;">💾 Exportar Backup (JSON)</button>
           <button class="btn-sec" onclick="triggerImportBackup()" style="width: 100%; margin: 0; font-size:0.85rem;">📂 Importar Backup (JSON)</button>
@@ -1179,38 +1224,6 @@
           <p style="color:var(--muted); font-size:0.85rem;">Basado en los datos de entrenamiento registrados por los alumnos.</p>
           <div id="rankingContainer"></div>
         </div>
-      </div>
-
-      <!-- Formulario para Nuevo Alumno -->
-      <div id="newStudentForm" class="card" style="display: none; border-left: 4px solid var(--accent);">
-        <h3>➕ Registrar Nuevo Alumno</h3>
-        <div class="grid-2">
-          <div><label>Nombre Completo</label><input type="text" id="newStudentName" placeholder="Ej: Maria Gomez"></div>
-          <div><label>ID Enlace (sin espacios)</label><input type="text" id="newStudentId" placeholder="Ej: maria"></div>
-        </div>
-        <div class="grid-2">
-          <div><label>Email de Google</label><input type="email" id="newStudentEmail" placeholder="maria@gmail.com"></div>
-          <div><label>Edad</label><input type="number" id="newStudentAge" placeholder="28"></div>
-        </div>
-        <div class="grid-2">
-          <div><label>Peso (kg)</label><input type="number" id="newStudentWeight" placeholder="60"></div>
-          <div><label>Altura (cm)</label><input type="number" id="newStudentHeight" placeholder="165"></div>
-        </div>
-        
-        <label>Patologías / Lesiones</label>
-        <input type="text" id="newStudentPathologies" placeholder="Ej: Hernia discal, dolor de rodilla...">
-        
-        <label>Foto de Perfil (Opcional)</label>
-        <input type="file" id="newStudentPhoto" accept="image/*">
-        
-        <label>Notas Adicionales</label>
-        <textarea id="newStudentNotes" placeholder="Objetivos, antecedentes..."></textarea>
-        
-        <div style="display: flex; gap: 10px;">
-          <button class="btn-main" onclick="createNewStudent()">Crear Alumno</button>
-          <button class="btn-sec" onclick="toggleNewStudentForm()">Cancelar</button>
-        </div>
-        <div id="createStatus" class="status-msg"></div>
       </div>
     </div>
 
@@ -1264,38 +1277,33 @@
       <div id="subtab-content-datos" class="sub-tab-content" style="display: block;">
         
         <div class="card" id="studentDataView">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 15px; flex-wrap: wrap;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
             <div style="display:flex; align-items:center; gap: 15px; min-width: 0;">
               <img id="viewStudentPhoto" src="" class="profile-img-circular" style="width: 70px; height: 70px;" alt="Foto">
-              <h3 style="margin: 0;">👤 Datos del Alumno</h3>
+              <div>
+                <h3 id="lblNombre" style="margin: 0; font-size: 1.6rem;">...</h3>
+                <div style="color: var(--muted); font-size: 0.95rem; margin-top: 4px;">
+                  <span id="lblEdad">...</span> años | <span id="lblPeso">...</span> kg | <span id="lblAltura">...</span> cm
+                </div>
+              </div>
             </div>
-            <button class="btn-sec" onclick="toggleEditData(true)" style="width: auto; padding: 6px 12px;">✏️ Editar Datos</button>
+            <button class="btn-sec" onclick="toggleEditData(true)" style="width: auto; padding: 6px 12px;">✏️ Editar Perfil</button>
           </div>
           
-          <div class="grid-3">
-            <div><label>Nombre</label><div class="item-chip" id="lblNombre">...</div></div>
-            <div><label>Email</label><div class="item-chip" id="lblEmail">...</div></div>
-            <div><label>Edad</label><div class="item-chip" id="lblEdad">...</div></div>
-            <div><label>Peso (kg)</label><div class="item-chip" id="lblPeso">...</div></div>
-            <div><label>Altura (cm)</label><div class="item-chip" id="lblAltura">...</div></div>
-            <div><label>Pago última cuota</label><div class="item-chip" id="lblPago">...</div></div>
+          <div style="font-size: 0.95rem; line-height: 1.6;">
+            <p><strong>📧 Email:</strong> <span id="lblEmail">...</span></p>
+            <p><strong>💰 Último pago:</strong> <span id="lblPago">...</span></p>
+            <p style="margin-top: 8px;"><strong>⚠️ Patologías:</strong> <span id="lblPatologias" style="color:var(--danger);">...</span></p>
+            
+            <div style="margin-top:16px;">
+              <strong>📝 Notas del Entrenador:</strong>
+              <p id="lblNotasAdmin" style="color:var(--muted); font-style: italic; margin-top: 4px;">...</p>
+            </div>
           </div>
-          <div style="margin-top:12px;">
-             <label>Patologías / Lesiones</label>
-             <div class="item-chip" id="lblPatologias" style="color:var(--danger);">...</div>
-          </div>
-          <label style="margin-top:12px;">Notas del Entrenador</label>
-          <div class="item-chip" id="lblNotasAdmin" style="min-height: 50px; font-style: italic;">...</div>
           
-          <div style="margin-top:16px;">
-            <label>Enlace de Acceso Personal</label>
-            <div style="display: flex; gap: 8px;">
-              <input type="text" id="studentLinkCopy" readonly style="margin: 0;">
-              <button class="btn-main" style="width: auto;" onclick="copyStudentLink('studentLinkCopy')">Copiar</button>
-            </div>
-            <div style="margin-top: 10px;">
-              <a id="sheetUrlDisplay" href="#" target="_blank" style="color: var(--accent); font-weight: bold; font-size: 0.85rem;">Abrir Google Sheet de este Alumno ↗</a>
-            </div>
+          <div style="margin-top:20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="copyPersonalLink()">🔗 Copiar Link Personal</button>
+            <a id="sheetUrlDisplay" href="#" target="_blank" style="color: var(--accent); font-weight: bold; font-size: 0.85rem; text-decoration: none;">Abrir Google Sheet ↗</a>
           </div>
         </div>
 
@@ -1377,9 +1385,10 @@
   <!-- MODAL: Diseñar / Editar Rutina -->
   <div id="routineEditorModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 800px;">
-      <button class="modal-close" onclick="closeRoutineEditorModal()">×</button>
-      
-      <h3>⚙️ Diseñar y Publicar Rutina</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+        <h3 style="margin: 0;">⚙️ Diseñar y Publicar Rutina</h3>
+        <button onclick="closeRoutineEditorModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
+      </div>
       
       <div style="margin-bottom: 16px;">
         <label>Aplicar Plantilla Estándar:</label>
@@ -1411,7 +1420,8 @@
           </div>
         </div>
         
-        <div style="background:#252530; padding:10px; border-radius:6px; margin-bottom:8px; border: 1px solid var(--border);">
+        <!-- Recuadro para añadir ejercicios (Se cambió el fondo duro por variable dinámica) -->
+        <div style="background:var(--bg); padding:10px; border-radius:6px; margin-bottom:8px; border: 1px solid var(--border);">
           <label>Elegir de Ejercicios Precargados:</label>
           <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''"></select>
 
