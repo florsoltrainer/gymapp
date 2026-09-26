@@ -164,7 +164,7 @@
           document.getElementById('loginBox').style.display = 'none';
           document.getElementById('adminApp').style.display = 'block';
           document.getElementById('adminEmailDisplay').textContent = user.email;
-          window.updateThemeIcon(); // Inicializar icono de tema
+          window.updateThemeIcon();
           await loadGlobalExercises();
           await loadGlobalTemplates();
           await fetchAndRenderStudents();
@@ -406,7 +406,6 @@
         document.getElementById('lblPatologias').textContent = window.currentStudentData.patologias || "Ninguna";
         document.getElementById('lblPago').textContent = window.currentStudentData.fecha_pago || "-";
         document.getElementById('lblNotasAdmin').textContent = window.currentStudentData.notas_admin || "Sin notas.";
-        document.getElementById('sheetUrlDisplay').href = window.currentStudentData.google_sheet_url || "#";
         document.getElementById('viewStudentPhoto').src = window.currentStudentData.foto_url || 'https://via.placeholder.com/100?text=👤';
 
         document.getElementById('editStudentName').value = window.currentStudentData.nombre || "";
@@ -659,7 +658,8 @@
           for (const zone in rut[day]) {
             rut[day][zone].forEach(ex => {
               const displayWeights = ex.weights ? ex.weights.join(", ") : ex.weight;
-              tableData.push([day, zone, ex.name, `${ex.sets}x [${ex.reps}]`, `${displayWeights} kg`, ex.notes || '-']);
+              const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
+              tableData.push([day, zone, ex.name, `${ex.sets}x [${displayReps}]`, `${displayWeights} kg`, ex.notes || '-']);
             });
           }
         }
@@ -730,7 +730,6 @@
       }
     };
 
-    // Funciones del Modal de Edición de Rutina
     window.openRoutineEditorModal = function(day) {
       document.getElementById('routineEditorModal').classList.add('show');
       renderEditor();
@@ -783,8 +782,10 @@
           
           rut[day][zone].forEach(ex => {
             const displayWeights = ex.weights ? ex.weights.join("kg, ") + "kg" : `${ex.weight} kg`;
+            const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
+            
             ul.innerHTML += `<li style="margin-bottom:6px;">
-              <span style="color: var(--text);">🏋️ <strong>${ex.name}</strong></span> - ${ex.sets} series x ${ex.reps} reps @ [${displayWeights}]
+              <span style="color: var(--text);">🏋️ <strong>${ex.name}</strong></span> - ${ex.sets} series x [${displayReps}] reps @ [${displayWeights}]
               ${ex.notes ? `<br><span style="color:var(--accent); font-size:0.85rem;">📌 <i>${ex.notes}</i></span>` : ''}
             </li>`;
           });
@@ -803,6 +804,73 @@
         alert("✅ Alumno eliminado.");
         closeEditorModal();
         await fetchAndRenderStudents();
+      }
+    };
+
+    // --- MÓDULO DE EJERCICIOS (BANCO GLOBAL) ---
+    window.openNewGlobalExModal = function() {
+      document.getElementById('newGlobalExModal').classList.add('show');
+    };
+    window.closeNewGlobalExModal = function() {
+      document.getElementById('newGlobalExModal').classList.remove('show');
+    };
+
+    window.openEditGlobalExModal = function(id) {
+      const ex = window.globalExercises.find(e => e.id === id);
+      if (!ex) return;
+      document.getElementById('editGlobalExId').value = id;
+      document.getElementById('editGlobalExName').value = ex.nombre || "";
+      document.getElementById('editGlobalExZone').value = ex.zona || "";
+      
+      const thumbsContainer = document.getElementById('editGlobalExThumbnails');
+      thumbsContainer.innerHTML = '';
+      if (ex.imageUrls && ex.imageUrls.length > 0) {
+        ex.imageUrls.forEach(url => {
+          const img = document.createElement('img');
+          img.src = url;
+          img.style.width = '80px';
+          img.style.height = '80px';
+          img.style.objectFit = 'cover';
+          img.style.borderRadius = '8px';
+          img.style.cursor = 'pointer';
+          img.style.border = '1px solid var(--border)';
+          img.onclick = () => openImageViewer(url);
+          thumbsContainer.appendChild(img);
+        });
+      } else {
+         thumbsContainer.innerHTML = '<span style="color:var(--muted); font-size:0.85rem;">Sin imágenes registradas</span>';
+      }
+      document.getElementById('editGlobalExModal').classList.add('show');
+    };
+    window.closeEditGlobalExModal = function() {
+      document.getElementById('editGlobalExModal').classList.remove('show');
+    };
+
+    window.openImageViewer = function(url) {
+      document.getElementById('imageViewerSrc').src = url;
+      document.getElementById('imageViewerModal').classList.add('show');
+    };
+    window.closeImageViewer = function() {
+      document.getElementById('imageViewerModal').classList.remove('show');
+    };
+
+    window.saveGlobalExerciseEdit = async function() {
+      const id = document.getElementById('editGlobalExId').value;
+      const newName = document.getElementById('editGlobalExName').value.trim();
+      const newZone = document.getElementById('editGlobalExZone').value.trim();
+      if(!newName) return alert('El nombre no puede estar vacío');
+      
+      await updateDoc(doc(db, "ejercicios_base", id), { nombre: newName, zona: newZone });
+      closeEditGlobalExModal();
+      await loadGlobalExercises();
+    };
+
+    window.deleteGlobalExerciseFromModal = async function() {
+      const id = document.getElementById('editGlobalExId').value;
+      if (confirm("¿Borrar este ejercicio definitivamente del banco global?")) {
+        await deleteDoc(doc(db, "ejercicios_base", id));
+        closeEditGlobalExModal();
+        await loadGlobalExercises();
       }
     };
 
@@ -830,10 +898,7 @@
             <div>
               <strong>🏋️ ${data.nombre}</strong> <small style="color:var(--muted)">[${data.zona || 'Sin Zona'}]</small>
             </div>
-            <div style="display:flex; gap:8px;">
-              <button class="btn-sec" style="width:auto; padding:4px 8px;" onclick="openEditExerciseModal('${docSnap.id}')">Editar</button>
-              <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteGlobalExercise('${docSnap.id}')">Eliminar</button>
-            </div>
+            <button class="btn-sec" style="width:auto; padding:4px 12px;" onclick="openEditGlobalExModal('${docSnap.id}')">Ver / Editar</button>
           `;
           listContainer.appendChild(chip);
         }
@@ -854,10 +919,7 @@
           <div>
             <strong>🏋️ ${data.nombre}</strong> <small style="color:var(--muted)">[${data.zona || 'Sin Zona'}]</small>
           </div>
-          <div style="display:flex; gap:8px;">
-            <button class="btn-sec" style="width:auto; padding:4px 8px;" onclick="openEditExerciseModal('${data.id}')">Editar</button>
-            <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteGlobalExercise('${data.id}')">Eliminar</button>
-          </div>
+          <button class="btn-sec" style="width:auto; padding:4px 12px;" onclick="openEditGlobalExModal('${data.id}')">Ver / Editar</button>
         `;
         listContainer.appendChild(chip);
       });
@@ -893,25 +955,9 @@
       document.getElementById('newGlobalExZoneSelect').value = '';
       document.getElementById('newGlobalExZoneManual').value = '';
       document.getElementById('newGlobalExFiles').value = '';
+      closeNewGlobalExModal();
       await loadGlobalExercises();
       populateZoneDropdowns();
-    };
-
-    window.openEditExerciseModal = function(id) {
-      const ex = window.globalExercises.find(e => e.id === id);
-      if (!ex) return;
-      const newName = prompt("Nuevo nombre del ejercicio:", ex.nombre);
-      const newZone = prompt("Nueva zona muscular:", ex.zona || "");
-      if (newName) {
-        updateDoc(doc(db, "ejercicios_base", id), { nombre: newName, zona: newZone }).then(() => loadGlobalExercises());
-      }
-    };
-
-    window.deleteGlobalExercise = async function(id) {
-      if (confirm("¿Borrar este ejercicio del banco global?")) {
-        await deleteDoc(doc(db, "ejercicios_base", id));
-        await loadGlobalExercises();
-      }
     };
 
     async function loadGlobalTemplates() {
@@ -981,8 +1027,8 @@
 
       const exName = selectedExName || manualExName;
       const sets = Number(document.getElementById('newExSets').value) || 3;
-      const reps = Number(document.getElementById('newExReps').value);
       const weightsInput = document.getElementById('newExWeights').value.trim();
+      const repsInput = document.getElementById('newExReps').value.trim();
 
       if (!day || !zone || !exName) return alert("Selecciona o escribe el nombre del ejercicio.");
 
@@ -992,6 +1038,13 @@
       } else {
         const singleWeight = Number(weightsInput) || 0;
         weightsArray = Array(sets).fill(singleWeight);
+      }
+
+      let repsArray = [];
+      if (repsInput.includes(',')) {
+        repsArray = repsInput.split(',').map(r => r.trim());
+      } else {
+        repsArray = Array(sets).fill(repsInput || "10");
       }
 
       let imageUrls = [];
@@ -1010,12 +1063,13 @@
 
       window.currentStudentData.rutina[day][zone].push({ 
         name: exName, sets: sets, weights: weightsArray, weight: weightsArray[0] || 0,
-        reps: reps, notes: notes, imageUrls: imageUrls
+        reps: repsArray, notes: notes, imageUrls: imageUrls
       });
 
       document.getElementById('manualExName').value = '';
       document.getElementById('newExNotes').value = '';
       document.getElementById('newExWeights').value = '';
+      document.getElementById('newExReps').value = '';
       document.getElementById('selectGlobalExercise').value = '';
       renderEditor(); 
       renderRoutineDetails();
@@ -1107,10 +1161,11 @@
           div.className = 'item-chip';
           const imgCount = ex.imageUrls ? ex.imageUrls.length : (ex.imageUrl ? 1 : 0);
           const displayWeights = ex.weights ? ex.weights.join("kg, ") + "kg" : `${ex.weight} kg`;
+          const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
 
           div.innerHTML = `
             <div>
-              <span>🏋️ <strong>${ex.name}</strong> (${ex.sets || 3} series x ${ex.reps} reps @ [${displayWeights}]) ${imgCount > 0 ? `🖼️ (${imgCount})` : ''}</span>
+              <span>🏋️ <strong>${ex.name}</strong> (${ex.sets || 3} series x [${displayReps}] reps @ [${displayWeights}]) ${imgCount > 0 ? `🖼️ (${imgCount})` : ''}</span>
               ${ex.notes ? `<div style="font-size:0.8rem; color:var(--accent); margin-top:2px;">📌 <em>${ex.notes}</em></div>` : ''}
             </div>
             <button class="btn-danger" onclick="deleteExercise('${day}', '${zone}', ${idx})">Eliminar</button>
@@ -1138,8 +1193,10 @@
   <!-- MODAL REGISTRO NUEVO ALUMNO -->
   <div id="newStudentModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 600px; border-left: 4px solid var(--accent);">
-      <button class="modal-close" onclick="closeNewStudentForm()">×</button>
-      <h3>➕ Nuevo Alumno</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+        <h3 style="margin: 0;">➕ Nuevo Alumno</h3>
+        <button onclick="closeNewStudentForm()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
+      </div>
       <div class="grid-2">
         <div><label>Nombre Completo</label><input type="text" id="newStudentName" placeholder="Ej: Maria Gomez"></div>
         <div><label>ID Enlace (sin espacios)</label><input type="text" id="newStudentId" placeholder="Ej: maria"></div>
@@ -1230,20 +1287,9 @@
     <!-- MÓDULO 2: BANCO Y PLANTILLAS -->
     <div id="module-ejercicios" class="module-section">
       <div class="card">
-        <h2>📚 Ejercicios (Banco Global)</h2>
-        
-        <div class="tree-node" style="margin-top: 14px;">
-          <h4>➕ Agregar Nuevo Ejercicio al Banco</h4>
-          <label>Nombre del Ejercicio</label>
-          <input type="text" id="newGlobalExInput" placeholder="Ej: Sentadilla Búlgara">
-          
-          <label>Zona Muscular</label>
-          <select id="newGlobalExZoneSelect"><option value="">-- Seleccionar Zona --</option></select>
-          <input type="text" id="newGlobalExZoneManual" placeholder="O escribe una zona nueva...">
-
-          <label>Fotos / GIFs demostrativos (hasta 3 archivos)</label>
-          <input type="file" id="newGlobalExFiles" accept="image/*" multiple>
-          <button class="btn-main" onclick="addGlobalExercise()">+ Agregar al Banco</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+          <h2 style="margin: 0;">📚 Ejercicios (Banco Global)</h2>
+          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openNewGlobalExModal()">➕ Nuevo Ejercicio</button>
         </div>
 
         <div class="grid-2" style="margin-top: 16px;">
@@ -1287,23 +1333,21 @@
                 </div>
               </div>
             </div>
-            <button class="btn-sec" onclick="toggleEditData(true)" style="width: auto; padding: 6px 12px;">✏️</button>
-          </div>
-          
-          <div style="font-size: 0.95rem; line-height: 1.6;">
-            <p><strong>📧 Email:</strong> <span id="lblEmail">...</span></p>
-            <p><strong>💰 Último pago:</strong> <span id="lblPago">...</span></p>
-            <p style="margin-top: 8px;"><strong>⚠️ Patologías:</strong> <span id="lblPatologias" style="color:var(--danger);">...</span></p>
-            
-            <div style="margin-top:16px;">
-              <strong>📝 Notas del Entrenador:</strong>
-              <p id="lblNotasAdmin" style="color:var(--muted); font-style: italic; margin-top: 4px;">...</p>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn-main" style="width: auto; padding: 6px 12px;" onclick="copyPersonalLink()">🔗 Link Personal</button>
+              <button class="btn-sec" onclick="toggleEditData(true)" style="width: auto; padding: 6px 12px;">✏️ Editar</button>
             </div>
           </div>
           
-          <div style="margin-top:20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="copyPersonalLink()">🔗 Copiar Link Personal</button>
-            <a id="sheetUrlDisplay" href="#" target="_blank" style="color: var(--accent); font-weight: bold; font-size: 0.85rem; text-decoration: none;">Abrir Google Sheet ↗</a>
+          <div style="font-size: 0.95rem; display: flex; flex-direction: column; gap: 8px;">
+            <div><strong>📧 Email:</strong> <span id="lblEmail">...</span></div>
+            <div><strong>💰 Último pago:</strong> <span id="lblPago">...</span></div>
+            <div><strong>⚠️ Patologías:</strong> <span id="lblPatologias" style="color:var(--danger);">...</span></div>
+            
+            <div style="margin-top: 8px;">
+              <strong>📝 Notas del Entrenador:</strong>
+              <div id="lblNotasAdmin" style="color:var(--muted); font-style: italic; margin-top: 4px;">...</div>
+            </div>
           </div>
         </div>
 
@@ -1420,7 +1464,6 @@
           </div>
         </div>
         
-        <!-- Recuadro para añadir ejercicios (Se cambió el fondo duro por variable dinámica) -->
         <div style="background:var(--bg); padding:10px; border-radius:6px; margin-bottom:8px; border: 1px solid var(--border);">
           <label>Elegir de Ejercicios Precargados:</label>
           <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''"></select>
@@ -1434,12 +1477,11 @@
           <div class="grid-3">
             <div><label>Series Target</label><input type="number" id="newExSets" value="3" min="1"></div>
             <div><label>Pesos (ej: 50, 55)</label><input type="text" id="newExWeights" placeholder="50, 55"></div>
-            <div><label>Reps Target</label><input type="number" id="newExReps" value="10"></div>
+            <div><label>Reps Target (ej: 12, 10)</label><input type="text" id="newExReps" placeholder="12, 10, 8"></div>
           </div>
           <button class="btn-sec" onclick="addExercise()" style="margin-bottom:0;">+ Añadir Ejercicio a la Rutina</button>
         </div>
         
-        <!-- Lista renderizada y filtrada por Día / Zona -->
         <div id="exercisesList"></div>
       </div>
       
@@ -1449,6 +1491,62 @@
       </div>
       <div id="saveStatus" class="status-msg"></div>
 
+    </div>
+  </div>
+
+  <!-- MODAL: Nuevo Ejercicio (Banco Global) -->
+  <div id="newGlobalExModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px; border-left: 4px solid var(--accent);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+        <h3 style="margin: 0;">➕ Nuevo Ejercicio</h3>
+        <button onclick="closeNewGlobalExModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
+      </div>
+      
+      <label>Nombre del Ejercicio</label>
+      <input type="text" id="newGlobalExInput" placeholder="Ej: Sentadilla Búlgara">
+      
+      <label>Zona Muscular</label>
+      <select id="newGlobalExZoneSelect"><option value="">-- Seleccionar Zona --</option></select>
+      <input type="text" id="newGlobalExZoneManual" placeholder="O escribe una zona nueva...">
+
+      <label>Fotos / GIFs demostrativos (hasta 3 archivos)</label>
+      <input type="file" id="newGlobalExFiles" accept="image/*" multiple>
+      
+      <button class="btn-main" style="margin-top: 15px;" onclick="addGlobalExercise()">+ Guardar en el Banco</button>
+    </div>
+  </div>
+
+  <!-- MODAL: Ver / Editar Ejercicio -->
+  <div id="editGlobalExModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+        <h3 style="margin: 0;">⚙️ Detalles del Ejercicio</h3>
+        <button onclick="closeEditGlobalExModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
+      </div>
+      
+      <input type="hidden" id="editGlobalExId">
+      
+      <label>Nombre</label>
+      <input type="text" id="editGlobalExName">
+      
+      <label>Zona Muscular / Categoría</label>
+      <input type="text" id="editGlobalExZone">
+      
+      <label style="margin-top: 10px;">Miniaturas (Haz click para ampliarlas)</label>
+      <div id="editGlobalExThumbnails" style="display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px;"></div>
+
+      <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 20px;">
+        <button class="btn-main" onclick="saveGlobalExerciseEdit()">💾 Guardar Cambios</button>
+        <button class="btn-danger" onclick="deleteGlobalExerciseFromModal()">🗑️ Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Visor de Imágenes -->
+  <div id="imageViewerModal" class="modal-overlay" style="z-index: 4000; background: rgba(0,0,0,0.9);" onclick="closeImageViewer()">
+    <button style="position: absolute; top: 20px; right: 30px; background: none; border: none; font-size: 2.5rem; color: white; cursor: pointer; line-height: 1;">×</button>
+    <div style="max-width: 90%; max-height: 90%; position: relative;">
+      <img id="imageViewerSrc" src="" style="max-width: 100%; max-height: 90vh; border-radius: 8px; object-fit: contain; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
     </div>
   </div>
 
