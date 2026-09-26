@@ -60,7 +60,7 @@
 
     .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
     .tab-btn { padding: 12px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.95rem; }
-    .tab-btn.active { background: var(--accent); color: var(--text); border-color: var(--accent); }
+    .tab-btn.active { background: var(--accent); color: #000000; border-color: var(--accent); } /* Contraste arreglado */
 
     .module-section { display: none; }
     .module-section.active { display: block; }
@@ -84,25 +84,25 @@
     
     .theme-toggle { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 20px; cursor: pointer; width: auto; font-size: 0.9rem; margin-bottom: 0; }
 
-    .item-chip { background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .item-chip { background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; word-break: break-all; overflow-wrap: anywhere; } /* Text overflow adaptado */
     .tree-node { background: var(--input-bg); border-radius: 10px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
     .status-msg { text-align: center; font-weight: bold; margin-top: 10px; font-size: 0.9rem; }
     
     .student-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 15px; }
     .student-item:last-child { border-bottom: none; }
-    .student-info-block { display: flex; flex-direction: column; flex-grow: 1; }
+    .student-info-block { display: flex; flex-direction: column; flex-grow: 1; word-break: break-all; overflow-wrap: anywhere; } /* Text overflow adaptado */
     .profile-img-circular { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); flex-shrink: 0; }
 
     .log-card { background: var(--input-bg); border-left: 4px solid var(--accent); padding: 10px 14px; margin-top: 8px; border-radius: 6px; font-size: 0.88rem; }
     
     .sub-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; overflow-x: auto; }
-    .sub-tab-btn { padding: 6px 12px; background: transparent; border: none; color: var(--muted); font-weight: 600; cursor: pointer; width: auto; margin-bottom: 0; white-space: nowrap; }
-    .sub-tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+    .sub-tab-btn { padding: 6px 12px; background: transparent; border: none; color: var(--text); font-weight: 600; cursor: pointer; width: auto; margin-bottom: 0; white-space: nowrap; opacity: 0.6; transition: opacity 0.2s, color 0.2s, border-bottom 0.2s; }
+    .sub-tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); opacity: 1; font-weight: bold; } /* Contraste y animación arreglado */
 
     /* Modal Alerta Estilos */
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 3000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
     .modal-overlay.show { display: flex; }
-    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; position: relative; }
+    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 1.5rem; color: var(--muted); cursor: pointer; }
     
     /* MODAL PANTALLA COMPLETA - PANEL DE ALUMNO */
@@ -268,7 +268,7 @@
         const altura = student.altura || '-';
 
         div.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 15px; flex-grow: 1;">
+          <div style="display: flex; align-items: center; gap: 15px; flex-grow: 1; min-width: 0;">
             <img src="${photoUrl}" class="profile-img-circular" alt="Foto">
             <div class="student-info-block">
               <strong style="font-size: 1.1rem;">${student.nombre || student.id}</strong>
@@ -277,7 +277,7 @@
               </div>
             </div>
           </div>
-          <div style="display:flex; gap:8px;">
+          <div style="display:flex; gap:8px; flex-shrink: 0;">
             <button class="btn-main" style="width: auto; padding: 8px 14px; font-size: 0.85rem;" onclick="selectStudentToEdit('${student.id}')">✏️ Configurar</button>
           </div>
         `;
@@ -461,15 +461,35 @@
       const id = document.getElementById('newStudentId').value.trim().toLowerCase().replace(/\s+/g, '-');
       const email = document.getElementById('newStudentEmail').value.trim().toLowerCase();
       const age = document.getElementById('newStudentAge').value.trim();
+      const weight = document.getElementById('newStudentWeight').value.trim();
+      const height = document.getElementById('newStudentHeight').value.trim();
+      const pathologies = document.getElementById('newStudentPathologies').value.trim();
       const notes = document.getElementById('newStudentNotes').value.trim();
+      const fileInput = document.getElementById('newStudentPhoto');
+      
       const status = document.getElementById('createStatus');
 
       if (!name || !id || !email) return alert("Ingresa Nombre, ID y Email.");
-      status.textContent = "⏳ Generando planilla en Drive...";
+      status.textContent = "⏳ Subiendo datos y generando planilla en Drive...";
+
+      let photoUrl = "";
+      if (fileInput.files.length > 0 && CLOUD_NAME) {
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+        formData.append("upload_preset", UPLOAD_PRESET);
+        try {
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+          const data = await res.json();
+          if (data.secure_url) photoUrl = data.secure_url;
+        } catch (e) {
+          console.error("Error subiendo foto", e);
+        }
+      }
 
       try {
         const response = await fetch(MASTER_SCRIPT_URL, {
           method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify({ action: "CREATE_SHEET", nombre: name, email: email })
         });
         const resData = await response.json();
@@ -477,8 +497,8 @@
         if (resData.status === "success") {
           const directLink = `https://florsoltrainer.github.io/gymapp/?id=${id}`;
           const newStudentData = {
-            nombre: name, email: email, edad: age, peso: "", altura: "", patologias: "",
-            notas_admin: notes, nota_para_alumno: "", google_sheet_url: resData.sheetUrl,
+            nombre: name, email: email, edad: age, peso: weight, altura: height, patologias: pathologies,
+            foto_url: photoUrl, notas_admin: notes, nota_para_alumno: "", google_sheet_url: resData.sheetUrl,
             spreadsheet_id: resData.spreadsheetId, link_personal: directLink, rutina: {}
           };
 
@@ -490,6 +510,10 @@
           document.getElementById('newStudentId').value = '';
           document.getElementById('newStudentEmail').value = '';
           document.getElementById('newStudentAge').value = '';
+          document.getElementById('newStudentWeight').value = '';
+          document.getElementById('newStudentHeight').value = '';
+          document.getElementById('newStudentPathologies').value = '';
+          document.getElementById('newStudentPhoto').value = '';
           document.getElementById('newStudentNotes').value = '';
           
           document.getElementById('newStudentForm').style.display = 'none';
@@ -499,7 +523,8 @@
           status.textContent = "❌ Error al crear la planilla en Drive.";
         }
       } catch (e) {
-        status.textContent = "❌ Error de conexión.";
+        status.textContent = "❌ Error de conexión al comunicarse con Drive.";
+        console.error(e);
       }
     };
 
@@ -695,14 +720,21 @@
       }
     };
 
-    // Saltar a edición rápida desde el resumen
-    window.jumpToEditDay = function(day) {
-      switchSubTab('rutina');
-      const daySelect = document.getElementById('selectDayForEx');
-      const zoneSelect = document.getElementById('selectZoneForEx');
-      if(daySelect) daySelect.value = day;
-      if(zoneSelect) zoneSelect.value = ''; // Borra zona para ver todos los ejercicios de ese día
-      renderExercisesList();
+    // Funciones del Modal de Edición de Rutina
+    window.openRoutineEditorModal = function(day) {
+      document.getElementById('routineEditorModal').classList.add('show');
+      renderEditor();
+      if (day) {
+        const daySelect = document.getElementById('selectDayForEx');
+        if(daySelect) daySelect.value = day;
+        const zoneSelect = document.getElementById('selectZoneForEx');
+        if(zoneSelect) zoneSelect.value = '';
+        renderExercisesList();
+      }
+    };
+
+    window.closeRoutineEditorModal = function() {
+      document.getElementById('routineEditorModal').classList.remove('show');
     };
 
     window.renderRoutineDetails = function() {
@@ -712,7 +744,10 @@
       
       const rut = window.currentStudentData.rutina;
       if (!rut || Object.keys(rut).length === 0) {
-        container.innerHTML = '<p style="color:var(--muted)">No hay rutina configurada aún.</p>';
+        container.innerHTML = `
+          <p style="color:var(--muted); margin-bottom: 12px;">No hay rutina configurada aún.</p>
+          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openRoutineEditorModal()">⚙️ Configurar Rutina</button>
+        `;
         return;
       }
       
@@ -723,7 +758,7 @@
         // Agregado el botón "Editar este día"
         dayDiv.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <h4 style="color:var(--accent); margin:0;">📅 ${day}</h4>
-          <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem;" onclick="jumpToEditDay('${day}')">✏️ Editar este día</button>
+          <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem;" onclick="openRoutineEditorModal('${day}')">✏️ Editar este día</button>
         </div>`;
         
         for (const zone in rut[day]) {
@@ -1043,7 +1078,6 @@
       });
     }
 
-    // Modificado para soportar filtro por zona o mostrar todo el día agrupado por zona
     window.renderExercisesList = function() {
       const day = document.getElementById('selectDayForEx').value;
       const zoneFilter = document.getElementById('selectZoneForEx').value;
@@ -1053,7 +1087,6 @@
       if (!day || !window.currentStudentData.rutina[day]) return;
 
       Object.keys(window.currentStudentData.rutina[day]).forEach(zone => {
-        // Si hay un filtro de zona activo, solo renderiza esa zona. Si no, muestra todas.
         if (zoneFilter && zone !== zoneFilter) return;
 
         const zoneTitle = document.createElement('div');
@@ -1148,6 +1181,7 @@
         </div>
       </div>
 
+      <!-- Formulario para Nuevo Alumno -->
       <div id="newStudentForm" class="card" style="display: none; border-left: 4px solid var(--accent);">
         <h3>➕ Registrar Nuevo Alumno</h3>
         <div class="grid-2">
@@ -1158,8 +1192,20 @@
           <div><label>Email de Google</label><input type="email" id="newStudentEmail" placeholder="maria@gmail.com"></div>
           <div><label>Edad</label><input type="number" id="newStudentAge" placeholder="28"></div>
         </div>
+        <div class="grid-2">
+          <div><label>Peso (kg)</label><input type="number" id="newStudentWeight" placeholder="60"></div>
+          <div><label>Altura (cm)</label><input type="number" id="newStudentHeight" placeholder="165"></div>
+        </div>
+        
+        <label>Patologías / Lesiones</label>
+        <input type="text" id="newStudentPathologies" placeholder="Ej: Hernia discal, dolor de rodilla...">
+        
+        <label>Foto de Perfil (Opcional)</label>
+        <input type="file" id="newStudentPhoto" accept="image/*">
+        
         <label>Notas Adicionales</label>
         <textarea id="newStudentNotes" placeholder="Objetivos, antecedentes..."></textarea>
+        
         <div style="display: flex; gap: 10px;">
           <button class="btn-main" onclick="createNewStudent()">Crear Alumno</button>
           <button class="btn-sec" onclick="toggleNewStudentForm()">Cancelar</button>
@@ -1211,7 +1257,6 @@
 
       <div class="sub-tabs">
         <button id="subtab-btn-datos" class="sub-tab-btn active" onclick="switchSubTab('datos')">👤 Datos y Resumen</button>
-        <button id="subtab-btn-rutina" class="sub-tab-btn" onclick="switchSubTab('rutina')">⚙️ Diseñar Rutina</button>
         <button id="subtab-btn-historial-avance" class="sub-tab-btn" onclick="switchSubTab('historial-avance')">📈 Historial y Avance</button>
       </div>
 
@@ -1220,7 +1265,7 @@
         
         <div class="card" id="studentDataView">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 15px; flex-wrap: wrap;">
-            <div style="display:flex; align-items:center; gap: 15px;">
+            <div style="display:flex; align-items:center; gap: 15px; min-width: 0;">
               <img id="viewStudentPhoto" src="" class="profile-img-circular" style="width: 70px; height: 70px;" alt="Foto">
               <h3 style="margin: 0;">👤 Datos del Alumno</h3>
             </div>
@@ -1291,6 +1336,7 @@
           <div id="saveDataStatus" class="status-msg"></div>
         </div>
 
+        <!-- Rutina Integrada -->
         <div class="card">
           <h3 style="margin:0; margin-bottom: 12px;">📋 Resumen de la Rutina Asignada</h3>
           <div id="routineDetailsDisplay" style="padding: 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border);">
@@ -1300,70 +1346,6 @@
             <textarea id="editStudentAppNote" placeholder="Escribe aquí un mensaje general, aviso o recomendación que el alumno verá al abrir su rutina..."></textarea>
             <button class="btn-sec" onclick="saveToFirebase()">Guardar Mensaje</button>
           </div>
-        </div>
-      </div>
-
-      <!-- Pestaña Rutina -->
-      <div id="subtab-content-rutina" class="sub-tab-content" style="display: none;">
-        <div class="card">
-          <h3>⚙️ Diseñar y Publicar Rutina</h3>
-          <div style="margin-bottom: 16px;">
-            <label>Aplicar Plantilla Estándar:</label>
-            <div style="display: flex; gap: 8px;">
-              <select id="selectTemplateToApply" style="margin:0;"></select>
-              <button class="btn-sec" onclick="applySelectedTemplate()" style="width: auto;">Aplicar</button>
-            </div>
-          </div>
-          
-          <div class="tree-node">
-            <h4>1. Día de Entrenamiento</h4>
-            <div style="display: flex; gap: 8px;">
-              <input type="text" id="newDayInput" placeholder="Ej: Lunes" style="margin: 0;">
-              <button class="btn-main" onclick="addDay()" style="width: auto;">+ Día</button>
-            </div>
-            <div id="daysList"></div>
-          </div>
-
-          <div class="tree-node">
-            <h4>2. Añadir Ejercicios</h4>
-            <div class="grid-2">
-              <div>
-                <label>Seleccionar Día:</label>
-                <select id="selectDayForEx" onchange="renderExercisesList()"></select>
-              </div>
-              <div>
-                <label>Grupo Muscular (Categoría):</label>
-                <select id="selectZoneForEx" onchange="updateGlobalExerciseDropdown(); renderExercisesList();"></select>
-              </div>
-            </div>
-            
-            <div style="background:#252530; padding:10px; border-radius:6px; margin-bottom:8px; border: 1px solid var(--border);">
-              <label>Elegir de Ejercicios Precargados:</label>
-              <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''"></select>
-
-              <label style="margin-top:6px;">O escribir uno nuevo (se guardará en el banco):</label>
-              <input type="text" id="manualExName" placeholder="Ej: Press Francés" oninput="document.getElementById('selectGlobalExercise').value=''">
-
-              <label style="margin-top:6px;">Observación / Nota para este alumno (opcional):</label>
-              <input type="text" id="newExNotes" placeholder="Ej: Controlar la bajada / Usar agarre neutro">
-
-              <div class="grid-3">
-                <div><label>Series Target</label><input type="number" id="newExSets" value="3" min="1"></div>
-                <div><label>Pesos (ej: 50, 55)</label><input type="text" id="newExWeights" placeholder="50, 55"></div>
-                <div><label>Reps Target</label><input type="number" id="newExReps" value="10"></div>
-              </div>
-              <button class="btn-sec" onclick="addExercise()" style="margin-bottom:0;">+ Añadir Ejercicio a la Rutina</button>
-            </div>
-            
-            <!-- Lista renderizada y filtrada por Día / Zona -->
-            <div id="exercisesList"></div>
-          </div>
-          
-          <div class="grid-2" style="margin-top: 16px;">
-            <button class="btn-main" onclick="saveToFirebase()" style="padding: 12px;">💾 Guardar Rutina</button>
-            <button class="btn-sec" onclick="saveCurrentAsTemplate()" style="padding: 12px;">⭐ Guardar como Plantilla</button>
-          </div>
-          <div id="saveStatus" class="status-msg"></div>
         </div>
       </div>
 
@@ -1389,6 +1371,74 @@
         <button class="btn-danger" onclick="deleteCurrentStudent()" style="width: auto; padding: 10px 18px;">🗑️ Eliminar Alumno de la Base de Datos</button>
       </div>
       
+    </div>
+  </div>
+
+  <!-- MODAL: Diseñar / Editar Rutina -->
+  <div id="routineEditorModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 800px;">
+      <button class="modal-close" onclick="closeRoutineEditorModal()">×</button>
+      
+      <h3>⚙️ Diseñar y Publicar Rutina</h3>
+      
+      <div style="margin-bottom: 16px;">
+        <label>Aplicar Plantilla Estándar:</label>
+        <div style="display: flex; gap: 8px;">
+          <select id="selectTemplateToApply" style="margin:0;"></select>
+          <button class="btn-sec" onclick="applySelectedTemplate()" style="width: auto;">Aplicar</button>
+        </div>
+      </div>
+      
+      <div class="tree-node">
+        <h4>1. Día de Entrenamiento</h4>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="newDayInput" placeholder="Ej: Lunes" style="margin: 0;">
+          <button class="btn-main" onclick="addDay()" style="width: auto;">+ Día</button>
+        </div>
+        <div id="daysList"></div>
+      </div>
+
+      <div class="tree-node">
+        <h4>2. Añadir Ejercicios</h4>
+        <div class="grid-2">
+          <div>
+            <label>Seleccionar Día:</label>
+            <select id="selectDayForEx" onchange="renderExercisesList()"></select>
+          </div>
+          <div>
+            <label>Grupo Muscular (Categoría):</label>
+            <select id="selectZoneForEx" onchange="updateGlobalExerciseDropdown(); renderExercisesList();"></select>
+          </div>
+        </div>
+        
+        <div style="background:#252530; padding:10px; border-radius:6px; margin-bottom:8px; border: 1px solid var(--border);">
+          <label>Elegir de Ejercicios Precargados:</label>
+          <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''"></select>
+
+          <label style="margin-top:6px;">O escribir uno nuevo (se guardará en el banco):</label>
+          <input type="text" id="manualExName" placeholder="Ej: Press Francés" oninput="document.getElementById('selectGlobalExercise').value=''">
+
+          <label style="margin-top:6px;">Observación / Nota para este alumno (opcional):</label>
+          <input type="text" id="newExNotes" placeholder="Ej: Controlar la bajada / Usar agarre neutro">
+
+          <div class="grid-3">
+            <div><label>Series Target</label><input type="number" id="newExSets" value="3" min="1"></div>
+            <div><label>Pesos (ej: 50, 55)</label><input type="text" id="newExWeights" placeholder="50, 55"></div>
+            <div><label>Reps Target</label><input type="number" id="newExReps" value="10"></div>
+          </div>
+          <button class="btn-sec" onclick="addExercise()" style="margin-bottom:0;">+ Añadir Ejercicio a la Rutina</button>
+        </div>
+        
+        <!-- Lista renderizada y filtrada por Día / Zona -->
+        <div id="exercisesList"></div>
+      </div>
+      
+      <div class="grid-2" style="margin-top: 16px;">
+        <button class="btn-main" onclick="saveToFirebase()" style="padding: 12px;">💾 Guardar Rutina</button>
+        <button class="btn-sec" onclick="saveCurrentAsTemplate()" style="padding: 12px;">⭐ Guardar como Plantilla</button>
+      </div>
+      <div id="saveStatus" class="status-msg"></div>
+
     </div>
   </div>
 
