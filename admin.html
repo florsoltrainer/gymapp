@@ -286,7 +286,7 @@
             </div>
           </div>
           <div style="display:flex; gap:8px; flex-shrink: 0;">
-            <button class="btn-main" style="width: auto; padding: 8px 14px; font-size: 0.85rem;" onclick="selectStudentToEdit('${student.id}')">✏️ Configurar</button>
+            <button class="btn-main" style="width: auto; padding: 8px 14px; font-size: 0.85rem;" onclick="selectStudentToEdit('${student.id}')">✏️</button>
           </div>
         `;
         container.appendChild(div);
@@ -767,7 +767,7 @@
         
         dayDiv.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <h4 style="color:var(--accent); margin:0;">📅 ${day}</h4>
-          <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem;" onclick="openRoutineEditorModal('${day}')">✏️ Editar este día</button>
+          <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem;" onclick="openRoutineEditorModal('${day}')">✏️</button>
         </div>`;
         
         for (const zone in rut[day]) {
@@ -1139,7 +1139,7 @@
   <div id="newStudentModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 600px; border-left: 4px solid var(--accent);">
       <button class="modal-close" onclick="closeNewStudentForm()">×</button>
-      <h3>➕ Registrar Nuevo Alumno</h3>
+      <h3>➕ Nuevo Alumno</h3>
       <div class="grid-2">
         <div><label>Nombre Completo</label><input type="text" id="newStudentName" placeholder="Ej: Maria Gomez"></div>
         <div><label>ID Enlace (sin espacios)</label><input type="text" id="newStudentId" placeholder="Ej: maria"></div>
@@ -1188,7 +1188,7 @@
           🔔 <span id="notifBadge" class="badge-notif">0</span>
         </button>
         <button class="user-menu-btn" onclick="document.getElementById('userMenuDropdown').classList.toggle('show')">
-          ⚙️ Ajustes
+          ⚙️ 
         </button>
         
         <div class="user-menu-dropdown" id="userMenuDropdown">
@@ -1213,8 +1213,8 @@
       
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-          <h2 style="margin: 0;">👥 Listado de Alumnos</h2>
-          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="toggleNewStudentForm()">➕ Registrar Nuevo</button>
+          <h2 style="margin: 0;">👥 Alumnos</h2>
+          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="toggleNewStudentForm()">➕</button>
         </div>
         <input type="text" id="searchStudentInput" placeholder="🔍 Buscar por nombre, mail o ID..." oninput="filterStudents()">
         <div id="studentsListContainer" style="margin-top: 10px;"></div>
@@ -1287,7 +1287,7 @@
                 </div>
               </div>
             </div>
-            <button class="btn-sec" onclick="toggleEditData(true)" style="width: auto; padding: 6px 12px;">✏️ Editar Perfil</button>
+            <button class="btn-sec" onclick="toggleEditData(true)" style="width: auto; padding: 6px 12px;">✏️</button>
           </div>
           
           <div style="font-size: 0.95rem; line-height: 1.6;">
