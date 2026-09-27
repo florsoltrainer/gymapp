@@ -1754,7 +1754,7 @@
 
     <div class="tabs">
       <div id="tab-alumnos" class="tab-btn active" onclick="switchModule('alumnos')">👥 Mis Alumnos</div>
-      <div id="tab-ejercicios" class="tab-btn" onclick="switchModule('ejercicios')">📚 Banco de Ejercicios</div>
+      <div id="tab-ejercicios" class="tab-btn" onclick="switchModule('ejercicios')">📚 Ejercicios y Rutinas</div>
     </div>
 
     <!-- MÓDULO 1: MIS ALUMNOS -->
@@ -1782,7 +1782,7 @@
       <!-- Sub-pestañas para Ejercicios y Plantillas -->
       <div class="sub-tabs" style="margin-bottom: 20px;">
         <button id="bank-subtab-btn-ejercicios" class="sub-tab-btn active" onclick="switchBankSubTab('ejercicios')">🏋️ Ejercicios</button>
-        <button id="bank-subtab-btn-plantillas" class="sub-tab-btn" onclick="switchBankSubTab('plantillas')">📋 Plantillas</button>
+        <button id="bank-subtab-btn-plantillas" class="sub-tab-btn" onclick="switchBankSubTab('plantillas')">📋 Rutinas</button>
       </div>
 
       <!-- Sección Banco de Ejercicios -->
@@ -1913,7 +1913,7 @@
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <h3 style="margin:0;">📋 Resumen de la Rutina Asignada</h3>
-            <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">⬇️ Descargar Rutina (PDF)</button>
+            <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">⬇️ Descargar Rutina</button>
           </div>
           <div id="routineDetailsDisplay" style="padding: 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border);">
           </div>
@@ -1930,7 +1930,7 @@
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap:10px;">
             <h3 style="margin:0;">📊 Historial y Avance (30 Días)</h3>
-            <button class="btn-main" onclick="generateConsolidatedPDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">📄 Exportar Ficha PDF</button>
+            <button class="btn-main" onclick="generateConsolidatedPDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">📄 Exportar Datos</button>
           </div>
           <div style="margin-top:15px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
             <label>Seleccionar ejercicio para ver progreso de cargas:</label>
