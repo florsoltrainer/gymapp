@@ -127,7 +127,7 @@
 
     /* Estilos extra para las miniaturas del editor de imágenes */
     .thumb-edit-wrapper { position: relative; display: inline-block; }
-    .thumb-del-btn { position: absolute; top: -6px; right: -6px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+    .thumb-del-btn { position: absolute; top: -6px; right: -6px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
   </style>
 
   <!-- Módulos de Firebase -->
@@ -1798,7 +1798,7 @@
   </div>
 
   <!-- MODAL: Añadir Día (En lugar de prompt) -->
-  <div id="newDayNameModal" class="modal-overlay" style="z-index: 2500;">
+  <div id="newDayNameModal" class="modal-overlay" style="z-index: 3200;">
     <div class="modal-content" style="max-width: 400px; border-left: 4px solid var(--accent);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
         <h3 style="margin: 0;">➕ Añadir Día</h3>
@@ -1813,7 +1813,7 @@
   </div>
 
   <!-- MODAL: Editar Ejercicios del Día Seleccionado -->
-  <div id="editDayExercisesModal" class="modal-overlay" style="z-index: 2500;">
+  <div id="editDayExercisesModal" class="modal-overlay" style="z-index: 3200;">
     <div class="modal-content" style="max-width: 800px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
         <h3 style="margin: 0;" id="editDayExercisesTitle">⚙️ Editar Ejercicios</h3>
