@@ -156,6 +156,8 @@
     window.currentStudentId = "";
     window.globalExercises = [];
     window.globalTemplates = [];
+    window.editorContext = { type: 'student' }; // Maneja el contexto del editor de rutinas
+    window.currentTemplateId = null; 
     let progressChartInstance = null;
 
     onAuthStateChanged(auth, async (user) => {
@@ -220,6 +222,15 @@
       document.getElementById(`subtab-btn-${subName}`).classList.add('active');
       document.getElementById(`subtab-content-${subName}`).style.display = 'block';
       if (subName === 'historial-avance') renderProgressChart();
+    };
+
+    window.switchBankSubTab = function(subName) {
+      document.querySelectorAll('.bank-sub-tab-content').forEach(c => c.style.display = 'none');
+      document.getElementById('bank-subtab-btn-ejercicios').classList.remove('active');
+      document.getElementById('bank-subtab-btn-plantillas').classList.remove('active');
+      
+      document.getElementById(`bank-subtab-content-${subName}`).style.display = 'block';
+      document.getElementById(`bank-subtab-btn-${subName}`).classList.add('active');
     };
 
     // --- MÓDULO 1: MIS ALUMNOS ---
@@ -730,7 +741,35 @@
       }
     };
 
+    // --- Manejo del Contexto del Editor de Rutinas ---
+    function getActiveRoutine() {
+      if (window.editorContext.type === 'template') {
+        return window.editorContext.rutina;
+      }
+      return window.currentStudentData.rutina;
+    }
+
+    function setupEditorButtons() {
+      const btnContainer = document.getElementById('editorActionButtons');
+      const editorTitle = document.getElementById('routineEditorTitle');
+      const applyTplDiv = document.getElementById('applyTemplateContainer');
+      
+      if(window.editorContext.type === 'template') {
+        if(editorTitle) editorTitle.textContent = window.editorContext.nombre ? `⚙️ Editando Plantilla: ${window.editorContext.nombre}` : `⚙️ Nueva Plantilla`;
+        btnContainer.innerHTML = `<button class="btn-main" onclick="saveTemplateToFirebase()" style="padding: 12px; grid-column: 1 / -1;">💾 Guardar Plantilla</button>`;
+        if(applyTplDiv) applyTplDiv.style.display = 'none';
+      } else {
+        if(editorTitle) editorTitle.textContent = `⚙️ Diseñar y Publicar Rutina`;
+        btnContainer.innerHTML = `
+          <button class="btn-main" onclick="saveToFirebase()" style="padding: 12px;">💾 Guardar Rutina</button>
+          <button class="btn-sec" onclick="saveCurrentAsTemplate()" style="padding: 12px;">⭐ Guardar como Plantilla</button>
+        `;
+        if(applyTplDiv) applyTplDiv.style.display = 'block';
+      }
+    }
+
     window.openRoutineEditorModal = function(day) {
+      window.editorContext = { type: 'student' };
       document.getElementById('routineEditorModal').classList.add('show');
       renderEditor();
       if (day) {
@@ -742,13 +781,27 @@
       }
     };
 
+    window.openTemplateEditor = function(templateId = null) {
+      if (templateId) {
+        const template = window.globalTemplates.find(t => t.id === templateId);
+        window.editorContext = { type: 'template', id: templateId, rutina: JSON.parse(JSON.stringify(template.rutina)), nombre: template.nombre_plantilla };
+      } else {
+        const name = prompt("Nombre de la nueva plantilla:");
+        if(!name) return;
+        window.editorContext = { type: 'template', id: null, rutina: {}, nombre: name };
+      }
+      closeViewTemplateModal();
+      document.getElementById('routineEditorModal').classList.add('show');
+      renderEditor();
+    };
+
     window.closeRoutineEditorModal = function() {
       document.getElementById('routineEditorModal').classList.remove('show');
     };
 
     window.renderRoutineDetails = function() {
       const container = document.getElementById('routineDetailsDisplay');
-      if(!container) return;
+      if(!container || !window.currentStudentData) return;
       container.innerHTML = '';
       
       const rut = window.currentStudentData.rutina;
@@ -960,42 +1013,147 @@
       populateZoneDropdowns();
     };
 
+    // --- MÓDULO DE PLANTILLAS ---
     async function loadGlobalTemplates() {
       window.globalTemplates = [];
       const selectTpl = document.getElementById('selectTemplateToApply');
-      selectTpl.innerHTML = '<option value="">-- Selecciona una plantilla --</option>';
+      if(selectTpl) selectTpl.innerHTML = '<option value="">-- Selecciona una plantilla --</option>';
+      const listContainer = document.getElementById('globalTemplatesList');
+      if(listContainer) listContainer.innerHTML = '';
 
       const querySnapshot = await getDocs(collection(db, "plantillas_rutinas"));
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
         window.globalTemplates.push({ id: docSnap.id, ...data });
-        const opt = document.createElement('option');
-        opt.value = docSnap.id; opt.textContent = data.nombre_plantilla;
-        selectTpl.appendChild(opt);
+        if(selectTpl) {
+          const opt = document.createElement('option');
+          opt.value = docSnap.id; opt.textContent = data.nombre_plantilla;
+          selectTpl.appendChild(opt);
+        }
+        if(listContainer) {
+          const chip = document.createElement('div');
+          chip.className = 'item-chip';
+          chip.innerHTML = `
+            <div><strong>📋 ${data.nombre_plantilla}</strong></div>
+            <button class="btn-sec" style="width:auto; padding:4px 12px;" onclick="openViewTemplateModal('${docSnap.id}')">Ver Plantilla</button>
+          `;
+          listContainer.appendChild(chip);
+        }
       });
     }
 
     window.saveCurrentAsTemplate = async function() {
-      if (!window.currentStudentData || !window.currentStudentData.rutina) return alert("No hay rutina para guardar.");
+      const rut = getActiveRoutine();
+      if (!rut || Object.keys(rut).length === 0) return alert("No hay rutina para guardar.");
       const templateName = prompt("Nombre para la plantilla estándar:");
       if (!templateName) return;
-      await addDoc(collection(db, "plantillas_rutinas"), { nombre_plantilla: templateName, rutina: window.currentStudentData.rutina });
+      await addDoc(collection(db, "plantillas_rutinas"), { nombre_plantilla: templateName, rutina: rut });
       alert("✅ Plantilla guardada.");
       await loadGlobalTemplates();
-    }
+    };
+
+    window.saveTemplateToFirebase = async function() {
+      const status = document.getElementById('saveStatus');
+      if(status) status.textContent = "⏳ Guardando plantilla...";
+      try {
+        if (window.editorContext.id) {
+          await updateDoc(doc(db, "plantillas_rutinas", window.editorContext.id), {
+            nombre_plantilla: window.editorContext.nombre,
+            rutina: window.editorContext.rutina
+          });
+        } else {
+          await addDoc(collection(db, "plantillas_rutinas"), {
+            nombre_plantilla: window.editorContext.nombre,
+            rutina: window.editorContext.rutina
+          });
+        }
+        if(status) {
+          status.textContent = "✅ Plantilla guardada.";
+          status.style.color = "var(--accent)";
+          setTimeout(() => { status.textContent = ""; }, 3000);
+        }
+        await loadGlobalTemplates();
+        closeRoutineEditorModal();
+      } catch (e) {
+        if(status) status.textContent = "❌ Error al guardar plantilla.";
+      }
+    };
 
     window.applySelectedTemplate = function() {
       const tplId = document.getElementById('selectTemplateToApply').value;
       const found = window.globalTemplates.find(t => t.id === tplId);
-      if (found && window.currentStudentData) {
-        window.currentStudentData.rutina = JSON.parse(JSON.stringify(found.rutina));
+      if (found) {
+        if (window.editorContext.type === 'template') {
+           window.editorContext.rutina = JSON.parse(JSON.stringify(found.rutina));
+        } else {
+           window.currentStudentData.rutina = JSON.parse(JSON.stringify(found.rutina));
+        }
         renderEditor();
-        renderRoutineDetails();
+        if(window.editorContext.type === 'student') renderRoutineDetails();
         alert("✅ Plantilla aplicada.");
       }
     };
 
+    window.openViewTemplateModal = function(id) {
+      window.currentTemplateId = id;
+      const template = window.globalTemplates.find(t => t.id === id);
+      if(!template) return;
+      document.getElementById('viewTemplateTitle').textContent = `📋 ${template.nombre_plantilla}`;
+      renderTemplateDetails(template);
+      document.getElementById('viewTemplateModal').classList.add('show');
+    };
+
+    window.closeViewTemplateModal = function() {
+      document.getElementById('viewTemplateModal').classList.remove('show');
+    };
+
+    window.editCurrentTemplate = function() {
+      if(window.currentTemplateId) {
+        openTemplateEditor(window.currentTemplateId);
+      }
+    };
+
+    window.renderTemplateDetails = function(template) {
+      const container = document.getElementById('templateDetailsDisplay');
+      if(!container) return;
+      container.innerHTML = '';
+      const rut = template.rutina;
+      if (!rut || Object.keys(rut).length === 0) {
+        container.innerHTML = `<p style="color:var(--muted); margin-bottom: 12px;">Plantilla vacía.</p>`;
+        return;
+      }
+      for (const day in rut) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'tree-node';
+        dayDiv.innerHTML = `<h4 style="color:var(--accent); margin-bottom:8px; margin-top:0;">📅 ${day}</h4>`;
+        
+        for (const zone in rut[day]) {
+          const zoneDiv = document.createElement('div');
+          zoneDiv.style.marginBottom = '8px';
+          zoneDiv.innerHTML = `<strong>💪 ${zone}</strong>`;
+          const ul = document.createElement('ul');
+          ul.style.paddingLeft = '20px';
+          ul.style.color = 'var(--muted)';
+          ul.style.fontSize = '0.9rem';
+          ul.style.marginTop = '4px';
+          rut[day][zone].forEach(ex => {
+            const displayWeights = ex.weights ? ex.weights.join("kg, ") + "kg" : `${ex.weight} kg`;
+            const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
+            ul.innerHTML += `<li style="margin-bottom:6px;">
+              <span style="color: var(--text);">🏋️ <strong>${ex.name}</strong></span> - ${ex.sets} series x [${displayReps}] reps @ [${displayWeights}]
+              ${ex.notes ? `<br><span style="color:var(--accent); font-size:0.85rem;">📌 <i>${ex.notes}</i></span>` : ''}
+            </li>`;
+          });
+          zoneDiv.appendChild(ul);
+          dayDiv.appendChild(zoneDiv);
+        }
+        container.appendChild(dayDiv);
+      }
+    };
+
+    // --- FUNCIONES DEL EDITOR ---
     window.renderEditor = function() {
+      setupEditorButtons();
       renderDayDropdowns();
       renderDaysList();
       populateZoneDropdowns();
@@ -1004,18 +1162,20 @@
 
     window.addDay = function() {
       const name = document.getElementById('newDayInput').value.trim();
-      if (name && !window.currentStudentData.rutina[name]) {
-        window.currentStudentData.rutina[name] = {};
+      const rut = getActiveRoutine();
+      if (name && !rut[name]) {
+        rut[name] = {};
         document.getElementById('newDayInput').value = '';
         renderEditor();
-        renderRoutineDetails();
+        if(window.editorContext.type === 'student') renderRoutineDetails();
       }
     };
 
     window.deleteDay = function(day) {
-      delete window.currentStudentData.rutina[day];
+      const rut = getActiveRoutine();
+      delete rut[day];
       renderEditor();
-      renderRoutineDetails();
+      if(window.editorContext.type === 'student') renderRoutineDetails();
     };
 
     window.addExercise = function() {
@@ -1057,11 +1217,13 @@
         addDoc(collection(db, "ejercicios_base"), { nombre: manualExName, imageUrls: [] }).then(() => loadGlobalExercises());
       }
 
-      if (!window.currentStudentData.rutina[day][zone]) {
-        window.currentStudentData.rutina[day][zone] = [];
+      const rut = getActiveRoutine();
+
+      if (!rut[day][zone]) {
+        rut[day][zone] = [];
       }
 
-      window.currentStudentData.rutina[day][zone].push({ 
+      rut[day][zone].push({ 
         name: exName, sets: sets, weights: weightsArray, weight: weightsArray[0] || 0,
         reps: repsArray, notes: notes, imageUrls: imageUrls
       });
@@ -1072,22 +1234,24 @@
       document.getElementById('newExReps').value = '';
       document.getElementById('selectGlobalExercise').value = '';
       renderEditor(); 
-      renderRoutineDetails();
+      if(window.editorContext.type === 'student') renderRoutineDetails();
     };
 
     window.deleteExercise = function(day, zone, idx) {
-      window.currentStudentData.rutina[day][zone].splice(idx, 1);
-      if (window.currentStudentData.rutina[day][zone].length === 0) {
-        delete window.currentStudentData.rutina[day][zone];
+      const rut = getActiveRoutine();
+      rut[day][zone].splice(idx, 1);
+      if (rut[day][zone].length === 0) {
+        delete rut[day][zone];
       }
       renderEditor();
-      renderRoutineDetails();
+      if(window.editorContext.type === 'student') renderRoutineDetails();
     };
 
     function renderDayDropdowns() {
       const dayForEx = document.getElementById('selectDayForEx');
       const currentSelectedDay = dayForEx.value;
-      const days = Object.keys(window.currentStudentData.rutina || {});
+      const rut = getActiveRoutine();
+      const days = Object.keys(rut || {});
       
       dayForEx.innerHTML = '';
       days.forEach(d => {
@@ -1133,7 +1297,8 @@
     function renderDaysList() {
       const container = document.getElementById('daysList');
       container.innerHTML = '';
-      Object.keys(window.currentStudentData.rutina || {}).forEach(day => {
+      const rut = getActiveRoutine();
+      Object.keys(rut || {}).forEach(day => {
         const div = document.createElement('div');
         div.className = 'item-chip';
         div.innerHTML = `<span>📅 ${day}</span> <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteDay('${day}')">Eliminar</button>`;
@@ -1147,16 +1312,17 @@
       const container = document.getElementById('exercisesList');
       container.innerHTML = '';
       
-      if (!day || !window.currentStudentData.rutina[day]) return;
+      const rut = getActiveRoutine();
+      if (!day || !rut[day]) return;
 
-      Object.keys(window.currentStudentData.rutina[day]).forEach(zone => {
+      Object.keys(rut[day]).forEach(zone => {
         if (zoneFilter && zone !== zoneFilter) return;
 
         const zoneTitle = document.createElement('div');
         zoneTitle.innerHTML = `<strong style="color:var(--muted); display:block; margin: 10px 0 5px 0;">💪 ${zone}</strong>`;
         container.appendChild(zoneTitle);
 
-        window.currentStudentData.rutina[day][zone].forEach((ex, idx) => {
+        rut[day][zone].forEach((ex, idx) => {
           const div = document.createElement('div');
           div.className = 'item-chip';
           const imgCount = ex.imageUrls ? ex.imageUrls.length : (ex.imageUrl ? 1 : 0);
@@ -1286,21 +1452,44 @@
 
     <!-- MÓDULO 2: BANCO Y PLANTILLAS -->
     <div id="module-ejercicios" class="module-section">
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-          <h2 style="margin: 0;">📚 Ejercicios</h2>
-          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openNewGlobalExModal()">➕</button>
-        </div>
-
-        <div class="grid-2" style="margin-top: 16px;">
-          <div>
-            <label>Filtrar por Zona Muscular:</label>
-            <select id="filterZoneExercise" onchange="filterGlobalExercises()"><option value="">-- Todas las Zonas --</option></select>
-          </div>
-        </div>
-
-        <div id="globalExercisesList" style="margin-top: 16px;"></div>
+      
+      <!-- Sub-pestañas para Ejercicios y Plantillas -->
+      <div class="sub-tabs" style="margin-bottom: 20px;">
+        <button id="bank-subtab-btn-ejercicios" class="sub-tab-btn active" onclick="switchBankSubTab('ejercicios')">🏋️ Ejercicios</button>
+        <button id="bank-subtab-btn-plantillas" class="sub-tab-btn" onclick="switchBankSubTab('plantillas')">📋 Plantillas</button>
       </div>
+
+      <!-- Sección Banco de Ejercicios -->
+      <div id="bank-subtab-content-ejercicios" class="bank-sub-tab-content" style="display: block;">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <h2 style="margin: 0;">📚 Ejercicios (Banco Global)</h2>
+            <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openNewGlobalExModal()">➕ Nuevo Ejercicio</button>
+          </div>
+
+          <div class="grid-2" style="margin-top: 16px;">
+            <div>
+              <label>Filtrar por Zona Muscular:</label>
+              <select id="filterZoneExercise" onchange="filterGlobalExercises()"><option value="">-- Todas las Zonas --</option></select>
+            </div>
+          </div>
+
+          <div id="globalExercisesList" style="margin-top: 16px;"></div>
+        </div>
+      </div>
+
+      <!-- Sección Plantillas de Rutinas -->
+      <div id="bank-subtab-content-plantillas" class="bank-sub-tab-content" style="display: none;">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <h2 style="margin: 0;">📋 Plantillas de Rutinas</h2>
+            <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openTemplateEditor()">➕ Crear Plantilla</button>
+          </div>
+
+          <div id="globalTemplatesList" style="margin-top: 16px;"></div>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -1430,11 +1619,11 @@
   <div id="routineEditorModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 800px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        <h3 style="margin: 0;">⚙️ Diseñar y Publicar Rutina</h3>
+        <h3 style="margin: 0;" id="routineEditorTitle">⚙️ Diseñar y Publicar Rutina</h3>
         <button onclick="closeRoutineEditorModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       
-      <div style="margin-bottom: 16px;">
+      <div id="applyTemplateContainer" style="margin-bottom: 16px;">
         <label>Aplicar Plantilla Estándar:</label>
         <div style="display: flex; gap: 8px;">
           <select id="selectTemplateToApply" style="margin:0;"></select>
@@ -1485,12 +1674,28 @@
         <div id="exercisesList"></div>
       </div>
       
-      <div class="grid-2" style="margin-top: 16px;">
-        <button class="btn-main" onclick="saveToFirebase()" style="padding: 12px;">💾 Guardar Rutina</button>
-        <button class="btn-sec" onclick="saveCurrentAsTemplate()" style="padding: 12px;">⭐ Guardar como Plantilla</button>
+      <div id="editorActionButtons" class="grid-2" style="margin-top: 16px;">
+        <!-- Botones inyectados dinámicamente según contexto (alumno o plantilla) -->
       </div>
       <div id="saveStatus" class="status-msg"></div>
 
+    </div>
+  </div>
+  
+  <!-- MODAL: Ver Detalles de Plantilla -->
+  <div id="viewTemplateModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 800px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+        <h3 style="margin: 0;" id="viewTemplateTitle">📋 Detalles de Plantilla</h3>
+        <button onclick="closeViewTemplateModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
+      </div>
+      
+      <div id="templateDetailsDisplay" style="padding: 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px;">
+      </div>
+      
+      <div style="display: flex; justify-content: flex-end;">
+        <button class="btn-main" style="width:auto; padding: 10px 20px;" onclick="editCurrentTemplate()">✏️ Editar Plantilla</button>
+      </div>
     </div>
   </div>
 
@@ -1498,7 +1703,7 @@
   <div id="newGlobalExModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 500px; border-left: 4px solid var(--accent);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        <h3 style="margin: 0;">➕</h3>
+        <h3 style="margin: 0;">➕ Nuevo Ejercicio</h3>
         <button onclick="closeNewGlobalExModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       
