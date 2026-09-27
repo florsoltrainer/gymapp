@@ -160,20 +160,24 @@
     window.currentStudentId = "";
     window.globalExercises = [];
     window.globalTemplates = [];
-    window.editorContext = { type: 'student' }; 
+    window.editorContext = { type: 'student' }; // Maneja el contexto del editor de rutinas
     window.currentTemplateId = null; 
     window.templatePromptContext = '';
-    window.currentEditorDay = null; 
-    window.currentEditExImages = []; 
+    window.currentEditorDay = null; // Para la gestión de días de entrenamiento por tabs
+    window.currentEditExImages = []; // Array temporal de imágenes editadas en el banco
     
     let progressChartInstance = null;
 
+    // --- MANEJO DE CLICS FUERA DE MODALES Y MENÚS ---
     window.addEventListener('click', function(event) {
+      // Cerrar dropdown de ajustes
       const dropdown = document.getElementById('userMenuDropdown');
       const menuContainer = document.querySelector('.user-menu-container');
       if (dropdown && dropdown.classList.contains('show') && !menuContainer.contains(event.target)) {
         dropdown.classList.remove('show');
       }
+      
+      // Cerrar modales si se cliquea en el fondo oscuro
       if (event.target.classList.contains('modal-overlay')) {
         event.target.classList.remove('show');
       }
@@ -252,6 +256,7 @@
       document.getElementById(`bank-subtab-btn-${subName}`).classList.add('active');
     };
 
+    // --- MÓDULO 1: MIS ALUMNOS ---
     window.toggleNewStudentForm = function() {
       document.getElementById('newStudentModal').classList.add('show');
     };
@@ -759,6 +764,7 @@
       }
     };
 
+    // --- Manejo del Contexto del Editor de Rutinas ---
     function getActiveRoutine() {
       if (window.editorContext.type === 'template') {
         return window.editorContext.rutina;
@@ -831,10 +837,7 @@
         
         dayDiv.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <h4 style="color:var(--accent); margin:0;">📅 ${day}</h4>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem;" onclick="downloadStudentRoutinePDF('${day}')">⬇️</button>
-            <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem;" onclick="openRoutineEditorModal('${day}')">✏️</button>
-          </div>
+          <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem;" onclick="openRoutineEditorModal('${day}')">✏️</button>
         </div>`;
         
         for (const zone in rut[day]) {
@@ -875,6 +878,7 @@
       }
     };
 
+    // --- MÓDULO DE EJERCICIOS (BANCO GLOBAL) ---
     window.openNewGlobalExModal = function() {
       document.getElementById('newGlobalExModal').classList.add('show');
     };
@@ -1066,6 +1070,7 @@
       populateZoneDropdowns();
     };
 
+    // --- MÓDULO DE PLANTILLAS ---
     async function loadGlobalTemplates() {
       window.globalTemplates = [];
       const selectTpl = document.getElementById('selectTemplateToApply');
@@ -1215,10 +1220,7 @@
       for (const day in rut) {
         const dayDiv = document.createElement('div');
         dayDiv.className = 'tree-node';
-        dayDiv.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <h4 style="color:var(--accent); margin:0;">📅 ${day}</h4>
-          <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem;" onclick="downloadTemplatePDF('${day}')">⬇️ PDF</button>
-        </div>`;
+        dayDiv.innerHTML = `<h4 style="color:var(--accent); margin-bottom:8px; margin-top:0;">📅 ${day}</h4>`;
         
         for (const zone in rut[day]) {
           const zoneDiv = document.createElement('div');
@@ -1244,94 +1246,65 @@
       }
     };
     
-    window.downloadStudentRoutinePDF = function(dayTarget = null) {
+    window.downloadStudentRoutinePDF = function() {
       if (!window.currentStudentData) return;
       const { jsPDF } = window.jspdf;
       const docPDF = new jsPDF();
 
       docPDF.setFontSize(18);
-      const title = dayTarget 
-          ? `Rutina - Día: ${dayTarget} - ${window.currentStudentData.nombre || 'Alumno'}`
-          : `Rutina de Entrenamiento - ${window.currentStudentData.nombre || 'Alumno'}`;
-      docPDF.text(title, 14, 20);
+      docPDF.text(`Rutina de Entrenamiento - ${window.currentStudentData.nombre || 'Alumno'}`, 14, 20);
       
       docPDF.setFontSize(10);
-      docPDF.setTextColor(100, 100, 100);
       docPDF.text(`Edad: ${window.currentStudentData.edad || '-'} años | Peso: ${window.currentStudentData.peso || '-'} kg | Altura: ${window.currentStudentData.altura || '-'} cm`, 14, 28);
       
       let currentY = 38;
-      const allRut = window.currentStudentData.rutina;
+      const rut = window.currentStudentData.rutina;
       
-      if(allRut && Object.keys(allRut).length > 0) {
-        const daysToPrint = dayTarget ? [dayTarget] : Object.keys(allRut);
-
-        daysToPrint.forEach((day, index) => {
-          if (index > 0 && currentY > 240) { docPDF.addPage(); currentY = 20; }
-          
+      if(rut && Object.keys(rut).length > 0) {
+        for (const day in rut) {
           docPDF.setFontSize(14);
-          docPDF.setTextColor(0, 176, 80); // Color acento oscuro para legibilidad
-          docPDF.text(`📅 Día: ${day}`, 14, currentY);
-          currentY += 8;
+          docPDF.text(`Día: ${day}`, 14, currentY);
+          currentY += 6;
           
-          for (const zone in allRut[day]) {
-            if (currentY > 260) { docPDF.addPage(); currentY = 20; }
-            
-            docPDF.setFontSize(12);
-            docPDF.setTextColor(0, 0, 0);
-            docPDF.text(`💪 Categoría: ${zone}`, 14, currentY);
-            currentY += 4;
-            
-            const tableData = [];
-            allRut[day][zone].forEach(ex => {
-              const displayWeights = ex.weights ? ex.weights.join("kg, ") + "kg" : `${ex.weight} kg`;
+          const tableData = [];
+          for (const zone in rut[day]) {
+            rut[day][zone].forEach(ex => {
+              const displayWeights = ex.weights ? ex.weights.join(", ") : ex.weight;
               const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
-              
-              let exNameText = `🏋️ ${ex.name}`;
-              if (ex.notes) {
-                exNameText += `\n📌 Nota: ${ex.notes}`;
-              }
-              tableData.push([exNameText, `${ex.sets}x [${displayReps}]`, displayWeights, "[   ]"]);
+              tableData.push([zone, ex.name, `${ex.sets}x [${displayReps}]`, `${displayWeights} kg`, "[   ]"]);
             });
-            
-            docPDF.autoTable({
-              startY: currentY,
-              head: [['Ejercicio', 'Series x Reps', 'Pesos', 'Hecho']],
-              body: tableData,
-              styles: { fontSize: 10, cellPadding: 4, valign: 'middle' },
-              headStyles: { fillColor: [0, 230, 118], textColor: [0,0,0] },
-              columnStyles: { 
-                0: { fontStyle: 'bold', cellWidth: 'auto' }, 
-                1: { cellWidth: 40 }, 
-                2: { cellWidth: 45 }, 
-                3: { halign: 'center', cellWidth: 20, fontStyle: 'bold', fontSize: 12 } 
-              },
-              margin: { left: 14 }
-            });
-            
-            currentY = docPDF.lastAutoTable.finalY + 12;
           }
-          currentY += 5;
-        });
+          
+          docPDF.autoTable({
+            startY: currentY,
+            head: [['Categoría', 'Ejercicio', 'Series x Reps', 'Pesos', 'Hecho']],
+            body: tableData,
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: [0, 230, 118], textColor: [0,0,0] },
+            columnStyles: { 4: { halign: 'center', cellWidth: 20 } }
+          });
+          
+          currentY = docPDF.lastAutoTable.finalY + 15;
+          if (currentY > 260) {
+              docPDF.addPage();
+              currentY = 20;
+          }
+        }
       }
 
-      if (!dayTarget && window.currentStudentData.nota_para_alumno) {
+      if (window.currentStudentData.nota_para_alumno) {
           if (currentY > 250) { docPDF.addPage(); currentY = 20; }
           docPDF.setFontSize(12);
-          docPDF.setTextColor(0, 176, 80);
-          docPDF.text("💬 Mensaje del Entrenador:", 14, currentY);
+          docPDF.text("Notas del Entrenador:", 14, currentY);
           docPDF.setFontSize(10);
-          docPDF.setTextColor(0, 0, 0);
           const splitNotes = docPDF.splitTextToSize(window.currentStudentData.nota_para_alumno, 180);
           docPDF.text(splitNotes, 14, currentY + 6);
       }
       
-      const fileName = dayTarget 
-          ? `Rutina_${dayTarget.replace(/\s+/g, '_')}_${window.currentStudentData.nombre || 'Alumno'}.pdf`
-          : `Rutina_${window.currentStudentData.nombre || 'Alumno'}.pdf`;
-      docPDF.save(fileName);
+      docPDF.save(`Rutina_${window.currentStudentData.nombre || 'Alumno'}.pdf`);
     };
 
-    window.downloadTemplatePDF = function(dayTarget = null) {
+    window.downloadTemplatePDF = function() {
       if (!window.currentTemplateId) return;
       const template = window.globalTemplates.find(t => t.id === window.currentTemplateId);
       if (!template) return;
@@ -1340,63 +1313,46 @@
       const docPDF = new jsPDF();
 
       docPDF.setFontSize(18);
-      const title = dayTarget 
-          ? `Plantilla - Día: ${dayTarget} - ${template.nombre_plantilla}`
-          : `Plantilla: ${template.nombre_plantilla}`;
-      docPDF.text(title, 14, 20);
+      docPDF.text(`Plantilla: ${template.nombre_plantilla}`, 14, 20);
       
       let currentY = 30;
-      const allRut = template.rutina;
+      const rut = template.rutina;
       
-      if(allRut && Object.keys(allRut).length > 0) {
-        const daysToPrint = dayTarget ? [dayTarget] : Object.keys(allRut);
-        
-        daysToPrint.forEach((day, index) => {
-          if (index > 0 && currentY > 240) { docPDF.addPage(); currentY = 20; }
-          
+      if(rut && Object.keys(rut).length > 0) {
+        for (const day in rut) {
           docPDF.setFontSize(14);
-          docPDF.setTextColor(0, 176, 80);
-          docPDF.text(`📅 Día: ${day}`, 14, currentY);
-          currentY += 8;
+          docPDF.text(`Día: ${day}`, 14, currentY);
+          currentY += 6;
           
-          for (const zone in allRut[day]) {
-            if (currentY > 260) { docPDF.addPage(); currentY = 20; }
-            docPDF.setFontSize(12);
-            docPDF.setTextColor(0, 0, 0);
-            docPDF.text(`💪 Categoría: ${zone}`, 14, currentY);
-            currentY += 4;
-            
-            const tableData = [];
-            allRut[day][zone].forEach(ex => {
-              const displayWeights = ex.weights ? ex.weights.join("kg, ") + "kg" : `${ex.weight} kg`;
+          const tableData = [];
+          for (const zone in rut[day]) {
+            rut[day][zone].forEach(ex => {
+              const displayWeights = ex.weights ? ex.weights.join(", ") : ex.weight;
               const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
-              let exNameText = `🏋️ ${ex.name}`;
-              if (ex.notes) exNameText += `\n📌 Nota: ${ex.notes}`;
-              tableData.push([exNameText, `${ex.sets}x [${displayReps}]`, displayWeights, "[   ]"]);
+              tableData.push([zone, ex.name, `${ex.sets}x [${displayReps}]`, `${displayWeights} kg`, "[   ]"]);
             });
-            
-            docPDF.autoTable({
-              startY: currentY,
-              head: [['Ejercicio', 'Series x Reps', 'Pesos', 'Hecho']],
-              body: tableData,
-              styles: { fontSize: 10, cellPadding: 4, valign: 'middle' },
-              headStyles: { fillColor: [0, 230, 118], textColor: [0,0,0] },
-              columnStyles: { 0: { fontStyle: 'bold', cellWidth: 'auto' }, 1: { cellWidth: 40 }, 2: { cellWidth: 45 }, 3: { halign: 'center', cellWidth: 20, fontStyle: 'bold', fontSize: 12 } },
-              margin: { left: 14 }
-            });
-            
-            currentY = docPDF.lastAutoTable.finalY + 12;
           }
-          currentY += 5;
-        });
+          
+          docPDF.autoTable({
+            startY: currentY,
+            head: [['Categoría', 'Ejercicio', 'Series x Reps', 'Pesos', 'Hecho']],
+            body: tableData,
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: [0, 230, 118], textColor: [0,0,0] },
+            columnStyles: { 4: { halign: 'center', cellWidth: 20 } }
+          });
+          
+          currentY = docPDF.lastAutoTable.finalY + 15;
+          if (currentY > 260) {
+              docPDF.addPage();
+              currentY = 20;
+          }
+        }
       }
-      
-      const fileName = dayTarget
-          ? `Plantilla_${dayTarget.replace(/\s+/g, '_')}_${template.nombre_plantilla.replace(/\s+/g, '_')}.pdf`
-          : `Plantilla_${template.nombre_plantilla.replace(/\s+/g, '_')}.pdf`;
-      docPDF.save(fileName);
+      docPDF.save(`Plantilla_${template.nombre_plantilla.replace(/\s+/g, '_')}.pdf`);
     };
 
+    // --- FUNCIONES DEL EDITOR REDISEÑADO ---
     window.renderEditor = function() {
       setupEditorButtons();
       populateZoneDropdowns();
@@ -1404,6 +1360,7 @@
       const rut = getActiveRoutine();
       const days = Object.keys(rut || {});
       
+      // Auto-seleccionar el primer día si no hay ninguno seleccionado o si se eliminó el activo
       if (days.length > 0 && !days.includes(window.currentEditorDay)) {
          window.currentEditorDay = days[0];
       } else if (days.length === 0) {
@@ -1513,7 +1470,7 @@
 
     window.closeEditDayExercisesModal = function() {
       document.getElementById('editDayExercisesModal').classList.remove('show');
-      renderEditorSelectedDay(); 
+      renderEditorSelectedDay(); // Actualizar vista resumen al cerrar
     };
 
     function populateZoneDropdowns() {
@@ -1606,6 +1563,7 @@
       if(window.editorContext.type === 'student') renderRoutineDetails();
     };
 
+    // --- Edición rápida de parámetros de un ejercicio ya agregado ---
     window.openEditSingleExercise = function(zone, idx) {
       const day = window.currentEditorDay;
       const rut = getActiveRoutine();
@@ -1955,7 +1913,7 @@
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <h3 style="margin:0;">📋 Resumen de la Rutina Asignada</h3>
-            <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">⬇️ Descargar Rutina</button>
+            <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">⬇️ Descargar Rutina (PDF)</button>
           </div>
           <div id="routineDetailsDisplay" style="padding: 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border);">
           </div>
