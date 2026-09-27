@@ -124,6 +124,10 @@
     .ranking-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid var(--border); align-items: center; }
     .ranking-item:last-child { border-bottom: none; }
     .rank-number { font-weight: bold; color: var(--accent); font-size: 1.1rem; width: 30px; }
+
+    /* Estilos extra para las miniaturas del editor de imágenes */
+    .thumb-edit-wrapper { position: relative; display: inline-block; }
+    .thumb-del-btn { position: absolute; top: -6px; right: -6px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
   </style>
 
   <!-- Módulos de Firebase -->
@@ -158,6 +162,10 @@
     window.globalTemplates = [];
     window.editorContext = { type: 'student' }; // Maneja el contexto del editor de rutinas
     window.currentTemplateId = null; 
+    window.templatePromptContext = '';
+    window.currentEditorDay = null; // Para la gestión de días de entrenamiento por tabs
+    window.currentEditExImages = []; // Array temporal de imágenes editadas en el banco
+    
     let progressChartInstance = null;
 
     onAuthStateChanged(auth, async (user) => {
@@ -771,28 +779,23 @@
     window.openRoutineEditorModal = function(day) {
       window.editorContext = { type: 'student' };
       document.getElementById('routineEditorModal').classList.add('show');
+      if (day) window.currentEditorDay = day;
       renderEditor();
-      if (day) {
-        const daySelect = document.getElementById('selectDayForEx');
-        if(daySelect) daySelect.value = day;
-        const zoneSelect = document.getElementById('selectZoneForEx');
-        if(zoneSelect) zoneSelect.value = '';
-        renderExercisesList();
-      }
     };
 
     window.openTemplateEditor = function(templateId = null) {
       if (templateId) {
         const template = window.globalTemplates.find(t => t.id === templateId);
         window.editorContext = { type: 'template', id: templateId, rutina: JSON.parse(JSON.stringify(template.rutina)), nombre: template.nombre_plantilla };
+        closeViewTemplateModal();
+        document.getElementById('routineEditorModal').classList.add('show');
+        window.currentEditorDay = null;
+        renderEditor();
       } else {
-        const name = prompt("Nombre de la nueva plantilla:");
-        if(!name) return;
-        window.editorContext = { type: 'template', id: null, rutina: {}, nombre: name };
+        window.templatePromptContext = 'new_editor';
+        document.getElementById('newTemplateNameInput').value = '';
+        document.getElementById('newTemplatePromptModal').classList.add('show');
       }
-      closeViewTemplateModal();
-      document.getElementById('routineEditorModal').classList.add('show');
-      renderEditor();
     };
 
     window.closeRoutineEditorModal = function() {
@@ -875,28 +878,50 @@
       document.getElementById('editGlobalExName').value = ex.nombre || "";
       document.getElementById('editGlobalExZone').value = ex.zona || "";
       
-      const thumbsContainer = document.getElementById('editGlobalExThumbnails');
-      thumbsContainer.innerHTML = '';
-      if (ex.imageUrls && ex.imageUrls.length > 0) {
-        ex.imageUrls.forEach(url => {
+      window.currentEditExImages = ex.imageUrls ? [...ex.imageUrls] : [];
+      renderEditGlobalExImages();
+      document.getElementById('editExUploadStatus').textContent = "";
+      document.getElementById('editGlobalExNewFiles').value = "";
+      
+      document.getElementById('editGlobalExModal').classList.add('show');
+    };
+    window.closeEditGlobalExModal = function() {
+      document.getElementById('editGlobalExModal').classList.remove('show');
+    };
+
+    window.renderEditGlobalExImages = function() {
+      const container = document.getElementById('editGlobalExThumbnails');
+      container.innerHTML = '';
+      if (window.currentEditExImages.length > 0) {
+        window.currentEditExImages.forEach((url, idx) => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'thumb-edit-wrapper';
+          
           const img = document.createElement('img');
           img.src = url;
           img.style.width = '80px';
           img.style.height = '80px';
           img.style.objectFit = 'cover';
           img.style.borderRadius = '8px';
-          img.style.cursor = 'pointer';
           img.style.border = '1px solid var(--border)';
+          img.style.cursor = 'pointer';
           img.onclick = () => openImageViewer(url);
-          thumbsContainer.appendChild(img);
+          
+          const delBtn = document.createElement('button');
+          delBtn.className = 'thumb-del-btn';
+          delBtn.innerHTML = '×';
+          delBtn.onclick = () => {
+            window.currentEditExImages.splice(idx, 1);
+            renderEditGlobalExImages();
+          };
+          
+          wrapper.appendChild(img);
+          wrapper.appendChild(delBtn);
+          container.appendChild(wrapper);
         });
       } else {
-         thumbsContainer.innerHTML = '<span style="color:var(--muted); font-size:0.85rem;">Sin imágenes registradas</span>';
+         container.innerHTML = '<span style="color:var(--muted); font-size:0.85rem;">Sin imágenes registradas</span>';
       }
-      document.getElementById('editGlobalExModal').classList.add('show');
-    };
-    window.closeEditGlobalExModal = function() {
-      document.getElementById('editGlobalExModal').classList.remove('show');
     };
 
     window.openImageViewer = function(url) {
@@ -913,7 +938,30 @@
       const newZone = document.getElementById('editGlobalExZone').value.trim();
       if(!newName) return alert('El nombre no puede estar vacío');
       
-      await updateDoc(doc(db, "ejercicios_base", id), { nombre: newName, zona: newZone });
+      const files = Array.from(document.getElementById('editGlobalExNewFiles').files).slice(0, 3);
+      const status = document.getElementById('editExUploadStatus');
+      
+      let uploadedUrls = [...window.currentEditExImages];
+      if (files.length > 0 && CLOUD_NAME) {
+        status.textContent = "⏳ Subiendo nuevas imágenes...";
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("upload_preset", UPLOAD_PRESET);
+          try {
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+            const data = await res.json();
+            if (data.secure_url) uploadedUrls.push(data.secure_url);
+          } catch (e) {
+            console.error("Error subiendo imagen:", e);
+          }
+        }
+      }
+      
+      status.textContent = "⏳ Guardando cambios...";
+      await updateDoc(doc(db, "ejercicios_base", id), { nombre: newName, zona: newZone, imageUrls: uploadedUrls });
+      status.textContent = "";
+      
       closeEditGlobalExModal();
       await loadGlobalExercises();
     };
@@ -1042,14 +1090,32 @@
       });
     }
 
-    window.saveCurrentAsTemplate = async function() {
+    window.saveCurrentAsTemplate = function() {
       const rut = getActiveRoutine();
       if (!rut || Object.keys(rut).length === 0) return alert("No hay rutina para guardar.");
-      const templateName = prompt("Nombre para la plantilla estándar:");
-      if (!templateName) return;
-      await addDoc(collection(db, "plantillas_rutinas"), { nombre_plantilla: templateName, rutina: rut });
-      alert("✅ Plantilla guardada.");
-      await loadGlobalTemplates();
+      window.templatePromptContext = 'save_current';
+      document.getElementById('newTemplateNameInput').value = '';
+      document.getElementById('newTemplatePromptModal').classList.add('show');
+    };
+
+    window.confirmTemplateName = async function() {
+      const name = document.getElementById('newTemplateNameInput').value.trim();
+      if (!name) return alert("El nombre no puede estar vacío.");
+      
+      document.getElementById('newTemplatePromptModal').classList.remove('show');
+      
+      if (window.templatePromptContext === 'save_current') {
+        const rut = getActiveRoutine();
+        await addDoc(collection(db, "plantillas_rutinas"), { nombre_plantilla: name, rutina: rut });
+        alert("✅ Plantilla guardada.");
+        await loadGlobalTemplates();
+      } else if (window.templatePromptContext === 'new_editor') {
+        window.editorContext = { type: 'template', id: null, rutina: {}, nombre: name };
+        closeViewTemplateModal();
+        document.getElementById('routineEditorModal').classList.add('show');
+        window.currentEditorDay = null;
+        renderEditor();
+      }
     };
 
     window.saveTemplateToFirebase = async function() {
@@ -1088,6 +1154,7 @@
         } else {
            window.currentStudentData.rutina = JSON.parse(JSON.stringify(found.rutina));
         }
+        window.currentEditorDay = null; // Reiniciar para que tome el primer día de la nueva plantilla
         renderEditor();
         if(window.editorContext.type === 'student') renderRoutineDetails();
         alert("✅ Plantilla aplicada.");
@@ -1151,118 +1218,126 @@
       }
     };
 
-    // --- FUNCIONES DEL EDITOR ---
+    // --- FUNCIONES DEL EDITOR REDISEÑADO ---
     window.renderEditor = function() {
       setupEditorButtons();
-      renderDayDropdowns();
-      renderDaysList();
       populateZoneDropdowns();
-      renderExercisesList();
+      
+      const rut = getActiveRoutine();
+      const days = Object.keys(rut || {});
+      
+      // Auto-seleccionar el primer día si no hay ninguno seleccionado o si se eliminó el activo
+      if (days.length > 0 && !days.includes(window.currentEditorDay)) {
+         window.currentEditorDay = days[0];
+      } else if (days.length === 0) {
+         window.currentEditorDay = null;
+      }
+      
+      renderEditorTabs();
+      renderEditorSelectedDay();
     };
 
-    window.addDay = function() {
-      const name = document.getElementById('newDayInput').value.trim();
+    window.renderEditorTabs = function() {
+      const container = document.getElementById('editorDaysTabs');
+      container.innerHTML = '';
+      const rut = getActiveRoutine();
+      
+      Object.keys(rut || {}).forEach(day => {
+        const btn = document.createElement('button');
+        btn.className = `sub-tab-btn ${day === window.currentEditorDay ? 'active' : ''}`;
+        btn.textContent = day;
+        btn.onclick = () => {
+          window.currentEditorDay = day;
+          renderEditorTabs();
+          renderEditorSelectedDay();
+        };
+        container.appendChild(btn);
+      });
+    };
+
+    window.renderEditorSelectedDay = function() {
+      const contentDiv = document.getElementById('editorDayContent');
+      const title = document.getElementById('editorSelectedDayTitle');
+      const listDiv = document.getElementById('editorSelectedDayExercises');
+      
+      if (!window.currentEditorDay) {
+        contentDiv.style.display = 'none';
+        return;
+      }
+      
+      contentDiv.style.display = 'block';
+      title.textContent = `📅 ${window.currentEditorDay}`;
+      
+      const rut = getActiveRoutine();
+      const dayData = rut[window.currentEditorDay] || {};
+      
+      listDiv.innerHTML = '';
+      
+      if (Object.keys(dayData).length === 0) {
+         listDiv.innerHTML = '<p style="color:var(--muted); font-size:0.9rem; margin-top:10px;">No hay ejercicios asignados a este día.</p>';
+         return;
+      }
+
+      for (const zone in dayData) {
+        const zoneDiv = document.createElement('div');
+        zoneDiv.style.marginTop = '15px';
+        zoneDiv.innerHTML = `<strong style="color:var(--muted); display:block; margin-bottom: 8px;">💪 ${zone}</strong>`;
+        
+        dayData[zone].forEach(ex => {
+          const displayWeights = ex.weights ? ex.weights.join("kg, ") + "kg" : `${ex.weight} kg`;
+          const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
+          
+          zoneDiv.innerHTML += `
+            <div style="background: var(--input-bg); border: 1px solid var(--border); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 0.95rem;">
+              <span style="color: var(--text);">🏋️ <strong>${ex.name}</strong></span> - ${ex.sets} series x [${displayReps}] reps @ [${displayWeights}]
+              ${ex.notes ? `<div style="color:var(--accent); font-size:0.85rem; margin-top:4px;">📌 <i>${ex.notes}</i></div>` : ''}
+            </div>
+          `;
+        });
+        listDiv.appendChild(zoneDiv);
+      }
+    };
+
+    window.promptNewDay = function() {
+      document.getElementById('newDayNameInput').value = '';
+      document.getElementById('newDayNameModal').classList.add('show');
+    };
+
+    window.confirmAddDay = function() {
+      const name = document.getElementById('newDayNameInput').value.trim();
       const rut = getActiveRoutine();
       if (name && !rut[name]) {
         rut[name] = {};
-        document.getElementById('newDayInput').value = '';
+        window.currentEditorDay = name;
+        renderEditor();
+        if(window.editorContext.type === 'student') renderRoutineDetails();
+      }
+      document.getElementById('newDayNameModal').classList.remove('show');
+    };
+
+    window.deleteSelectedDay = function() {
+      if(!window.currentEditorDay) return;
+      if(confirm(`¿Estás seguro de eliminar el día "${window.currentEditorDay}" y todos sus ejercicios?`)) {
+        const rut = getActiveRoutine();
+        delete rut[window.currentEditorDay];
+        window.currentEditorDay = null;
         renderEditor();
         if(window.editorContext.type === 'student') renderRoutineDetails();
       }
     };
 
-    window.deleteDay = function(day) {
-      const rut = getActiveRoutine();
-      delete rut[day];
-      renderEditor();
-      if(window.editorContext.type === 'student') renderRoutineDetails();
+    window.openEditDayExercisesModal = function() {
+      if(!window.currentEditorDay) return;
+      document.getElementById('editDayExercisesTitle').textContent = `⚙️ Editar: ${window.currentEditorDay}`;
+      document.getElementById('editDayExercisesModal').classList.add('show');
+      updateGlobalExerciseDropdown();
+      renderExercisesListEditor();
     };
 
-    window.addExercise = function() {
-      const day = document.getElementById('selectDayForEx').value;
-      const zone = document.getElementById('selectZoneForEx').value;
-      const selectedExName = document.getElementById('selectGlobalExercise').value;
-      const manualExName = document.getElementById('manualExName').value.trim();
-      const notes = document.getElementById('newExNotes').value.trim();
-
-      const exName = selectedExName || manualExName;
-      const sets = Number(document.getElementById('newExSets').value) || 3;
-      const weightsInput = document.getElementById('newExWeights').value.trim();
-      const repsInput = document.getElementById('newExReps').value.trim();
-
-      if (!day || !zone || !exName) return alert("Selecciona o escribe el nombre del ejercicio.");
-
-      let weightsArray = [];
-      if (weightsInput.includes(',')) {
-        weightsArray = weightsInput.split(',').map(w => Number(w.trim()) || 0);
-      } else {
-        const singleWeight = Number(weightsInput) || 0;
-        weightsArray = Array(sets).fill(singleWeight);
-      }
-
-      let repsArray = [];
-      if (repsInput.includes(',')) {
-        repsArray = repsInput.split(',').map(r => r.trim());
-      } else {
-        repsArray = Array(sets).fill(repsInput || "10");
-      }
-
-      let imageUrls = [];
-      const foundGlobal = window.globalExercises.find(e => e.name === exName);
-      if (foundGlobal && foundGlobal.imageUrls) {
-        imageUrls = foundGlobal.imageUrls;
-      }
-
-      if (manualExName && !window.globalExercises.some(e => e.name.toLowerCase() === manualExName.toLowerCase())) {
-        addDoc(collection(db, "ejercicios_base"), { nombre: manualExName, imageUrls: [] }).then(() => loadGlobalExercises());
-      }
-
-      const rut = getActiveRoutine();
-
-      if (!rut[day][zone]) {
-        rut[day][zone] = [];
-      }
-
-      rut[day][zone].push({ 
-        name: exName, sets: sets, weights: weightsArray, weight: weightsArray[0] || 0,
-        reps: repsArray, notes: notes, imageUrls: imageUrls
-      });
-
-      document.getElementById('manualExName').value = '';
-      document.getElementById('newExNotes').value = '';
-      document.getElementById('newExWeights').value = '';
-      document.getElementById('newExReps').value = '';
-      document.getElementById('selectGlobalExercise').value = '';
-      renderEditor(); 
-      if(window.editorContext.type === 'student') renderRoutineDetails();
+    window.closeEditDayExercisesModal = function() {
+      document.getElementById('editDayExercisesModal').classList.remove('show');
+      renderEditorSelectedDay(); // Actualizar vista resumen al cerrar
     };
-
-    window.deleteExercise = function(day, zone, idx) {
-      const rut = getActiveRoutine();
-      rut[day][zone].splice(idx, 1);
-      if (rut[day][zone].length === 0) {
-        delete rut[day][zone];
-      }
-      renderEditor();
-      if(window.editorContext.type === 'student') renderRoutineDetails();
-    };
-
-    function renderDayDropdowns() {
-      const dayForEx = document.getElementById('selectDayForEx');
-      const currentSelectedDay = dayForEx.value;
-      const rut = getActiveRoutine();
-      const days = Object.keys(rut || {});
-      
-      dayForEx.innerHTML = '';
-      days.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d; opt.textContent = d;
-        dayForEx.appendChild(opt);
-      });
-      if (currentSelectedDay && days.includes(currentSelectedDay)) {
-        dayForEx.value = currentSelectedDay;
-      }
-    }
 
     function populateZoneDropdowns() {
       const uniqueZones = [...new Set(window.globalExercises.map(ex => ex.zona).filter(Boolean))];
@@ -1294,32 +1369,88 @@
       }
     };
 
-    function renderDaysList() {
-      const container = document.getElementById('daysList');
-      container.innerHTML = '';
-      const rut = getActiveRoutine();
-      Object.keys(rut || {}).forEach(day => {
-        const div = document.createElement('div');
-        div.className = 'item-chip';
-        div.innerHTML = `<span>📅 ${day}</span> <button class="btn-danger" style="width:auto; padding:4px 8px;" onclick="deleteDay('${day}')">Eliminar</button>`;
-        container.appendChild(div);
-      });
-    }
+    window.addExercise = function() {
+      const day = window.currentEditorDay;
+      const zone = document.getElementById('selectZoneForEx').value;
+      const selectedExName = document.getElementById('selectGlobalExercise').value;
+      const manualExName = document.getElementById('manualExName').value.trim();
+      const notes = document.getElementById('newExNotes').value.trim();
 
-    window.renderExercisesList = function() {
-      const day = document.getElementById('selectDayForEx').value;
-      const zoneFilter = document.getElementById('selectZoneForEx').value;
-      const container = document.getElementById('exercisesList');
+      const exName = selectedExName || manualExName;
+      const sets = Number(document.getElementById('newExSets').value) || 3;
+      const weightsInput = document.getElementById('newExWeights').value.trim();
+      const repsInput = document.getElementById('newExReps').value.trim();
+
+      if (!day || !zone || !exName) return alert("Selecciona la zona y el nombre del ejercicio.");
+
+      let weightsArray = [];
+      if (weightsInput.includes(',')) {
+        weightsArray = weightsInput.split(',').map(w => Number(w.trim()) || 0);
+      } else {
+        const singleWeight = Number(weightsInput) || 0;
+        weightsArray = Array(sets).fill(singleWeight);
+      }
+
+      let repsArray = [];
+      if (repsInput.includes(',')) {
+        repsArray = repsInput.split(',').map(r => r.trim());
+      } else {
+        repsArray = Array(sets).fill(repsInput || "10");
+      }
+
+      let imageUrls = [];
+      const foundGlobal = window.globalExercises.find(e => e.nombre === exName);
+      if (foundGlobal && foundGlobal.imageUrls) {
+        imageUrls = foundGlobal.imageUrls;
+      }
+
+      if (manualExName && !window.globalExercises.some(e => e.nombre.toLowerCase() === manualExName.toLowerCase())) {
+        addDoc(collection(db, "ejercicios_base"), { nombre: manualExName, imageUrls: [] }).then(() => loadGlobalExercises());
+      }
+
+      const rut = getActiveRoutine();
+
+      if (!rut[day][zone]) {
+        rut[day][zone] = [];
+      }
+
+      rut[day][zone].push({ 
+        name: exName, sets: sets, weights: weightsArray, weight: weightsArray[0] || 0,
+        reps: repsArray, notes: notes, imageUrls: imageUrls
+      });
+
+      document.getElementById('manualExName').value = '';
+      document.getElementById('newExNotes').value = '';
+      document.getElementById('newExWeights').value = '';
+      document.getElementById('newExReps').value = '';
+      document.getElementById('selectGlobalExercise').value = '';
+      
+      renderExercisesListEditor();
+      if(window.editorContext.type === 'student') renderRoutineDetails();
+    };
+
+    window.deleteExercise = function(zone, idx) {
+      const day = window.currentEditorDay;
+      const rut = getActiveRoutine();
+      rut[day][zone].splice(idx, 1);
+      if (rut[day][zone].length === 0) {
+        delete rut[day][zone];
+      }
+      renderExercisesListEditor();
+      if(window.editorContext.type === 'student') renderRoutineDetails();
+    };
+
+    window.renderExercisesListEditor = function() {
+      const container = document.getElementById('exercisesListEditor');
       container.innerHTML = '';
       
+      const day = window.currentEditorDay;
       const rut = getActiveRoutine();
       if (!day || !rut[day]) return;
 
       Object.keys(rut[day]).forEach(zone => {
-        if (zoneFilter && zone !== zoneFilter) return;
-
         const zoneTitle = document.createElement('div');
-        zoneTitle.innerHTML = `<strong style="color:var(--muted); display:block; margin: 10px 0 5px 0;">💪 ${zone}</strong>`;
+        zoneTitle.innerHTML = `<strong style="color:var(--muted); display:block; margin: 15px 0 5px 0;">💪 ${zone}</strong>`;
         container.appendChild(zoneTitle);
 
         rut[day][zone].forEach((ex, idx) => {
@@ -1334,7 +1465,7 @@
               <span>🏋️ <strong>${ex.name}</strong> (${ex.sets || 3} series x [${displayReps}] reps @ [${displayWeights}]) ${imgCount > 0 ? `🖼️ (${imgCount})` : ''}</span>
               ${ex.notes ? `<div style="font-size:0.8rem; color:var(--accent); margin-top:2px;">📌 <em>${ex.notes}</em></div>` : ''}
             </div>
-            <button class="btn-danger" onclick="deleteExercise('${day}', '${zone}', ${idx})">Eliminar</button>
+            <button class="btn-danger" style="width: auto; padding: 6px 12px;" onclick="deleteExercise('${zone}', ${idx})">Eliminar</button>
           `;
           container.appendChild(div);
         });
@@ -1347,8 +1478,10 @@
   <!-- MODAL NOTIFICACIONES -->
   <div id="notifModal" class="modal-overlay">
     <div class="modal-content">
-      <button class="modal-close" onclick="closeNotifModal()">×</button>
-      <h2>🔔 Notificaciones</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+        <h3 style="margin: 0;">🔔 Notificaciones</h3>
+        <button onclick="closeNotifModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
+      </div>
       <p style="color: var(--muted); font-size: 0.9rem;">Mensajes recientes de tus alumnos en sus entrenamientos.</p>
       <div id="notifListContainer" style="margin-top: 15px;">
         <div class="log-card">💬 <strong>Maria Gomez:</strong> "Me costó mucho la última repetición en Sentadilla Búlgara." <br><small style="color:var(--muted)">Hoy, 14:30</small></div>
@@ -1623,7 +1756,7 @@
         <button onclick="closeRoutineEditorModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       
-      <div id="applyTemplateContainer" style="margin-bottom: 16px;">
+      <div id="applyTemplateContainer" style="margin-bottom: 20px;">
         <label>Aplicar Plantilla Estándar:</label>
         <div style="display: flex; gap: 8px;">
           <select id="selectTemplateToApply" style="margin:0;"></select>
@@ -1631,54 +1764,97 @@
         </div>
       </div>
       
-      <div class="tree-node">
-        <h4>1. Día de Entrenamiento</h4>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="newDayInput" placeholder="Ej: Lunes" style="margin: 0;">
-          <button class="btn-main" onclick="addDay()" style="width: auto;">+ Día</button>
+      <!-- Pestañas de Días -->
+      <div style="margin-bottom: 15px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div id="editorDaysTabs" class="sub-tabs" style="margin-bottom: 0; border-bottom: none; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; flex-grow: 1;">
+             <!-- Las pestañas se generarán aquí -->
+          </div>
+          <button class="btn-sec" onclick="promptNewDay()" style="width: auto; padding: 6px 12px; font-size: 0.85rem; flex-shrink: 0;">➕ Añadir Día</button>
         </div>
-        <div id="daysList"></div>
       </div>
 
-      <div class="tree-node">
-        <h4>2. Añadir Ejercicios</h4>
-        <div class="grid-2">
-          <div>
-            <label>Seleccionar Día:</label>
-            <select id="selectDayForEx" onchange="renderExercisesList()"></select>
-          </div>
-          <div>
-            <label>Grupo Muscular (Categoría):</label>
-            <select id="selectZoneForEx" onchange="updateGlobalExerciseDropdown(); renderExercisesList();"></select>
+      <!-- Contenido del Día Seleccionado -->
+      <div id="editorDayContent" class="tree-node" style="display: none; background: var(--card);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+          <h3 id="editorSelectedDayTitle" style="margin: 0; color: var(--accent);">Día</h3>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-sec" onclick="openEditDayExercisesModal()" style="width: auto; padding: 6px 12px; font-size: 0.9rem;">✏️ Editar Ejercicios</button>
+            <button class="btn-danger" onclick="deleteSelectedDay()" style="width: auto; padding: 6px 12px; font-size: 0.9rem;">🗑️ Eliminar Día</button>
           </div>
         </div>
         
-        <div style="background:var(--bg); padding:10px; border-radius:6px; margin-bottom:8px; border: 1px solid var(--border);">
-          <label>Elegir de Ejercicios Precargados:</label>
-          <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''"></select>
-
-          <label style="margin-top:6px;">O escribir uno nuevo (se guardará en el banco):</label>
-          <input type="text" id="manualExName" placeholder="Ej: Press Francés" oninput="document.getElementById('selectGlobalExercise').value=''">
-
-          <label style="margin-top:6px;">Observación / Nota para este alumno (opcional):</label>
-          <input type="text" id="newExNotes" placeholder="Ej: Controlar la bajada / Usar agarre neutro">
-
-          <div class="grid-3">
-            <div><label>Series Target</label><input type="number" id="newExSets" value="3" min="1"></div>
-            <div><label>Pesos (ej: 50, 55)</label><input type="text" id="newExWeights" placeholder="50, 55"></div>
-            <div><label>Reps Target (ej: 12, 10)</label><input type="text" id="newExReps" placeholder="12, 10, 8"></div>
-          </div>
-          <button class="btn-sec" onclick="addExercise()" style="margin-bottom:0;">+ Añadir Ejercicio a la Rutina</button>
+        <div id="editorSelectedDayExercises">
+           <!-- Resumen de ejercicios en solo lectura -->
         </div>
-        
-        <div id="exercisesList"></div>
       </div>
       
-      <div id="editorActionButtons" class="grid-2" style="margin-top: 16px;">
+      <div id="editorActionButtons" class="grid-2" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
         <!-- Botones inyectados dinámicamente según contexto (alumno o plantilla) -->
       </div>
       <div id="saveStatus" class="status-msg"></div>
 
+    </div>
+  </div>
+
+  <!-- MODAL: Añadir Día (En lugar de prompt) -->
+  <div id="newDayNameModal" class="modal-overlay" style="z-index: 2500;">
+    <div class="modal-content" style="max-width: 400px; border-left: 4px solid var(--accent);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+        <h3 style="margin: 0;">➕ Añadir Día</h3>
+        <button onclick="document.getElementById('newDayNameModal').classList.remove('show')" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
+      </div>
+      <label>Ingresa el nombre del día de entrenamiento:</label>
+      <input type="text" id="newDayNameInput" placeholder="Ej: Lunes, Piernas, etc.">
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button class="btn-main" onclick="confirmAddDay()">Añadir Día</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Editar Ejercicios del Día Seleccionado -->
+  <div id="editDayExercisesModal" class="modal-overlay" style="z-index: 2500;">
+    <div class="modal-content" style="max-width: 800px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+        <h3 style="margin: 0;" id="editDayExercisesTitle">⚙️ Editar Ejercicios</h3>
+        <button onclick="closeEditDayExercisesModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
+      </div>
+      
+      <div style="background:var(--bg); padding:15px; border-radius:10px; margin-bottom:20px; border: 1px solid var(--border);">
+        <h4 style="margin-top:0; margin-bottom: 12px; color: var(--accent);">➕ Añadir Nuevo Ejercicio</h4>
+        <div class="grid-2">
+          <div>
+            <label>Grupo Muscular (Categoría):</label>
+            <select id="selectZoneForEx" onchange="updateGlobalExerciseDropdown()"></select>
+          </div>
+          <div>
+            <label>Elegir de Ejercicios Precargados:</label>
+            <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''"></select>
+          </div>
+        </div>
+        
+        <label style="margin-top:6px;">O escribir uno nuevo (se guardará en el banco):</label>
+        <input type="text" id="manualExName" placeholder="Ej: Press Francés" oninput="document.getElementById('selectGlobalExercise').value=''">
+
+        <label style="margin-top:6px;">Observación / Nota para este alumno (opcional):</label>
+        <input type="text" id="newExNotes" placeholder="Ej: Controlar la bajada / Usar agarre neutro">
+
+        <div class="grid-3">
+          <div><label>Series Target</label><input type="number" id="newExSets" value="3" min="1"></div>
+          <div><label>Pesos (ej: 50, 55)</label><input type="text" id="newExWeights" placeholder="50, 55"></div>
+          <div><label>Reps Target (ej: 12, 10)</label><input type="text" id="newExReps" placeholder="12, 10, 8"></div>
+        </div>
+        <button class="btn-sec" onclick="addExercise()" style="margin-bottom:0;">+ Añadir Ejercicio al Día</button>
+      </div>
+
+      <h4 style="margin-bottom: 10px;">Ejercicios Agregados:</h4>
+      <div id="exercisesListEditor" style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+         <!-- Editable list with delete buttons -->
+      </div>
+      
+      <div style="margin-top: 20px; text-align: right; border-top: 1px solid var(--border); padding-top: 15px;">
+         <button class="btn-main" style="width: auto; padding: 10px 25px;" onclick="closeEditDayExercisesModal()">Terminar y Volver</button>
+      </div>
     </div>
   </div>
   
@@ -1695,6 +1871,21 @@
       
       <div style="display: flex; justify-content: flex-end;">
         <button class="btn-main" style="width:auto; padding: 10px 20px;" onclick="editCurrentTemplate()">✏️ Editar Plantilla</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Nombre de la nueva Plantilla (En lugar de prompt) -->
+  <div id="newTemplatePromptModal" class="modal-overlay" style="z-index: 3500;">
+    <div class="modal-content" style="max-width: 400px; border-left: 4px solid var(--accent);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+        <h3 style="margin: 0;">📋 Nombre de Plantilla</h3>
+        <button onclick="document.getElementById('newTemplatePromptModal').classList.remove('show')" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
+      </div>
+      <label>Ingresa el nombre para la plantilla:</label>
+      <input type="text" id="newTemplateNameInput" placeholder="Ej: Rutina Hipertrofia 4 Días">
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button class="btn-main" onclick="confirmTemplateName()">Confirmar</button>
       </div>
     </div>
   </div>
@@ -1737,8 +1928,12 @@
       <label>Zona Muscular / Categoría</label>
       <input type="text" id="editGlobalExZone">
       
-      <label style="margin-top: 10px;">Miniaturas (Haz click para ampliarlas)</label>
-      <div id="editGlobalExThumbnails" style="display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px;"></div>
+      <label style="margin-top: 10px;">Miniaturas (Click en la X para eliminar)</label>
+      <div id="editGlobalExThumbnails" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;"></div>
+
+      <label>Subir nuevas fotos/GIFs (Opcional)</label>
+      <input type="file" id="editGlobalExNewFiles" accept="image/*" multiple>
+      <div id="editExUploadStatus" class="status-msg" style="margin-top: 5px;"></div>
 
       <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 20px;">
         <button class="btn-main" onclick="saveGlobalExerciseEdit()">💾 Guardar Cambios</button>
