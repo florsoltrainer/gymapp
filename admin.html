@@ -168,6 +168,21 @@
     
     let progressChartInstance = null;
 
+    // --- MANEJO DE CLICS FUERA DE MODALES Y MENÚS ---
+    window.addEventListener('click', function(event) {
+      // Cerrar dropdown de ajustes
+      const dropdown = document.getElementById('userMenuDropdown');
+      const menuContainer = document.querySelector('.user-menu-container');
+      if (dropdown && dropdown.classList.contains('show') && !menuContainer.contains(event.target)) {
+        dropdown.classList.remove('show');
+      }
+      
+      // Cerrar modales si se cliquea en el fondo oscuro
+      if (event.target.classList.contains('modal-overlay')) {
+        event.target.classList.remove('show');
+      }
+    });
+
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
@@ -1179,6 +1194,16 @@
         openTemplateEditor(window.currentTemplateId);
       }
     };
+    
+    window.deleteCurrentTemplate = async function() {
+      if (!window.currentTemplateId) return;
+      if (confirm("⚠️ ¿Estás seguro de eliminar esta plantilla? Esta acción no se puede deshacer.")) {
+        await deleteDoc(doc(db, "plantillas_rutinas", window.currentTemplateId));
+        alert("✅ Plantilla eliminada.");
+        closeViewTemplateModal();
+        await loadGlobalTemplates();
+      }
+    };
 
     window.renderTemplateDetails = function(template) {
       const container = document.getElementById('templateDetailsDisplay');
@@ -1429,6 +1454,62 @@
       if(window.editorContext.type === 'student') renderRoutineDetails();
     };
 
+    // --- Edición rápida de parámetros de un ejercicio ya agregado ---
+    window.openEditSingleExercise = function(zone, idx) {
+      const day = window.currentEditorDay;
+      const rut = getActiveRoutine();
+      const ex = rut[day][zone][idx];
+      
+      document.getElementById('editSingleExNameDisplay').textContent = ex.name;
+      document.getElementById('editSingleExZone').value = zone;
+      document.getElementById('editSingleExIdx').value = idx;
+      
+      document.getElementById('editSingleExSets').value = ex.sets || 3;
+      document.getElementById('editSingleExWeights').value = ex.weights ? ex.weights.join(", ") : (ex.weight || "");
+      document.getElementById('editSingleExReps').value = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || "");
+      
+      document.getElementById('editSingleExerciseModal').classList.add('show');
+    };
+
+    window.closeEditSingleExerciseModal = function() {
+      document.getElementById('editSingleExerciseModal').classList.remove('show');
+    };
+
+    window.saveSingleExerciseEdit = function() {
+      const zone = document.getElementById('editSingleExZone').value;
+      const idx = parseInt(document.getElementById('editSingleExIdx').value);
+      const sets = Number(document.getElementById('editSingleExSets').value) || 3;
+      const weightsInput = document.getElementById('editSingleExWeights').value.trim();
+      const repsInput = document.getElementById('editSingleExReps').value.trim();
+      
+      let weightsArray = [];
+      if (weightsInput.includes(',')) {
+        weightsArray = weightsInput.split(',').map(w => Number(w.trim()) || 0);
+      } else {
+        const singleWeight = Number(weightsInput) || 0;
+        weightsArray = Array(sets).fill(singleWeight);
+      }
+
+      let repsArray = [];
+      if (repsInput.includes(',')) {
+        repsArray = repsInput.split(',').map(r => r.trim());
+      } else {
+        repsArray = Array(sets).fill(repsInput || "10");
+      }
+
+      const day = window.currentEditorDay;
+      const rut = getActiveRoutine();
+      
+      rut[day][zone][idx].sets = sets;
+      rut[day][zone][idx].weights = weightsArray;
+      rut[day][zone][idx].weight = weightsArray[0] || 0;
+      rut[day][zone][idx].reps = repsArray;
+      
+      closeEditSingleExerciseModal();
+      renderExercisesListEditor();
+      if(window.editorContext.type === 'student') renderRoutineDetails();
+    };
+
     window.deleteExercise = function(zone, idx) {
       const day = window.currentEditorDay;
       const rut = getActiveRoutine();
@@ -1465,7 +1546,10 @@
               <span>🏋️ <strong>${ex.name}</strong> (${ex.sets || 3} series x [${displayReps}] reps @ [${displayWeights}]) ${imgCount > 0 ? `🖼️ (${imgCount})` : ''}</span>
               ${ex.notes ? `<div style="font-size:0.8rem; color:var(--accent); margin-top:2px;">📌 <em>${ex.notes}</em></div>` : ''}
             </div>
-            <button class="btn-danger" style="width: auto; padding: 6px 12px;" onclick="deleteExercise('${zone}', ${idx})">Eliminar</button>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-sec" style="width: auto; padding: 6px 12px;" onclick="openEditSingleExercise('${zone}', ${idx})">Editar</button>
+              <button class="btn-danger" style="width: auto; padding: 6px 12px;" onclick="deleteExercise('${zone}', ${idx})">Eliminar</button>
+            </div>
           `;
           container.appendChild(div);
         });
@@ -1857,6 +1941,30 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL: Editar Parámetros de un Ejercicio Individual -->
+  <div id="editSingleExerciseModal" class="modal-overlay" style="z-index: 3300;">
+    <div class="modal-content" style="max-width: 400px; border-left: 4px solid var(--accent);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+        <h3 style="margin: 0;">⚙️ Editar Parámetros</h3>
+        <button onclick="closeEditSingleExerciseModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
+      </div>
+      
+      <h4 id="editSingleExNameDisplay" style="color:var(--accent); margin-top:0;"></h4>
+      <input type="hidden" id="editSingleExZone">
+      <input type="hidden" id="editSingleExIdx">
+      
+      <div class="grid-3">
+        <div><label>Series Target</label><input type="number" id="editSingleExSets" min="1"></div>
+        <div><label>Pesos (ej: 50, 55)</label><input type="text" id="editSingleExWeights"></div>
+        <div><label>Reps Target (ej: 12, 10)</label><input type="text" id="editSingleExReps"></div>
+      </div>
+      
+      <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+        <button class="btn-main" style="width: auto; padding: 10px 20px;" onclick="saveSingleExerciseEdit()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
   
   <!-- MODAL: Ver Detalles de Plantilla -->
   <div id="viewTemplateModal" class="modal-overlay">
@@ -1869,7 +1977,8 @@
       <div id="templateDetailsDisplay" style="padding: 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px;">
       </div>
       
-      <div style="display: flex; justify-content: flex-end;">
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn-danger" style="width:auto; padding: 10px 20px;" onclick="deleteCurrentTemplate()">🗑️ Eliminar Plantilla</button>
         <button class="btn-main" style="width:auto; padding: 10px 20px;" onclick="editCurrentTemplate()">✏️ Editar Plantilla</button>
       </div>
     </div>
@@ -1943,9 +2052,9 @@
   </div>
 
   <!-- MODAL: Visor de Imágenes -->
-  <div id="imageViewerModal" class="modal-overlay" style="z-index: 4000; background: rgba(0,0,0,0.9);" onclick="closeImageViewer()">
-    <button style="position: absolute; top: 20px; right: 30px; background: none; border: none; font-size: 2.5rem; color: white; cursor: pointer; line-height: 1;">×</button>
-    <div style="max-width: 90%; max-height: 90%; position: relative;">
+  <div id="imageViewerModal" class="modal-overlay" style="z-index: 4000; background: rgba(0,0,0,0.9);">
+    <button onclick="closeImageViewer()" style="position: absolute; top: 20px; right: 30px; background: none; border: none; font-size: 2.5rem; color: white; cursor: pointer; line-height: 1;">×</button>
+    <div style="max-width: 90%; max-height: 90%; position: relative;" onclick="event.stopPropagation()">
       <img id="imageViewerSrc" src="" style="max-width: 100%; max-height: 90vh; border-radius: 8px; object-fit: contain; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
     </div>
   </div>
