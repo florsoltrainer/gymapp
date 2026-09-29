@@ -1,0 +1,21 @@
+{
+  "name": "Flor Sol Trainer",
+  "short_name": "Flor Sol",
+  "start_url": "./alumnos.html",
+  "display": "standalone",
+  "background_color": "#121214",
+  "theme_color": "#121214",
+  "description": "Plataforma de Entrenamiento y Rutinas",
+  "icons": [
+    {
+      "src": "logo chico.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo chico.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
