@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mi Entrenamiento - Flor Sol Trainer</title>
   <style>
-    /* VARIABLES (Idénticas al Admin) */
+    /* VARIABLES */
     :root {
       --bg: #121214;
       --card: #1e1e24;
@@ -35,7 +35,7 @@
 
     /* CABECERA TOP */
     .top-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
-    .top-header img.logo { height: 40px; width: auto; }
+    .top-header img.logo { height: 40px; width: auto; object-fit: contain; }
     .header-actions { display: flex; gap: 12px; align-items: center; }
     .icon-btn { background: transparent; border: 1px solid var(--border); color: var(--text); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; position: relative; }
     .icon-btn:hover { background: var(--border); }
@@ -84,8 +84,23 @@
     .ex-details.open { display: block; }
     .ex-meta { display: flex; gap: 16px; margin-bottom: 16px; font-size: 0.9rem; color: var(--muted); }
     .ex-status-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--border); display: inline-block; margin-right: 8px; }
-    .ex-card.completed { border-color: var(--accent); }
-    .ex-card.completed .ex-status-dot { background: var(--accent); }
+
+    /* ESTILOS DEL MÓDULO DE ENTRENAMIENTO */
+    .timer-display { font-size: 3rem; font-weight: bold; text-align: center; color: var(--accent); margin: 10px 0; font-variant-numeric: tabular-nums; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+    input, textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 1rem; outline: none; margin-bottom: 12px; }
+    input:focus, textarea:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 70px; }
+    
+    .image-gallery { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 16px; scroll-snap-type: x mandatory; }
+    .image-gallery img { flex: 0 0 100%; max-height: 250px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); scroll-snap-align: center; }
+
+    .session-log-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.9rem; }
+    .session-log-table th { text-align: left; padding: 8px; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .session-log-table td { padding: 8px; border-bottom: 1px solid var(--border); }
+
+    .sync-badge { background: rgba(255, 152, 0, 0.1); color: #ff9800; border: 1px solid #ff9800; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; text-align: center; margin-top: 16px; display: none; }
 
     /* MODAL */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
@@ -94,6 +109,7 @@
     .loading-overlay { display: flex; align-items: center; justify-content: center; min-height: 80vh; color: var(--muted); font-size: 1.1rem; }
   </style>
 
+  <!-- Módulos de Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -109,12 +125,18 @@
       appId: "1:36053648611:web:34f519fc41a12024f4f1d6"
     };
 
+    window.MASTER_SCRIPT_URL = "https://script.google.com/macros/s/TU_URL_AQUI/exec";
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    // Estado global de la app
     window.workoutData = {};
+    window.spreadsheetId = "";
     window.currentDay = "";
+    window.activeExercise = null; // Guarda los datos del ejercicio en curso
+    window.sessionLogs = []; // Historial de la sesión actual
 
     onAuthStateChanged(auth, async (user) => {
       const loadingState = document.getElementById('loadingState');
@@ -130,7 +152,9 @@
           if (!querySnapshot.empty) {
             let data = null;
             querySnapshot.forEach((doc) => { data = doc.data(); });
+            
             window.workoutData = data.rutina || {};
+            window.spreadsheetId = data.spreadsheet_id || data.google_sheet_url || "";
 
             // Poblar Datos del Perfil
             document.getElementById('profileName').textContent = data.nombre || user.displayName;
@@ -144,8 +168,8 @@
             loadingState.style.display = 'none';
             appInterface.style.display = 'block';
 
-            // Iniciar renderizado de la rutina
             window.renderDaysNav();
+            window.processSyncQueue(); // Intentar sincronizar datos pendientes offline
 
           } else {
             loadingState.innerHTML = `❌ Tu correo no tiene rutina asignada.`;
@@ -169,7 +193,6 @@
     window.switchTab = function(tabId) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.module-section').forEach(mod => mod.classList.remove('active'));
-      
       document.getElementById(`btn-${tabId}`).classList.add('active');
       document.getElementById(`modulo-${tabId}`).classList.add('active');
     };
@@ -178,8 +201,9 @@
       document.getElementById('modalPerfil').style.display = show ? 'flex' : 'none';
     };
 
-    // --- LÓGICA DEL MÓDULO "MI RUTINA" ---
-    
+    /* =========================================
+       MÓDULO 1: MI RUTINA (Renderizado)
+       ========================================= */
     window.renderDaysNav = function() {
       const daysContainer = document.getElementById('daysNav');
       daysContainer.innerHTML = '';
@@ -198,7 +222,6 @@
         daysContainer.appendChild(pill);
       });
 
-      // Renderizar el primer día por defecto
       window.selectDay(days[0], daysContainer.firstChild);
     };
 
@@ -212,23 +235,18 @@
 
       const zones = window.workoutData[dayName];
       if (!zones || Object.keys(zones).length === 0) {
-        content.innerHTML = '<p style="color:var(--muted);">No hay ejercicios asignados para este día.</p>';
+        content.innerHTML = '<p style="color:var(--muted);">No hay ejercicios asignados.</p>';
         return;
       }
 
-      // Iterar sobre las zonas musculares
       Object.keys(zones).forEach(zone => {
         const zoneBlock = document.createElement('div');
         zoneBlock.className = 'zone-block';
         zoneBlock.innerHTML = `<h3 class="zone-title">${zone}</h3>`;
 
-        // Iterar sobre los ejercicios de la zona
         zones[zone].forEach((ex, exIndex) => {
           const exCard = document.createElement('div');
           exCard.className = 'ex-card';
-          // ID único para referenciarlo visualmente al completarlo después
-          exCard.id = `card-${dayName.replace(/\s+/g,'-')}-${zone.replace(/\s+/g,'-')}-${exIndex}`; 
-          
           exCard.innerHTML = `
             <div class="ex-header" onclick="this.nextElementSibling.classList.toggle('open')">
               <div><span class="ex-status-dot"></span>${ex.name}</div>
@@ -245,44 +263,222 @@
           `;
           zoneBlock.appendChild(exCard);
         });
-
         content.appendChild(zoneBlock);
       });
     };
 
+    /* =========================================
+       MÓDULO 2: MOTOR DE ENTRENAMIENTO
+       ========================================= */
+    let timerInterval = null;
+    let endTime = null;
+
+    // Iniciar ejercicio y cargar datos en el UI
     window.startExercise = function(day, zone, exIndex) {
-      // 1. Cambiar visualmente a la pestaña de Entrenamiento
       window.switchTab('entrenamiento');
       
-      // 2. Aquí conectaremos la lógica del Paso 3 (Precarga de datos en el motor de entrenamiento)
-      console.log(`Iniciando: ${day} -> ${zone} -> Ejercicio ${exIndex}`);
-      // window.loadActiveExercise(day, zone, exIndex); 
+      const ex = window.workoutData[day][zone][exIndex];
+      window.activeExercise = { day, zone, ...ex };
+
+      document.getElementById('activeExName').textContent = ex.name;
+      document.getElementById('activeExZone').textContent = `${day} - ${zone}`;
+      
+      // Mostrar nota si existe
+      const notesBox = document.getElementById('activeExNotes');
+      if (ex.notes) {
+        notesBox.innerHTML = `📌 <strong>Nota:</strong> ${ex.notes}`;
+        notesBox.style.display = 'block';
+      } else {
+        notesBox.style.display = 'none';
+      }
+
+      // Cargar imágenes en galería
+      const gallery = document.getElementById('activeExGallery');
+      gallery.innerHTML = '';
+      const images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
+      if (images.length > 0) {
+        images.forEach(url => {
+          gallery.innerHTML += `<img src="${url}" alt="Técnica">`;
+        });
+        gallery.style.display = 'flex';
+      } else {
+        gallery.style.display = 'none';
+      }
+
+      // Resetear inputs de serie
+      document.getElementById('setNum').value = 1;
+      window.updateInputsForSet(1);
     };
 
-    window.finishDay = function() {
-      // Lógica de finalización (Resumen Post-Entrenamiento)
-      alert("¡Entrenamiento finalizado! Preparando resumen de sesión...");
-      // Aquí dispararemos el modal de la tarjeta de gamificación (Share Card)
+    // Actualiza los casilleros de peso y reps según la serie
+    window.updateInputsForSet = function(currentSet) {
+      const ex = window.activeExercise;
+      if (!ex) return;
+
+      // Intentar leer array de pesos (ej: [50, 55, 60]), sino tomar el peso base
+      let targetWeight = (ex.weights && ex.weights.length >= currentSet) ? ex.weights[currentSet - 1] : (ex.weight || 0);
+      let targetReps = (ex.repsArray && ex.repsArray.length >= currentSet) ? ex.repsArray[currentSet - 1] : (ex.reps || 0);
+
+      document.getElementById('weight').value = targetWeight;
+      document.getElementById('reps').value = targetReps;
+      document.getElementById('setNumLabel').textContent = `Serie Nº (de ${ex.sets || 3})`;
     };
+
+    // Registrar Serie y Guardar en Offline Queue
+    window.logSet = function() {
+      if (!window.activeExercise) return alert("Selecciona un ejercicio primero.");
+
+      const setNum = document.getElementById('setNum').value;
+      const weight = document.getElementById('weight').value;
+      const reps = document.getElementById('reps').value;
+      const comments = document.getElementById('workoutComments').value.trim();
+
+      const entry = {
+        action: "LOG_SET",
+        spreadsheetId: window.spreadsheetId,
+        Fecha: new Date().toLocaleDateString('es-AR'),
+        Hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        Día: window.activeExercise.day,
+        Zona: window.activeExercise.zone,
+        Ejercicio: window.activeExercise.name,
+        Serie: Number(setNum),
+        "Peso (kg)": Number(weight),
+        Repeticiones: Number(reps),
+        Comentarios: comments
+      };
+
+      // 1. Añadir al historial visual de la sesión
+      window.sessionLogs.push(entry);
+      window.renderSessionLogs();
+
+      // 2. Guardar en Cola Offline
+      let queue = JSON.parse(localStorage.getItem('fst_sync_queue') || '[]');
+      queue.push(entry);
+      localStorage.setItem('fst_sync_queue', JSON.stringify(queue));
+
+      // 3. Intentar enviar a Google Sheets
+      window.processSyncQueue();
+
+      // 4. Avanzar a la siguiente serie, limpiar comentarios e iniciar cronómetro
+      const nextSet = Number(setNum) + 1;
+      document.getElementById('setNum').value = nextSet;
+      document.getElementById('workoutComments').value = '';
+      window.updateInputsForSet(nextSet);
+      
+      window.startTimer(90); // Descanso sugerido por defecto
+    };
+
+    // Procesar la cola de envíos pendientes (Modo Offline)
+    window.processSyncQueue = async function() {
+      if (!window.MASTER_SCRIPT_URL) return;
+      
+      let queue = JSON.parse(localStorage.getItem('fst_sync_queue') || '[]');
+      const syncBadge = document.getElementById('syncBadge');
+
+      if (queue.length === 0) {
+        syncBadge.style.display = 'none';
+        return;
+      }
+
+      syncBadge.style.display = 'block';
+      syncBadge.textContent = `☁️ Sincronizando ${queue.length} series...`;
+
+      try {
+        // Enviar el último elemento
+        const entry = queue[0];
+        await fetch(window.MASTER_SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(entry)
+        });
+
+        // Si tuvo éxito, lo quitamos de la cola
+        queue.shift();
+        localStorage.setItem('fst_sync_queue', JSON.stringify(queue));
+        
+        syncBadge.textContent = "✅ Rutina Sincronizada";
+        setTimeout(() => { syncBadge.style.display = 'none'; }, 2000);
+
+        // Si quedan más, procesar el siguiente
+        if(queue.length > 0) window.processSyncQueue();
+        
+      } catch (e) {
+        syncBadge.textContent = `⚠️ Sin conexión. ${queue.length} series guardadas para enviar luego.`;
+        syncBadge.style.color = "var(--danger)";
+        syncBadge.style.borderColor = "var(--danger)";
+        syncBadge.style.background = "rgba(255, 82, 82, 0.1)";
+      }
+    };
+
+    // Dibujar historial de la sesión activa
+    window.renderSessionLogs = function() {
+      const tbody = document.getElementById('sessionLogsBody');
+      tbody.innerHTML = '';
+      
+      window.sessionLogs.forEach(log => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${log.Ejercicio}</td>
+            <td>${log.Serie}</td>
+            <td>${log['Peso (kg)']}kg x ${log.Repeticiones}</td>
+          </tr>
+        `;
+      });
+    };
+
+    // Cronómetro Absoluto (Resistente a bloqueos de pantalla)
+    window.startTimer = function(seconds) {
+      clearInterval(timerInterval);
+      endTime = Date.now() + (seconds * 1000);
+      updateTimerDisplay();
+
+      timerInterval = setInterval(() => {
+        updateTimerDisplay();
+      }, 250); // Actualiza 4 veces por segundo para fluidez
+    };
+
+    window.resetTimer = function() {
+      clearInterval(timerInterval);
+      document.getElementById('timerDisplay').textContent = "00:00";
+      endTime = null;
+    };
+
+    function updateTimerDisplay() {
+      if (!endTime) return;
+      const remaining = Math.round((endTime - Date.now()) / 1000);
+      
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        document.getElementById('timerDisplay').textContent = "00:00";
+        if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        // alert('⏱️ ¡Tiempo de descanso terminado!');
+      } else {
+        const minutes = Math.floor(remaining / 60);
+        const seconds = remaining % 60;
+        document.getElementById('timerDisplay').textContent = 
+          `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      }
+    }
   </script>
 </head>
 <body>
 
   <!-- PANTALLA DE CARGA -->
-  <div id="loadingState" class="loading-overlay">⏳ Sincronizando tu entrenamiento...</div>
+  <div id="loadingState" class="loading-overlay">⏳ Verificando acceso seguro...</div>
 
   <!-- INTERFAZ PRINCIPAL -->
   <div id="appInterface" style="display: none;">
     
     <!-- CABECERA SUPERIOR -->
     <header class="top-header">
-      <img src="logo fst.png" alt="Flor Sol Trainer" class="logo" onerror="this.style.display='none'">
+      <img src="logo chico.png" alt="Flor Sol Trainer" class="logo" onerror="this.style.display='none'">
       <div class="header-actions">
         <button class="icon-btn" title="Descargar Backup">📥</button>
         <button class="icon-btn" title="Notificaciones">
           🔔<div id="notificationDot" class="notification-dot"></div>
         </button>
-        <button class="icon-btn" id="themeIcon" onclick="toggleTheme()" title="Cambiar Tema">☀️️</button>
+        <button class="icon-btn" id="themeIcon" onclick="toggleTheme()" title="Cambiar Tema">☀</button>
       </div>
     </header>
 
@@ -309,25 +505,78 @@
           </div>
         </div>
 
-        <!-- ESTRUCTURA DE LA RUTINA DINÁMICA -->
         <div class="card" style="padding: 20px 16px;">
-          <!-- Selector de días horizontal -->
           <div class="days-nav" id="daysNav"></div>
-          
-          <!-- Contenedor donde se inyectan las zonas y ejercicios -->
           <div id="rutinaContent"></div>
-
-          <!-- Finalizar sesión -->
-          <button class="btn-done" onclick="finishDay()">Terminé por hoy</button>
+          <button class="btn-done" onclick="alert('¡Excelente trabajo! Generando resumen...')">Terminé por hoy</button>
         </div>
       </div>
 
       <!-- MÓDULO 2: ENTRENAMIENTO ACTIVO -->
       <div id="modulo-entrenamiento" class="module-section">
+        
+        <!-- ESTACIÓN DEL EJERCICIO -->
         <div class="card" style="border-left: 4px solid var(--accent);">
-          <h3 style="margin-bottom: 12px;">El área de Entrenamiento</h3>
-          <p style="color: var(--muted); font-size: 0.9rem;">Cuando presiones "Empezar Ejercicio" en tu rutina, el cronómetro flotante y el registro activo aparecerán aquí (lo configuraremos en el siguiente paso).</p>
+          <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 4px;" id="activeExZone">Selecciona un ejercicio de tu rutina</div>
+          <h2 id="activeExName" style="margin-bottom: 16px;">Ningún ejercicio activo</h2>
+          
+          <div id="activeExNotes" style="background: rgba(0, 230, 118, 0.1); color: var(--accent); padding: 10px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem; border: 1px solid var(--accent); display: none;"></div>
+          
+          <div id="activeExGallery" class="image-gallery" style="display: none;"></div>
+
+          <!-- Cronómetro Flotante -->
+          <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
+            <div class="timer-display" id="timerDisplay">00:00</div>
+            <div class="grid-3" style="margin-bottom: 8px;">
+              <button class="btn-sec" onclick="startTimer(60)">60s</button>
+              <button class="btn-sec" onclick="startTimer(90)">90s</button>
+              <button class="btn-sec" onclick="startTimer(120)">120s</button>
+            </div>
+            <button class="btn-sec" style="width: 100%;" onclick="resetTimer()">Detener Cronómetro</button>
+          </div>
+
+          <!-- Casilleros de Registro -->
+          <div class="grid-3">
+            <div>
+              <label id="setNumLabel">Serie Nº</label>
+              <input type="number" id="setNum" value="1" min="1" onchange="updateInputsForSet(this.value)">
+            </div>
+            <div>
+              <label>Peso (kg)</label>
+              <input type="number" id="weight" value="0" step="0.5">
+            </div>
+            <div>
+              <label>Reps logradas</label>
+              <input type="number" id="reps" value="0" min="1">
+            </div>
+          </div>
+
+          <label>Comentarios (Opcional)</label>
+          <textarea id="workoutComments" placeholder="Ej: Costó la última, molestias, sentí bien el peso..."></textarea>
+
+          <button class="btn-main" onclick="logSet()">Completar Serie y Descansar</button>
+          <div class="sync-badge" id="syncBadge"></div>
         </div>
+
+        <!-- HISTORIAL DE LA SESIÓN (TABLA ACTIVA) -->
+        <div class="card">
+          <h3 style="margin-bottom: 12px; font-size: 1.1rem;">📊 Series Completadas Hoy</h3>
+          <table class="session-log-table">
+            <thead>
+              <tr>
+                <th>Ejercicio</th>
+                <th>S</th>
+                <th>Carga</th>
+              </tr>
+            </thead>
+            <tbody id="sessionLogsBody">
+              <tr>
+                <td colspan="3" style="text-align: center; color: var(--muted); padding: 16px;">Aún no registraste series hoy.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
       </div>
     </div>
   </div>
@@ -345,7 +594,7 @@
         <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 8px;">🔥 Racha actual: <strong style="color: var(--text);">3 semanas</strong></p>
         <p style="color: var(--muted); font-size: 0.9rem;">📈 Cumplimiento (10 días): <strong style="color: var(--accent);">85%</strong></p>
       </div>
-      <button class="btn-sec" style="width: 100%; border-color: var(--danger); color: var(--danger);" onclick="signOut(auth).then(() => window.location.href='./index.html')">Cerrar Sesión</button>
+      <button class="btn-sec" style="width: 100%; border-color: var(--danger); color: var(--danger);" onclick="import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js').then(m => m.signOut(getAuth()).then(() => window.location.href='./index.html'))">Cerrar Sesión</button>
     </div>
   </div>
 
