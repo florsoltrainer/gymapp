@@ -5,61 +5,78 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mi Entrenamiento - Flor Sol Trainer</title>
   <style>
+    /* VARIABLES (Idénticas al Admin) */
     :root {
       --bg: #121214;
       --card: #1e1e24;
       --accent: #00e676;
+      --accent-hover: #00c853;
       --text: #ffffff;
       --muted: #a0a0b0;
       --border: #2a2a35;
       --danger: #ff5252;
+      --shadow: rgba(0, 0, 0, 0.5);
     }
 
-    @media (prefers-color-scheme: light) {
-      :root {
-        --bg: #f4f5f8;
-        --card: #ffffff;
-        --accent: #00b050;
-        --text: #1a1a1e;
-        --muted: #6c707e;
-        --border: #e2e4e9;
-        --danger: #e53935;
-      }
+    /* Tema Claro Dinámico */
+    body.light-mode {
+      --bg: #f4f5f8;
+      --card: #ffffff;
+      --accent: #00b050;
+      --accent-hover: #008a3e;
+      --text: #1a1a1e;
+      --muted: #6c707e;
+      --border: #e2e4e9;
+      --shadow: rgba(0, 0, 0, 0.08);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 600px; margin: 0 auto; transition: background-color 0.3s, color 0.3s; }
+    body { background-color: var(--bg); color: var(--text); transition: background-color 0.3s, color 0.3s; padding-bottom: 40px; }
 
-    h1, h2, h3 { margin-bottom: 12px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    /* CABECERA TOP */
+    .top-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .top-header img.logo { height: 40px; width: auto; }
+    .header-actions { display: flex; gap: 12px; align-items: center; }
+    .icon-btn { background: transparent; border: 1px solid var(--border); color: var(--text); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; position: relative; }
+    .icon-btn:hover { background: var(--border); }
+    .notification-dot { position: absolute; top: 0; right: 0; width: 10px; height: 10px; background: var(--danger); border-radius: 50%; display: none; }
 
-    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
-    input, select, textarea, button { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); margin-bottom: 16px; font-size: 1rem; appearance: none; outline: none; }
-    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
-    textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+    /* NAVEGACIÓN PRINCIPAL */
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+    .tab-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); padding: 14px; text-align: center; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
 
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    /* MÓDULOS */
+    .module-section { display: none; animation: fadeIn 0.3s ease; }
+    .module-section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px var(--shadow); }
 
-    button.btn-main { background: var(--accent); color: #000; font-weight: bold; cursor: pointer; border: none; margin-bottom: 0; transition: opacity 0.2s; }
-    button.btn-main:hover { opacity: 0.9; }
-    button.btn-sec { background: transparent; color: var(--text); border: 1px solid var(--border); cursor: pointer; }
+    /* PERFIL HEADER */
+    .profile-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    .profile-info { display: flex; align-items: center; gap: 16px; }
+    .avatar { width: 60px; height: 60px; border-radius: 50%; background: var(--border); object-fit: cover; }
+    .profile-details h2 { font-size: 1.2rem; margin-bottom: 4px; }
+    .profile-details p { font-size: 0.85rem; color: var(--muted); }
+    button.btn-sec { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
     button.btn-sec:hover { background: var(--border); }
 
-    .timer-display { font-size: 3rem; font-weight: bold; text-align: center; color: var(--accent); margin: 10px 0; font-variant-numeric: tabular-nums; }
-    .sync-status { font-size: 0.85rem; text-align: center; color: var(--accent); margin-top: 10px; font-weight: 600; display: none; }
+    /* MODAL */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    .modal-content { background: var(--card); width: 100%; max-width: 400px; border-radius: 20px; padding: 24px; position: relative; border: 1px solid var(--border); }
+    .close-modal { position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; }
     
-    .loading-overlay { text-align: center; padding: 60px 20px; font-size: 1.1rem; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh; }
-    
-    .nota-entrenador { background: rgba(0, 230, 118, 0.1); color: var(--accent); padding: 14px; border-radius: 12px; font-size: 0.95rem; margin-bottom: 20px; border: 1px solid var(--accent); }
+    .loading-overlay { display: flex; align-items: center; justify-content: center; min-height: 80vh; color: var(--muted); font-size: 1.1rem; }
   </style>
 
-  <!-- Módulos de Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // ⚠️ CONFIGURACIÓN DE FIREBASE (Usa tus claves reales)
+    // ⚠️ TUS CREDENCIALES DE FIREBASE
     const firebaseConfig = {
       apiKey: "AIzaSyDC3Wvw3E8IhSnkSKg5Qk98NivuqK-FNzM",
       authDomain: "florsoltrainer-f22c2.firebaseapp.com",
@@ -69,28 +86,19 @@
       appId: "1:36053648611:web:34f519fc41a12024f4f1d6"
     };
 
-    // ⚠️ REEMPLAZA CON LA URL DE TU SCRIPT MAESTRO DE GOOGLE
-    window.MASTER_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWh2qt5SkwUw_Zi7MyXBTVUXJs2SNW0rMe17dxlmA-jgc5f8qiNsxZwrWdX0eu0K13/exec";
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Variables globales para el entrenamiento
     window.workoutData = {};
-    window.spreadsheetId = "";
 
-    // Detección de sesión al cargar la página
     onAuthStateChanged(auth, async (user) => {
       const loadingState = document.getElementById('loadingState');
-      const mainContent = document.getElementById('mainContent');
+      const appInterface = document.getElementById('appInterface');
 
       if (user) {
         const userEmail = user.email.toLowerCase().trim();
-        loadingState.innerHTML = `⏳ Descargando tu rutina, <strong>${user.displayName || 'Alumno'}</strong>...`;
-
         try {
-          // Búsqueda en Firestore por correo electrónico en lugar de ID en URL
           const alumnosRef = collection(db, "alumnos");
           const q = query(alumnosRef, where("email", "==", userEmail));
           const querySnapshot = await getDocs(q);
@@ -98,293 +106,129 @@
           if (!querySnapshot.empty) {
             let data = null;
             querySnapshot.forEach((doc) => { data = doc.data(); });
-
             window.workoutData = data.rutina || {};
-            window.spreadsheetId = data.spreadsheet_id || "";
 
-            // Renderizar la información en la cabecera
-            document.getElementById('alumnoNombreHeader').textContent = `🏋️ Hola, ${data.nombre || user.displayName}`;
-            document.getElementById('userEmailDisplay').textContent = userEmail;
+            // Poblar Datos del Perfil
+            document.getElementById('profileName').textContent = data.nombre || user.displayName;
+            document.getElementById('modalProfileName').textContent = data.nombre || user.displayName;
+            document.getElementById('profileMetrics').textContent = `${data.edad || '--'} años | ${data.peso || '--'} kg | ${data.altura || '--'} cm`;
 
-            // Mostrar nota del entrenador si existe
-            if (data.nota_para_alumno) {
-              const notaBox = document.getElementById('notaEntrenador');
-              notaBox.style.display = 'block';
-              notaBox.innerHTML = `<strong>📌 Mensaje de Flor:</strong><br>${data.nota_para_alumno}`;
+            if(data.nota_para_alumno) {
+              document.getElementById('notificationDot').style.display = 'block';
             }
 
-            // Inicializar la interfaz y mostrarla
-            window.initDropdowns();
             loadingState.style.display = 'none';
-            mainContent.style.display = 'block';
-
+            appInterface.style.display = 'block';
           } else {
-            // Falla de seguridad: el correo pasó index.html pero no está en la base (raro, pero cubierto)
-            loadingState.innerHTML = `❌ Error: El correo ${userEmail} no tiene una rutina asignada.`;
-            setTimeout(() => window.logoutStudent(), 3000);
+            loadingState.innerHTML = `❌ Tu correo no tiene rutina asignada.`;
+            setTimeout(() => signOut(auth).then(() => window.location.href='./index.html'), 3000);
           }
         } catch (error) {
-          console.error("Error consultando Firestore:", error);
-          loadingState.innerHTML = "❌ Error de conexión al cargar la base de datos.";
+          loadingState.innerHTML = "❌ Error al cargar la base de datos.";
         }
       } else {
-        // Si intenta entrar a alumnos.html copiando el enlace pero sin iniciar sesión
         window.location.href = './index.html';
       }
     });
 
-    window.logoutStudent = function() {
-      signOut(auth).then(() => {
-        window.location.href = './index.html';
-      });
+    // Control del Tema
+    window.toggleTheme = function() {
+      const body = document.body;
+      const themeIcon = document.getElementById('themeIcon');
+      body.classList.toggle('light-mode');
+      themeIcon.textContent = body.classList.contains('light-mode') ? '🌙' : '☀️';
+    };
+
+    // Control de Pestañas
+    window.switchTab = function(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.module-section').forEach(mod => mod.classList.remove('active'));
+      
+      document.getElementById(`btn-${tabId}`).classList.add('active');
+      document.getElementById(`modulo-${tabId}`).classList.add('active');
+    };
+
+    // Control del Modal
+    window.toggleModal = function(show) {
+      document.getElementById('modalPerfil').style.display = show ? 'flex' : 'none';
     };
   </script>
 </head>
 <body>
 
   <!-- PANTALLA DE CARGA -->
-  <div class="loading-overlay" id="loadingState">
-    ⏳ Identificando usuario...
-  </div>
+  <div id="loadingState" class="loading-overlay">⏳ Sincronizando tu entrenamiento...</div>
 
-  <!-- APLICACIÓN PRINCIPAL -->
-  <div id="mainContent" style="display: none;">
+  <!-- INTERFAZ PRINCIPAL -->
+  <div id="appInterface" style="display: none;">
     
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <h2 id="alumnoNombreHeader" style="margin-bottom:0; font-size: 1.4rem;">🏋️ Mi Entrenamiento</h2>
-      <button onclick="window.logoutStudent()" style="width: auto; padding: 6px 12px; margin: 0; font-size: 0.85rem; border-radius: 8px;">Salir</button>
-    </div>
-    <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 20px;">Sesión: <span id="userEmailDisplay" style="color: var(--text);"></span></div>
-
-    <!-- Mensaje del Entrenador -->
-    <div id="notaEntrenador" class="nota-entrenador" style="display: none;"></div>
-
-    <!-- 1. Cronómetro Flotante -->
-    <div class="card">
-      <h3 style="margin-bottom: 0;">⏱️ Descanso</h3>
-      <div class="timer-display" id="timerDisplay">00:00</div>
-      <div class="grid-3">
-        <button class="btn-sec" onclick="startTimer(60)">60s</button>
-        <button class="btn-sec" onclick="startTimer(90)">90s</button>
-        <button class="btn-sec" onclick="startTimer(120)">120s</button>
+    <!-- CABECERA SUPERIOR (Idéntica al Admin) -->
+    <header class="top-header">
+      <img src="logo fst.png" alt="Flor Sol Trainer" class="logo" onerror="this.style.display='none'">
+      <div class="header-actions">
+        <button class="icon-btn" title="Descargar Backup">📥</button>
+        <button class="icon-btn" title="Notificaciones">
+          🔔<div id="notificationDot" class="notification-dot"></div>
+        </button>
+        <button class="icon-btn" id="themeIcon" onclick="toggleTheme()" title="Cambiar Tema">☀️</button>
       </div>
-      <button class="btn-sec" onclick="resetTimer()" style="margin-bottom: 0;">Detener / Reiniciar</button>
-    </div>
+    </header>
 
-    <!-- 2. Registro de Entrenamiento -->
-    <div class="card">
-      <h3>📝 Registrar Serie</h3>
-      
-      <label>1. Día de Entrenamiento</label>
-      <select id="daySelect" onchange="window.onDayChange()"></select>
-
-      <label>2. Zona Muscular</label>
-      <select id="zoneSelect" onchange="window.onZoneChange()"></select>
-
-      <label>3. Ejercicio</label>
-      <select id="exerciseSelect" onchange="window.onExerciseChange()"></select>
-
-      <div style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border);">
-        <strong style="font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 6px;">🎯 Meta asignada por Flor:</strong>
-        <div id="exerciseTargetDisplay" style="font-size: 0.95rem;">Selecciona un ejercicio...</div>
+    <div class="container">
+      <!-- NAVEGACIÓN -->
+      <div class="tabs">
+        <div id="btn-rutina" class="tab-btn active" onclick="switchTab('rutina')">Mi Rutina</div>
+        <div id="btn-entrenamiento" class="tab-btn" onclick="switchTab('entrenamiento')">Entrenamiento</div>
       </div>
 
-      <div class="grid-3">
-        <div>
-          <label>Serie Nº</label>
-          <input type="number" id="setNum" value="1" min="1">
+      <!-- MÓDULO 1: MI RUTINA -->
+      <div id="modulo-rutina" class="module-section active">
+        <div class="card">
+          <div class="profile-header">
+            <div class="profile-info">
+              <!-- Imagen por defecto -->
+              <img src="https://ui-avatars.com/api/?name=Alumno&background=random" alt="Avatar" class="avatar" id="profileAvatar">
+              <div class="profile-details">
+                <h2 id="profileName">Cargando...</h2>
+                <p id="profileMetrics">-- años | -- kg | -- cm</p>
+              </div>
+            </div>
+            <button class="btn-sec" onclick="toggleModal(true)">Ver Perfil</button>
+          </div>
         </div>
-        <div>
-          <label>Peso (kg)</label>
-          <input type="number" id="weight" value="0" step="0.5">
-        </div>
-        <div>
-          <label>Reps</label>
-          <input type="number" id="reps" value="0" min="1">
+
+        <div class="card">
+          <h3 style="margin-bottom: 12px;">Desglose de Rutina (Próximo paso)</h3>
+          <p style="color: var(--muted); font-size: 0.9rem;">Aquí conectaremos las pestañas de días y las tarjetas de ejercicios desplegables para iniciar el entrenamiento.</p>
         </div>
       </div>
 
-      <label>Comentarios (Opcional)</label>
-      <textarea id="workoutComments" placeholder="Ej: Me costó la última repe, o sentí molestia en el hombro..."></textarea>
-
-      <button class="btn-main" onclick="window.logSet()">Completar Serie y Descansar</button>
-      <div class="sync-status" id="syncStatus">☁️ Enviando datos...</div>
+      <!-- MÓDULO 2: ENTRENAMIENTO ACTIVO -->
+      <div id="modulo-entrenamiento" class="module-section">
+        <div class="card" style="border-left: 4px solid var(--accent);">
+          <h3 style="margin-bottom: 12px;">Entrenamiento en curso (Próximo paso)</h3>
+          <p style="color: var(--muted); font-size: 0.9rem;">Aquí montaremos el cronómetro flotante con Picture-in-Picture, la memoria inteligente de cargas y el registro offline de series.</p>
+        </div>
+      </div>
     </div>
   </div>
 
-  <script>
-    let timerInterval = null;
-    let timeRemaining = 0;
+  <!-- MODAL DE PERFIL -->
+  <div id="modalPerfil" class="modal-overlay">
+    <div class="modal-content">
+      <button class="close-modal" onclick="toggleModal(false)">&times;</button>
+      <h2 style="margin-bottom: 16px; text-align: center;">Mi Perfil</h2>
+      <div style="text-align: center; margin-bottom: 20px;">
+        <img src="https://ui-avatars.com/api/?name=Alumno&background=random" alt="Avatar" class="avatar" style="width: 80px; height: 80px; margin-bottom: 10px;">
+        <h3 id="modalProfileName">Nombre Alumno</h3>
+      </div>
+      <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+        <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 8px;">🔥 Racha actual: <strong style="color: var(--text);">3 semanas</strong></p>
+        <p style="color: var(--muted); font-size: 0.9rem;">📈 Cumplimiento (10 días): <strong style="color: var(--accent);">85%</strong></p>
+      </div>
+      <button class="btn-sec" style="width: 100%; border-color: var(--danger); color: var(--danger);" onclick="window.location.href='./index.html'">Cerrar Sesión</button>
+    </div>
+  </div>
 
-    window.initDropdowns = function() {
-      const daySelect = document.getElementById('daySelect');
-      daySelect.innerHTML = '';
-      
-      const days = Object.keys(window.workoutData);
-      if (days.length === 0) {
-        daySelect.innerHTML = '<option>No hay rutina asignada</option>';
-        return;
-      }
-
-      days.forEach(day => {
-        const opt = document.createElement('option');
-        opt.value = day;
-        opt.textContent = day;
-        daySelect.appendChild(opt);
-      });
-
-      window.onDayChange();
-    };
-
-    window.onDayChange = function() {
-      const day = document.getElementById('daySelect').value;
-      const zoneSelect = document.getElementById('zoneSelect');
-      zoneSelect.innerHTML = '';
-
-      if (day && window.workoutData[day]) {
-        Object.keys(window.workoutData[day]).forEach(zone => {
-          const opt = document.createElement('option');
-          opt.value = zone;
-          opt.textContent = zone;
-          zoneSelect.appendChild(opt);
-        });
-      }
-      window.onZoneChange();
-    };
-
-    window.onZoneChange = function() {
-      const day = document.getElementById('daySelect').value;
-      const zone = document.getElementById('zoneSelect').value;
-      const exSelect = document.getElementById('exerciseSelect');
-      exSelect.innerHTML = '';
-
-      if (day && zone && window.workoutData[day][zone]) {
-        window.workoutData[day][zone].forEach(ex => {
-          const opt = document.createElement('option');
-          opt.value = ex.name;
-          opt.textContent = ex.name;
-          exSelect.appendChild(opt);
-        });
-      }
-      window.onExerciseChange();
-    };
-
-    window.onExerciseChange = function() {
-      const day = document.getElementById('daySelect').value;
-      const zone = document.getElementById('zoneSelect').value;
-      const exName = document.getElementById('exerciseSelect').value;
-      const targetDisplay = document.getElementById('exerciseTargetDisplay');
-
-      if (day && zone && exName && window.workoutData[day][zone]) {
-        const ex = window.workoutData[day][zone].find(e => e.name === exName);
-        if (ex) {
-          // Extraer las metas y precargar los inputs
-          const displayWeights = ex.weights ? ex.weights.join("kg, ") + "kg" : `${ex.weight || 0} kg`;
-          const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
-          
-          targetDisplay.innerHTML = `<strong>${ex.sets || 3} Series</strong> x [${displayReps}] reps @ [${displayWeights}]`;
-          if (ex.notes) {
-            targetDisplay.innerHTML += `<br><span style="color:var(--accent); font-size:0.85rem; margin-top:4px; display:inline-block;">📌 ${ex.notes}</span>`;
-          }
-
-          document.getElementById('weight').value = ex.weights ? ex.weights[0] : (ex.weight || 0);
-          
-          // Si las reps son un array (ej: "12, 10, 8"), intentamos tomar la primera para precargar
-          let firstRep = 0;
-          if (Array.isArray(ex.reps) && ex.reps.length > 0) {
-            firstRep = parseInt(ex.reps[0]);
-          } else {
-             firstRep = parseInt(ex.reps);
-          }
-          document.getElementById('reps').value = isNaN(firstRep) ? 0 : firstRep;
-        }
-      }
-    };
-
-    window.logSet = async function() {
-      const day = document.getElementById('daySelect').value;
-      const zone = document.getElementById('zoneSelect').value;
-      const exercise = document.getElementById('exerciseSelect').value;
-      const setNum = document.getElementById('setNum').value;
-      const weight = document.getElementById('weight').value;
-      const reps = document.getElementById('reps').value;
-      const comments = document.getElementById('workoutComments').value.trim();
-      const statusDiv = document.getElementById('syncStatus');
-
-      if (!exercise) return alert("Selecciona un ejercicio válido.");
-      if (!window.spreadsheetId) return alert("Error: Tu cuenta no tiene una planilla asignada para guardar datos.");
-
-      const entry = {
-        action: "LOG_SET",
-        spreadsheetId: window.spreadsheetId,
-        Fecha: new Date().toLocaleDateString('es-AR'),
-        Hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        Día: day,
-        Zona: zone,
-        Ejercicio: exercise,
-        Serie: Number(setNum),
-        "Peso (kg)": Number(weight),
-        Repeticiones: Number(reps),
-        Comentarios: comments
-      };
-
-      statusDiv.style.display = 'block';
-      statusDiv.style.color = "var(--text)";
-      statusDiv.textContent = "⏳ Registrando serie...";
-
-      try {
-        fetch(window.MASTER_SCRIPT_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(entry)
-        });
-        
-        statusDiv.style.color = "var(--accent)";
-        statusDiv.textContent = "✅ Serie registrada con éxito";
-        
-        // Sumar 1 a la serie actual y disparar el cronómetro
-        document.getElementById('setNum').value = Number(setNum) + 1;
-        document.getElementById('workoutComments').value = '';
-        window.startTimer(90);
-
-        setTimeout(() => { statusDiv.style.display = 'none'; }, 4000);
-      } catch (e) {
-        statusDiv.style.color = "var(--danger)";
-        statusDiv.textContent = "⚠️️ Error de conexión. Reintenta.";
-      }
-    };
-
-    // Funciones del Cronómetro
-    window.startTimer = function(seconds) {
-      clearInterval(timerInterval);
-      timeRemaining = seconds;
-      updateTimerDisplay();
-
-      timerInterval = setInterval(() => {
-        timeRemaining--;
-        updateTimerDisplay();
-        if (timeRemaining <= 0) {
-          clearInterval(timerInterval);
-          // Opcional: Agregar sonido o vibración aquí
-          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-          alert('⏱️ ¡Tiempo de descanso terminado! A darle con todo.');
-        }
-      }, 1000);
-    };
-
-    window.resetTimer = function() {
-      clearInterval(timerInterval);
-      timeRemaining = 0;
-      updateTimerDisplay();
-    };
-
-    function updateTimerDisplay() {
-      const minutes = Math.floor(Math.abs(timeRemaining) / 60);
-      const seconds = Math.abs(timeRemaining) % 60;
-      document.getElementById('timerDisplay').textContent = 
-        `${timeRemaining < 0 ? '+' : ''}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
-  </script>
 </body>
 </html>
