@@ -60,14 +60,37 @@
     .avatar { width: 60px; height: 60px; border-radius: 50%; background: var(--border); object-fit: cover; }
     .profile-details h2 { font-size: 1.2rem; margin-bottom: 4px; }
     .profile-details p { font-size: 0.85rem; color: var(--muted); }
+    
+    /* BOTONES GLOBALES */
     button.btn-sec { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
     button.btn-sec:hover { background: var(--border); }
+    button.btn-main { background: var(--accent); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 1rem; width: 100%; cursor: pointer; transition: 0.2s; }
+    button.btn-main:hover { background: var(--accent-hover); }
+    button.btn-done { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 14px; border-radius: 12px; font-weight: 700; font-size: 1rem; width: 100%; cursor: pointer; margin-top: 16px; }
+
+    /* NAVEGACIÓN DE DÍAS */
+    .days-nav { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 16px; scrollbar-width: none; }
+    .days-nav::-webkit-scrollbar { display: none; }
+    .day-pill { padding: 10px 20px; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; white-space: nowrap; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--muted); }
+    .day-pill.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+    /* ACORDEÓN DE EJERCICIOS */
+    .zone-block { margin-bottom: 24px; }
+    .zone-title { font-size: 1.1rem; color: var(--accent); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .ex-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+    .ex-header { padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 600; }
+    .ex-header:hover { background: rgba(255,255,255,0.02); }
+    .ex-details { padding: 0 16px 16px 16px; display: none; border-top: 1px solid var(--border); margin-top: 8px; padding-top: 16px; }
+    .ex-details.open { display: block; }
+    .ex-meta { display: flex; gap: 16px; margin-bottom: 16px; font-size: 0.9rem; color: var(--muted); }
+    .ex-status-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--border); display: inline-block; margin-right: 8px; }
+    .ex-card.completed { border-color: var(--accent); }
+    .ex-card.completed .ex-status-dot { background: var(--accent); }
 
     /* MODAL */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
     .modal-content { background: var(--card); width: 100%; max-width: 400px; border-radius: 20px; padding: 24px; position: relative; border: 1px solid var(--border); }
     .close-modal { position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; }
-    
     .loading-overlay { display: flex; align-items: center; justify-content: center; min-height: 80vh; color: var(--muted); font-size: 1.1rem; }
   </style>
 
@@ -91,6 +114,7 @@
     const auth = getAuth(app);
 
     window.workoutData = {};
+    window.currentDay = "";
 
     onAuthStateChanged(auth, async (user) => {
       const loadingState = document.getElementById('loadingState');
@@ -119,6 +143,10 @@
 
             loadingState.style.display = 'none';
             appInterface.style.display = 'block';
+
+            // Iniciar renderizado de la rutina
+            window.renderDaysNav();
+
           } else {
             loadingState.innerHTML = `❌ Tu correo no tiene rutina asignada.`;
             setTimeout(() => signOut(auth).then(() => window.location.href='./index.html'), 3000);
@@ -131,7 +159,6 @@
       }
     });
 
-    // Control del Tema
     window.toggleTheme = function() {
       const body = document.body;
       const themeIcon = document.getElementById('themeIcon');
@@ -139,7 +166,6 @@
       themeIcon.textContent = body.classList.contains('light-mode') ? '🌙' : '☀️';
     };
 
-    // Control de Pestañas
     window.switchTab = function(tabId) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.module-section').forEach(mod => mod.classList.remove('active'));
@@ -148,9 +174,95 @@
       document.getElementById(`modulo-${tabId}`).classList.add('active');
     };
 
-    // Control del Modal
     window.toggleModal = function(show) {
       document.getElementById('modalPerfil').style.display = show ? 'flex' : 'none';
+    };
+
+    // --- LÓGICA DEL MÓDULO "MI RUTINA" ---
+    
+    window.renderDaysNav = function() {
+      const daysContainer = document.getElementById('daysNav');
+      daysContainer.innerHTML = '';
+      const days = Object.keys(window.workoutData);
+
+      if (days.length === 0) {
+        document.getElementById('rutinaContent').innerHTML = '<p style="color:var(--muted);">No hay rutina cargada.</p>';
+        return;
+      }
+
+      days.forEach((day, index) => {
+        const pill = document.createElement('div');
+        pill.className = `day-pill ${index === 0 ? 'active' : ''}`;
+        pill.textContent = day;
+        pill.onclick = () => window.selectDay(day, pill);
+        daysContainer.appendChild(pill);
+      });
+
+      // Renderizar el primer día por defecto
+      window.selectDay(days[0], daysContainer.firstChild);
+    };
+
+    window.selectDay = function(dayName, element) {
+      window.currentDay = dayName;
+      document.querySelectorAll('.day-pill').forEach(p => p.classList.remove('active'));
+      if(element) element.classList.add('active');
+      
+      const content = document.getElementById('rutinaContent');
+      content.innerHTML = '';
+
+      const zones = window.workoutData[dayName];
+      if (!zones || Object.keys(zones).length === 0) {
+        content.innerHTML = '<p style="color:var(--muted);">No hay ejercicios asignados para este día.</p>';
+        return;
+      }
+
+      // Iterar sobre las zonas musculares
+      Object.keys(zones).forEach(zone => {
+        const zoneBlock = document.createElement('div');
+        zoneBlock.className = 'zone-block';
+        zoneBlock.innerHTML = `<h3 class="zone-title">${zone}</h3>`;
+
+        // Iterar sobre los ejercicios de la zona
+        zones[zone].forEach((ex, exIndex) => {
+          const exCard = document.createElement('div');
+          exCard.className = 'ex-card';
+          // ID único para referenciarlo visualmente al completarlo después
+          exCard.id = `card-${dayName.replace(/\s+/g,'-')}-${zone.replace(/\s+/g,'-')}-${exIndex}`; 
+          
+          exCard.innerHTML = `
+            <div class="ex-header" onclick="this.nextElementSibling.classList.toggle('open')">
+              <div><span class="ex-status-dot"></span>${ex.name}</div>
+              <span style="color:var(--muted); font-size:0.8rem;">▼</span>
+            </div>
+            <div class="ex-details">
+              <div class="ex-meta">
+                <div><strong>Series:</strong> ${ex.sets || 3}</div>
+                <div><strong>Reps:</strong> ${ex.reps || 10}</div>
+                <div><strong>Carga:</strong> ${ex.weight || 0}kg</div>
+              </div>
+              <button class="btn-main" onclick="window.startExercise('${dayName}', '${zone}', ${exIndex})">Empezar Ejercicio</button>
+            </div>
+          `;
+          zoneBlock.appendChild(exCard);
+        });
+
+        content.appendChild(zoneBlock);
+      });
+    };
+
+    window.startExercise = function(day, zone, exIndex) {
+      // 1. Cambiar visualmente a la pestaña de Entrenamiento
+      window.switchTab('entrenamiento');
+      
+      // 2. Aquí conectaremos la lógica del Paso 3 (Precarga de datos en el motor de entrenamiento)
+      console.log(`Iniciando: ${day} -> ${zone} -> Ejercicio ${exIndex}`);
+      // window.loadActiveExercise(day, zone, exIndex); 
+    };
+
+    window.finishDay = function() {
+      // Lógica de finalización (Resumen Post-Entrenamiento)
+      alert("¡Entrenamiento finalizado! Preparando resumen de sesión...");
+      // Aquí dispararemos el modal de la tarjeta de gamificación (Share Card)
     };
   </script>
 </head>
@@ -162,7 +274,7 @@
   <!-- INTERFAZ PRINCIPAL -->
   <div id="appInterface" style="display: none;">
     
-    <!-- CABECERA SUPERIOR (Idéntica al Admin) -->
+    <!-- CABECERA SUPERIOR -->
     <header class="top-header">
       <img src="logo fst.png" alt="Flor Sol Trainer" class="logo" onerror="this.style.display='none'">
       <div class="header-actions">
@@ -170,7 +282,7 @@
         <button class="icon-btn" title="Notificaciones">
           🔔<div id="notificationDot" class="notification-dot"></div>
         </button>
-        <button class="icon-btn" id="themeIcon" onclick="toggleTheme()" title="Cambiar Tema">☀️</button>
+        <button class="icon-btn" id="themeIcon" onclick="toggleTheme()" title="Cambiar Tema">☀️️</button>
       </div>
     </header>
 
@@ -183,10 +295,10 @@
 
       <!-- MÓDULO 1: MI RUTINA -->
       <div id="modulo-rutina" class="module-section active">
+        <!-- PERFIL ESTÁTICO -->
         <div class="card">
-          <div class="profile-header">
+          <div class="profile-header" style="margin-bottom: 0;">
             <div class="profile-info">
-              <!-- Imagen por defecto -->
               <img src="https://ui-avatars.com/api/?name=Alumno&background=random" alt="Avatar" class="avatar" id="profileAvatar">
               <div class="profile-details">
                 <h2 id="profileName">Cargando...</h2>
@@ -197,17 +309,24 @@
           </div>
         </div>
 
-        <div class="card">
-          <h3 style="margin-bottom: 12px;">Desglose de Rutina (Próximo paso)</h3>
-          <p style="color: var(--muted); font-size: 0.9rem;">Aquí conectaremos las pestañas de días y las tarjetas de ejercicios desplegables para iniciar el entrenamiento.</p>
+        <!-- ESTRUCTURA DE LA RUTINA DINÁMICA -->
+        <div class="card" style="padding: 20px 16px;">
+          <!-- Selector de días horizontal -->
+          <div class="days-nav" id="daysNav"></div>
+          
+          <!-- Contenedor donde se inyectan las zonas y ejercicios -->
+          <div id="rutinaContent"></div>
+
+          <!-- Finalizar sesión -->
+          <button class="btn-done" onclick="finishDay()">Terminé por hoy</button>
         </div>
       </div>
 
       <!-- MÓDULO 2: ENTRENAMIENTO ACTIVO -->
       <div id="modulo-entrenamiento" class="module-section">
         <div class="card" style="border-left: 4px solid var(--accent);">
-          <h3 style="margin-bottom: 12px;">Entrenamiento en curso (Próximo paso)</h3>
-          <p style="color: var(--muted); font-size: 0.9rem;">Aquí montaremos el cronómetro flotante con Picture-in-Picture, la memoria inteligente de cargas y el registro offline de series.</p>
+          <h3 style="margin-bottom: 12px;">El área de Entrenamiento</h3>
+          <p style="color: var(--muted); font-size: 0.9rem;">Cuando presiones "Empezar Ejercicio" en tu rutina, el cronómetro flotante y el registro activo aparecerán aquí (lo configuraremos en el siguiente paso).</p>
         </div>
       </div>
     </div>
@@ -226,7 +345,7 @@
         <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 8px;">🔥 Racha actual: <strong style="color: var(--text);">3 semanas</strong></p>
         <p style="color: var(--muted); font-size: 0.9rem;">📈 Cumplimiento (10 días): <strong style="color: var(--accent);">85%</strong></p>
       </div>
-      <button class="btn-sec" style="width: 100%; border-color: var(--danger); color: var(--danger);" onclick="window.location.href='./index.html'">Cerrar Sesión</button>
+      <button class="btn-sec" style="width: 100%; border-color: var(--danger); color: var(--danger);" onclick="signOut(auth).then(() => window.location.href='./index.html')">Cerrar Sesión</button>
     </div>
   </div>
 
