@@ -119,12 +119,12 @@
     /* Botón Alumnos con Acento Verde */
     .btn-student {
       background-color: var(--accent);
-      color: #000000; /* Texto negro para contraste máximo con el verde */
+      color: #000000;
     }
     
     @media (prefers-color-scheme: light) {
       .btn-student {
-        color: #ffffff; /* Texto blanco para lectura sobre verde en modo claro */
+        color: #ffffff;
       }
     }
 
@@ -154,13 +154,42 @@
     .error-msg {
       color: var(--danger);
     }
+
+    /* =========================================================
+       4. ESTILOS DE LA PANTALLA DEL PERFIL DEL ALUMNO
+       ========================================================= */
+    #appScreen {
+      display: none;
+      padding: 24px;
+    }
+
+    .header-perfil {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+
+    .nota-entrenador {
+      background: rgba(0, 230, 118, 0.1);
+      color: var(--accent);
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+      border: 1px solid var(--accent);
+      display: none;
+      text-align: left;
+    }
   </style>
 
   <!-- Módulos de Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     // ⚠️ REEMPLAZA CON TUS CREDENCIALES REALES DE FIREBASE
     const firebaseConfig = {
@@ -177,18 +206,21 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    window.loginStudentWithGoogle = async function() {
+    // Variable global para almacenar el Contrato de Datos del alumno
+    window.alumnoData = {
+      nombre: "",
+      spreadsheetId: "",
+      rutina: {},
+      nota: ""
+    };
+
+    let isAuthenticating = false;
+
+    // Función unificada para cargar el perfil
+    async function loadStudentProfile(userEmail, userDisplayName) {
       const statusMsg = document.getElementById('statusMsg');
-      statusMsg.className = "status-msg";
-      statusMsg.textContent = "⏳ Conectando con Google...";
-
+      
       try {
-        const result = await signInWithPopup(auth, provider);
-        const userEmail = result.user.email.toLowerCase().trim();
-
-        statusMsg.textContent = `🔍 Verificando cuenta (${userEmail})...`;
-
-        // Búsqueda en la colección "alumnos" por la dirección de Gmail
         const alumnosRef = collection(db, "alumnos");
         const q = query(alumnosRef, where("email", "==", userEmail));
         const querySnapshot = await getDocs(q);
@@ -199,38 +231,88 @@
             studentData = doc.data();
           });
 
-          const targetUrl = studentData.google_sheet_url || studentData.sheet_url || studentData.link_personal;
+          statusMsg.textContent = `✅ ¡Hola ${studentData.nombre || userDisplayName}! Cargando tu perfil...`;
 
-          if (targetUrl) {
-            statusMsg.textContent = `✅ ¡Hola ${studentData.nombre || result.user.displayName}! Redirigiendo a tu rutina...`;
-            setTimeout(() => {
-              window.location.href = targetUrl;
-            }, 1000);
-          } else {
-            statusMsg.className = "status-msg error-msg";
-            statusMsg.textContent = "⚠️ Tu cuenta está registrada pero aún no se le asignó un enlace personal. Consulta a la entrenadora.";
-            signOut(auth);
-          }
+          // 1. Guardar la rutina y datos en memoria para armar la web (Paso 2)
+          window.alumnoData.nombre = studentData.nombre || userDisplayName;
+          window.alumnoData.spreadsheetId = studentData.spreadsheet_id || studentData.google_sheet_url || studentData.sheet_url;
+          window.alumnoData.rutina = studentData.rutina || {};
+          window.alumnoData.nota = studentData.nota_para_alumno || studentData.notas || "";
+
+          // 2. Transición visual: Ocultar login, mostrar appScreen
+          setTimeout(() => {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appScreen').style.display = 'block';
+            document.getElementById('alumnoNombre').textContent = `Hola, ${window.alumnoData.nombre}`;
+            
+            if(window.alumnoData.nota) {
+              const notaBox = document.getElementById('notaEntrenador');
+              notaBox.style.display = 'block';
+              notaBox.innerHTML = `<strong>Mensaje de Flor:</strong><br>${window.alumnoData.nota}`;
+            }
+          }, 1000);
+
         } else {
           statusMsg.className = "status-msg error-msg";
-          statusMsg.textContent = `❌ El correo (${userEmail}) no está registrado en el sistema. Consulta a la entrenadora.`;
+          statusMsg.textContent = `❌ El correo (${userEmail}) no está registrado. Consulta a la entrenadora.`;
           signOut(auth);
         }
+      } catch (error) {
+        console.error("Error consultando la base de datos:", error);
+        statusMsg.className = "status-msg error-msg";
+        statusMsg.textContent = "❌ Error de conexión al verificar tus datos.";
+      }
+    }
+
+    // Detector automático de sesión (si el alumno ya inició sesión antes)
+    onAuthStateChanged(auth, async (user) => {
+      if (user && !isAuthenticating) {
+        const statusMsg = document.getElementById('statusMsg');
+        statusMsg.className = "status-msg";
+        statusMsg.textContent = "⏳ Restaurando tu sesión...";
+        await loadStudentProfile(user.email.toLowerCase().trim(), user.displayName);
+      }
+    });
+
+    // Función del botón manual
+    window.loginStudentWithGoogle = async function() {
+      const statusMsg = document.getElementById('statusMsg');
+      statusMsg.className = "status-msg";
+      statusMsg.textContent = "⏳ Conectando con Google...";
+      isAuthenticating = true; // Previene doble carga con el onAuthStateChanged
+
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const userEmail = result.user.email.toLowerCase().trim();
+        statusMsg.textContent = `🔍 Verificando cuenta (${userEmail})...`;
+        
+        await loadStudentProfile(userEmail, result.user.displayName);
       } catch (error) {
         console.error("Error en autenticación:", error);
         statusMsg.className = "status-msg error-msg";
         statusMsg.textContent = "❌ Error al iniciar sesión: " + error.message;
+      } finally {
+        isAuthenticating = false;
       }
+    };
+
+    // Función para cerrar sesión y volver a la pantalla inicial
+    window.logoutStudent = async function() {
+      await signOut(auth);
+      document.getElementById('appScreen').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'block';
+      document.getElementById('statusMsg').textContent = "";
     };
   </script>
 </head>
 <body>
 
-  <div class="container">
-    <!-- LOGO CENTRADO -->
+  <!-- PANTALLA 1: Acceso (Login) -->
+  <div class="container" id="loginScreen">
     <img src="logo fst.png" alt="Flor Sol Trainer - Tu mejor versión" class="logo">
+    <h1 class="welcome-title">Portal de Acceso</h1>
+    <p class="welcome-sub">Selecciona tu tipo de usuario para ingresar</p>
 
-    <!-- BOTONES DE ACCESO -->
     <div class="btn-container">
       <button class="btn-student" onclick="loginStudentWithGoogle()">
         <svg width="18" height="18" viewBox="0 0 18 18"><path fill="currentColor" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="currentColor" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="currentColor" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="currentColor" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
@@ -238,12 +320,26 @@
       </button>
 
       <button class="btn-admin" onclick="window.location.href='./admin.html'">
-        Acceso Administrador
+        🔐 Acceso Administrador
       </button>
     </div>
 
-    <!-- MENSAJE DE ESTADO -->
     <div id="statusMsg" class="status-msg"></div>
+  </div>
+
+  <!-- PANTALLA 2: Perfil del Alumno (Oculta al inicio) -->
+  <div class="container" id="appScreen">
+    <div class="header-perfil">
+      <h2 id="alumnoNombre" class="welcome-title" style="margin:0;">Hola</h2>
+      <button class="btn-admin" onclick="logoutStudent()" style="padding: 6px 12px; width: auto; font-size: 0.85rem;">Cerrar Sesión</button>
+    </div>
+    
+    <div id="notaEntrenador" class="nota-entrenador"></div>
+
+    <!-- Contenedor donde generaremos dinámicamente los días de entrenamiento en el Paso 2 -->
+    <div id="rutinaContainer">
+      <p style="color: var(--muted); margin-top: 30px;">Cargando estructura de tu rutina...</p>
+    </div>
   </div>
 
 </body>
