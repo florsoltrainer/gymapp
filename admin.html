@@ -363,39 +363,69 @@
       
       let notifs = [];
 
-      // 1. Revisar colección global (si existe)
+      // Función auxiliar para extraer de cualquier formato
+      const extractComments = (d, studentName) => {
+          let rawFecha = d.fecha || d.Fecha || d.date || d.timestamp;
+          let fechaStr = rawFecha;
+          if (rawFecha && rawFecha.toDate) fechaStr = rawFecha.toDate().toLocaleDateString();
+          else if (rawFecha instanceof Date) fechaStr = rawFecha.toLocaleDateString();
+          else if (!rawFecha) fechaStr = 'Reciente';
+
+          // Comentarios a nivel de sesión completa
+          let globalComment = d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas;
+          if (globalComment && typeof globalComment === 'string' && globalComment.trim() !== '') {
+              notifs.push({ nombre: studentName, mensaje: globalComment, fecha: fechaStr });
+          }
+
+          // Comentarios a nivel de ejercicio (si se guardan como un arreglo)
+          if (d.ejercicios && Array.isArray(d.ejercicios)) {
+              d.ejercicios.forEach(ej => {
+                  let ejComment = ej.comentario || ej.Comentarios || ej.comentarios || ej.nota || ej.notas;
+                  if (ejComment && typeof ejComment === 'string' && ejComment.trim() !== '') {
+                      notifs.push({ nombre: studentName, mensaje: `(${ej.ejercicio || ej.nombre || 'Ejercicio'}) ${ejComment}`, fecha: fechaStr });
+                  }
+              });
+          }
+      };
+
+      // 1. Revisar colección global notificaciones (si existe)
       try {
          const notifSnap = await getDocs(collection(db, "notificaciones"));
          notifSnap.forEach(doc => {
              let d = doc.data();
-             notifs.push({ nombre: d.alumno || 'Alumno', mensaje: d.mensaje || d.comentario, fecha: d.fecha || '' });
+             let rawFecha = d.fecha || d.Fecha || d.timestamp;
+             let fechaStr = rawFecha;
+             if (rawFecha && rawFecha.toDate) fechaStr = rawFecha.toDate().toLocaleDateString();
+             notifs.push({ nombre: d.alumno || d.nombreAlumno || 'Alumno', mensaje: d.mensaje || d.comentario || d.nota, fecha: fechaStr || 'Reciente' });
          });
       } catch(e) {}
 
-      // 2. Revisar el historial de ejercicios en Firebase de todos los alumnos buscando comentarios recientes
+      // 2. Revisar historial global (por si la app lo guarda de esta manera)
+      try {
+         const histSnap = await getDocs(collection(db, "historial"));
+         histSnap.forEach(doc => {
+             let d = doc.data();
+             let studentName = d.alumno || d.nombreAlumno || 'Alumno';
+             extractComments(d, studentName);
+         });
+      } catch(e) {}
+
+      // 3. Revisar el historial de subcolecciones de cada alumno
       for (const student of window.allStudentsList) {
          try {
-            // Buscamos en "historial" y "registros" por si acaso
-            const cols = ["historial", "registros"];
+            const cols = ["historial", "registros", "entrenamientos"];
             for (let col of cols) {
                 const histSnap = await getDocs(collection(db, "alumnos", student.id, col));
                 histSnap.forEach(docSnap => {
                    let d = docSnap.data();
-                   let comentario = d.comentario || d.Comentarios || d.comentarios;
-                   if (comentario && typeof comentario === 'string' && comentario.trim() !== '') {
-                      notifs.push({ 
-                          nombre: student.nombre || student.id, 
-                          mensaje: comentario, 
-                          fecha: d.fecha || d.Fecha || 'Reciente'
-                      });
-                   }
+                   extractComments(d, student.nombre || student.id);
                 });
             }
          } catch(e) {}
       }
 
       if (notifs.length > 0) {
-         // Quitar duplicados por si se leyó el mismo comentario dos veces
+         // Quitar duplicados por si se leyó el mismo comentario de varios lugares
          let uniqueNotifs = [];
          let seen = new Set();
          notifs.forEach(n => {
@@ -643,26 +673,92 @@
       let allLogs = [];
       window.currentStudentData.logs = [];
 
-      // 1. Extraer desde Firebase (subcolecciones 'historial' o 'registros')
+      // 1. Extraer desde Firebase (subcolecciones 'historial', 'registros' o 'entrenamientos')
       try {
-        const colsToTry = ["historial", "registros"];
+        const colsToTry = ["historial", "registros", "entrenamientos"];
         for (let colName of colsToTry) {
             const histSnap = await getDocs(collection(db, "alumnos", window.currentStudentId, colName));
             histSnap.forEach(docSnap => {
               let d = docSnap.data();
-              allLogs.push({
-                Fecha: d.fecha || d.Fecha || new Date().toLocaleDateString(),
-                Ejercicio: d.ejercicio || d.Ejercicio || "Desconocido",
-                Serie: d.serie || d.Serie || 1,
-                "Peso (kg)": d.peso || d["Peso (kg)"] || d.peso_kg || 0,
-                Repeticiones: d.reps || d.Repeticiones || d.repeticiones || 0,
-                Comentarios: d.comentario || d.Comentarios || d.comentarios || ""
-              });
+              
+              // Evitar error [object Object] si la fecha es un Timestamp de Firestore
+              let rawFecha = d.fecha || d.Fecha || d.date || d.timestamp;
+              let fechaStr = rawFecha;
+              if (rawFecha && rawFecha.toDate) {
+                  fechaStr = rawFecha.toDate().toLocaleDateString();
+              } else if (rawFecha instanceof Date) {
+                  fechaStr = rawFecha.toLocaleDateString();
+              } else if (typeof rawFecha === 'object') {
+                  fechaStr = new Date(rawFecha.seconds * 1000).toLocaleDateString() || new Date().toLocaleDateString();
+              } else if (!rawFecha) {
+                  fechaStr = new Date().toLocaleDateString();
+              }
+
+              // Soportar estructura donde se guarda un arreglo de ejercicios
+              if (d.ejercicios && Array.isArray(d.ejercicios)) {
+                  d.ejercicios.forEach(ej => {
+                      allLogs.push({
+                          Fecha: fechaStr,
+                          Ejercicio: ej.ejercicio || ej.nombre || ej.name || "Desconocido",
+                          Serie: ej.serie || ej.sets || ej.Serie || 1,
+                          "Peso (kg)": ej.peso || ej["Peso (kg)"] || ej.peso_kg || ej.weight || 0,
+                          Repeticiones: ej.reps || ej.Repeticiones || ej.repeticiones || 0,
+                          Comentarios: ej.comentario || ej.Comentarios || ej.comentarios || ej.nota || d.comentario || d.Comentarios || ""
+                      });
+                  });
+              } else {
+                  allLogs.push({
+                    Fecha: fechaStr,
+                    Ejercicio: d.ejercicio || d.Ejercicio || d.nombre || "Desconocido",
+                    Serie: d.serie || d.Serie || d.sets || 1,
+                    "Peso (kg)": d.peso || d["Peso (kg)"] || d.peso_kg || d.weight || 0,
+                    Repeticiones: d.reps || d.Repeticiones || d.repeticiones || 0,
+                    Comentarios: d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas || ""
+                  });
+              }
             });
         }
       } catch(e) {
-        console.error("Error leyendo historial de Firebase", e);
+        console.error("Error leyendo historial de Firebase subcolecciones", e);
       }
+      
+      // 1.5 Revisar colección global "historial" por si la App lo guarda así
+      try {
+          const globalHistSnap = await getDocs(collection(db, "historial"));
+          globalHistSnap.forEach(docSnap => {
+              let d = docSnap.data();
+              if (d.alumnoId === window.currentStudentId || (d.email && d.email === window.currentStudentData.email) || d.alumno === window.currentStudentData.nombre) {
+                  let rawFecha = d.fecha || d.Fecha || d.date || d.timestamp;
+                  let fechaStr = rawFecha;
+                  if (rawFecha && rawFecha.toDate) fechaStr = rawFecha.toDate().toLocaleDateString();
+                  else if (rawFecha instanceof Date) fechaStr = rawFecha.toLocaleDateString();
+                  else if (typeof rawFecha === 'object') fechaStr = new Date(rawFecha.seconds * 1000).toLocaleDateString() || new Date().toLocaleDateString();
+                  else if (!rawFecha) fechaStr = new Date().toLocaleDateString();
+
+                  if (d.ejercicios && Array.isArray(d.ejercicios)) {
+                      d.ejercicios.forEach(ej => {
+                          allLogs.push({
+                              Fecha: fechaStr,
+                              Ejercicio: ej.ejercicio || ej.nombre || ej.name || "Desconocido",
+                              Serie: ej.serie || ej.sets || 1,
+                              "Peso (kg)": ej.peso || ej.weight || 0,
+                              Repeticiones: ej.reps || ej.repeticiones || 0,
+                              Comentarios: ej.comentario || ej.nota || d.comentario || ""
+                          });
+                      });
+                  } else {
+                      allLogs.push({
+                          Fecha: fechaStr,
+                          Ejercicio: d.ejercicio || d.Ejercicio || d.nombre || "Desconocido",
+                          Serie: d.serie || d.Serie || d.sets || 1,
+                          "Peso (kg)": d.peso || d["Peso (kg)"] || d.peso_kg || d.weight || 0,
+                          Repeticiones: d.reps || d.Repeticiones || d.repeticiones || 0,
+                          Comentarios: d.comentario || d.Comentarios || d.comentarios || d.nota || ""
+                      });
+                  }
+              }
+          });
+      } catch(e) { /* Colección no existe, ignorar */ }
 
       // 2. Extraer desde Google Sheets (compatibilidad con datos antiguos)
       if (window.currentStudentData.spreadsheet_id) {
@@ -698,7 +794,7 @@
         container.innerHTML += prHtml;
 
         const logsByDay = {};
-        // Tomamos los 50 más recientes para el resumen visual
+        // Tomamos los 50 más recientes para el resumen visual (al no poder ordenar strings de fechas de forma fácil, al menos evitamos el error [object Object])
         allLogs.slice(0, 50).forEach(log => {
            const key = `${log.Fecha}`;
            if (!logsByDay[key]) logsByDay[key] = [];
@@ -1696,6 +1792,7 @@
       document.getElementById('editSingleExSets').value = ex.sets || 3;
       document.getElementById('editSingleExWeights').value = ex.weights ? ex.weights.join(", ") : (ex.weight || "");
       document.getElementById('editSingleExReps').value = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || "");
+      document.getElementById('editSingleExNotes').value = ex.notes || ""; // CARGAMOS LA NOTA
       
       document.getElementById('editSingleExerciseModal').classList.add('show');
     };
@@ -1710,6 +1807,7 @@
       const sets = Number(document.getElementById('editSingleExSets').value) || 3;
       const weightsInput = document.getElementById('editSingleExWeights').value.trim();
       const repsInput = document.getElementById('editSingleExReps').value.trim();
+      const notesInput = document.getElementById('editSingleExNotes').value.trim(); // LEEMOS LA NOTA
       
       let weightsArray = [];
       if (weightsInput.includes(',')) {
@@ -1733,6 +1831,7 @@
       rut[day][zone][idx].weights = weightsArray;
       rut[day][zone][idx].weight = weightsArray[0] || 0;
       rut[day][zone][idx].reps = repsArray;
+      rut[day][zone][idx].notes = notesInput; // GUARDAMOS LA NOTA
       
       closeEditSingleExerciseModal();
       renderExercisesListEditor();
@@ -2197,6 +2296,9 @@
         <div><label>Pesos (ej: 50, 55)</label><input type="text" id="editSingleExWeights"></div>
         <div><label>Reps Target (ej: 12, 10)</label><input type="text" id="editSingleExReps"></div>
       </div>
+
+      <label style="margin-top: 10px;">Notas / Comentarios para el alumno</label>
+      <input type="text" id="editSingleExNotes" placeholder="Ej: Controlar la bajada / Usar agarre neutro">
       
       <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
         <button class="btn-main" style="width: auto; padding: 10px 20px;" onclick="saveSingleExerciseEdit()">Guardar Cambios</button>
