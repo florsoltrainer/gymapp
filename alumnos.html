@@ -207,7 +207,10 @@
             document.getElementById('modalProfileMetrics').textContent = `${data.edad || '--'} años | ${data.peso || '--'} kg | ${data.altura || '--'} cm`;
             document.getElementById('userEmailDisplay').textContent = user.email;
 
-            if(window.trainerNotes || data.rutina) {
+            // Revisar si las notificaciones ya fueron descartadas
+            if(window.trainerNotes && localStorage.getItem('hide_note') !== window.trainerNotes) {
+              document.getElementById('notificationDot').style.display = 'block';
+            } else if (localStorage.getItem('hide_update') !== 'true' && Object.keys(window.workoutData).length > 0) {
               document.getElementById('notificationDot').style.display = 'block';
             }
 
@@ -291,7 +294,8 @@
       document.getElementById('modalPerfil').style.display = show ? 'flex' : 'none';
       if(show) {
         window.updateProfileStats();
-        window.renderChart();
+        // Retrasamos unos ms para que el Canvas tenga dimensiones físicas y se renderice correctamente
+        setTimeout(() => window.renderChart(), 50);
       }
     };
 
@@ -300,23 +304,56 @@
       const notifContent = document.getElementById('notificacionesContent');
       notifContent.innerHTML = '';
 
-      if (window.trainerNotes) {
+      let hasNotifications = false;
+
+      if (window.trainerNotes && localStorage.getItem('hide_note') !== window.trainerNotes) {
+        hasNotifications = true;
         notifContent.innerHTML += `
-          <div class="notification-card">
-            <div style="font-size: 0.8rem; color: var(--accent); margin-bottom: 4px; font-weight:bold;">Mensaje de tu Entrenador</div>
+          <div class="notification-card" id="notif-note">
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+              <div style="font-size: 0.8rem; color: var(--accent); margin-bottom: 4px; font-weight:bold;">Mensaje de tu Entrenador</div>
+              <button onclick="dismissNotification('note', '${window.trainerNotes}')" style="background:transparent; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer; line-height:1;">&times;</button>
+            </div>
             <p>${window.trainerNotes}</p>
           </div>
         `;
       }
       
-      notifContent.innerHTML += `
-        <div class="notification-card">
-          <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px;">Actualización del Sistema</div>
-          <p>Tu rutina está sincronizada y lista para hoy. ¡A darle con todo!</p>
-        </div>
-      `;
+      if (localStorage.getItem('hide_update') !== 'true' && Object.keys(window.workoutData).length > 0) {
+        hasNotifications = true;
+        notifContent.innerHTML += `
+          <div class="notification-card" id="notif-sys">
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px;">Actualización del Sistema</div>
+              <button onclick="dismissNotification('sys')" style="background:transparent; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer; line-height:1;">&times;</button>
+            </div>
+            <p>Tu rutina está sincronizada y lista para hoy. ¡A darle con todo!</p>
+          </div>
+        `;
+      }
       
+      if (!hasNotifications) {
+          notifContent.innerHTML = `<p style="color:var(--muted); text-align:center;">No tienes notificaciones nuevas.</p>`;
+      }
+
       document.getElementById('modalNotificaciones').style.display = 'flex';
+    };
+
+    window.dismissNotification = function(type, value = '') {
+       if(type === 'note') {
+           localStorage.setItem('hide_note', value);
+           const el = document.getElementById('notif-note');
+           if(el) el.style.display = 'none';
+       } else if (type === 'sys') {
+           localStorage.setItem('hide_update', 'true');
+           const el = document.getElementById('notif-sys');
+           if(el) el.style.display = 'none';
+       }
+       
+       const notifContent = document.getElementById('notificacionesContent');
+       if(notifContent.querySelectorAll('.notification-card[style!="display: none;"]').length === 0) {
+           notifContent.innerHTML = `<p style="color:var(--muted); text-align:center;">No tienes notificaciones nuevas.</p>`;
+       }
     };
 
     window.updateProfileStats = function() {
@@ -449,21 +486,31 @@
         const gallery = document.getElementById('verExGaleria');
         gallery.innerHTML = '';
         const images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
+        
         if (images.length > 0) {
             images.forEach(url => {
-                gallery.innerHTML += `<img src="${url}" alt="Técnica">`;
+                if(url) gallery.innerHTML += `<img src="${url}" alt="Técnica">`;
             });
             gallery.style.display = 'flex';
         } else {
-            gallery.style.display = 'none';
+            gallery.innerHTML = '<p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 10px;">No hay imágenes ilustrativas cargadas para este ejercicio.</p>';
+            gallery.style.display = 'block';
         }
 
         const notas = document.getElementById('verExNotas');
-        if (ex.notes && ex.notes.trim() !== '') {
-            notas.innerHTML = `📌 <strong style="color: var(--accent);">Nota del Entrenador:</strong> ${ex.notes}`;
+        const notaText = ex.notes || ex.nota || ex.observaciones || '';
+        if (notaText.trim() !== '') {
+            notas.innerHTML = `📌 <strong style="color: var(--accent);">Nota del Entrenador:</strong> ${notaText}`;
             notas.style.display = 'block';
+            notas.style.borderLeft = '3px solid var(--accent)';
+            notas.style.background = 'var(--input-bg)';
+            notas.style.padding = '10px 14px';
         } else {
-            notas.style.display = 'none';
+            notas.innerHTML = `<p style="color:var(--muted); font-size: 0.9rem;">Sin observaciones adicionales por parte de tu entrenador.</p>`;
+            notas.style.display = 'block';
+            notas.style.borderLeft = 'none';
+            notas.style.background = 'transparent';
+            notas.style.padding = '0';
         }
 
         document.getElementById('modalVerEjercicio').style.display = 'flex';
@@ -589,7 +636,6 @@
       window.sessionLogs.push(entry);
       window.renderSessionLogs();
 
-      // Guardar en Firebase directamente para evitar pérdida de datos si refresca o cambia dispositivo
       if (window.studentDocRef) {
         try {
             await updateDoc(window.studentDocRef, {
@@ -665,16 +711,52 @@
       window.isSyncing = false;
     };
 
+    window.deleteSessionLog = async function(index) {
+        if(!confirm("¿Eliminar esta serie registrada?")) return;
+        
+        // Quitar localmente
+        const deletedLog = window.sessionLogs.splice(index, 1)[0];
+        window.renderSessionLogs();
+
+        // Actualizar en Firebase para evitar que se restaure
+        if (window.studentDocRef) {
+            try {
+                const todayStr = new Date().toLocaleDateString('es-AR');
+                await updateDoc(window.studentDocRef, {
+                    entrenamiento_hoy: { fecha: todayStr, logs: window.sessionLogs }
+                });
+            } catch (error) {
+                console.error("Error al actualizar Firebase:", error);
+            }
+        }
+        
+        // Remover de la cola de sincronización si aún no se había subido al drive
+        let queue = JSON.parse(localStorage.getItem('fst_sync_queue') || '[]');
+        const qIdx = queue.findIndex(q => q.Hora === deletedLog.Hora && q.Ejercicio === deletedLog.Ejercicio && q.Serie === deletedLog.Serie);
+        if (qIdx > -1) {
+            queue.splice(qIdx, 1);
+            localStorage.setItem('fst_sync_queue', JSON.stringify(queue));
+        }
+    };
+
     window.renderSessionLogs = function() {
       const tbody = document.getElementById('sessionLogsBody');
       tbody.innerHTML = '';
       
-      window.sessionLogs.forEach(log => {
+      if(window.sessionLogs.length === 0) {
+         tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 16px;">Aún no registraste series hoy.</td></tr>`;
+         return;
+      }
+
+      window.sessionLogs.forEach((log, index) => {
         tbody.innerHTML += `
           <tr>
             <td>${log.Ejercicio}</td>
             <td>${log.Serie}</td>
             <td>${log['Peso (kg)']}kg x ${log.Repeticiones}</td>
+            <td style="text-align:right;">
+                <button onclick="deleteSessionLog(${index})" style="background:transparent; color:var(--danger); border:1px solid var(--danger); border-radius:6px; padding:2px 8px; font-weight:bold; cursor:pointer;" title="Borrar serie">&times;</button>
+            </td>
           </tr>
         `;
       });
@@ -716,7 +798,7 @@
         } catch (err) {}
         
         if ("Notification" in window && Notification.permission === "granted") {
-          new Notification('⏱️ ¡Tiempo de descanso terminado!', {
+          new Notification('⏱️️ ¡Tiempo de descanso terminado!', {
             body: 'Toca aquí para volver a tu rutina y empezar la siguiente serie.',
             icon: 'logo chico.png'
           });
@@ -862,11 +944,12 @@
                 <th>Ejercicio</th>
                 <th>S</th>
                 <th>Carga</th>
+                <th style="width: 40px;"></th>
               </tr>
             </thead>
             <tbody id="sessionLogsBody">
               <tr>
-                <td colspan="3" style="text-align: center; color: var(--muted); padding: 16px;">Aún no registraste series hoy.</td>
+                <td colspan="4" style="text-align: center; color: var(--muted); padding: 16px;">Aún no registraste series hoy.</td>
               </tr>
             </tbody>
           </table>
