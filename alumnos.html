@@ -42,6 +42,12 @@
       --border: #e2e4e9; --accent: #00b050; --danger: #e53935; 
       --shadow: rgba(0, 0, 0, 0.08); --input-bg: #f0f2f5;
     }
+    
+    body.dark-mode {
+      --bg: #121214; --card: #1e1e24; --text: #ffffff; --muted: #a0a0b0;
+      --border: #2a2a35; --accent: #00e676; --danger: #ff5252;
+      --input-bg: #252530; --shadow: rgba(0, 0, 0, 0.4);
+    }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: var(--bg); color: var(--text); transition: background-color 0.3s, color 0.3s; padding-bottom: 40px; }
@@ -126,7 +132,7 @@
   <!-- Módulos de Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -138,7 +144,6 @@
       appId: "1:36053648611:web:34f519fc41a12024f4f1d6"
     };
 
-    // URL DEL SCRIPT MAESTRO ACTUALIZADA PARA SINCRONIZACIÓN REAL
     window.MASTER_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxbaZh2vl5h1nR5xchoN0Gx7SnShZv02XXxiijGlpfTDo3XG30KR-LyApLCJkuPE16pYw/exec";
 
     const app = initializeApp(firebaseConfig);
@@ -151,8 +156,11 @@
     window.currentDay = "";
     window.activeExercise = null;
     window.sessionLogs = [];
+    window.historialFechas = [];
     window.trainerNotes = ""; 
-    window.alumnoId = new URLSearchParams(window.location.search).get('id');
+    window.alumnoId = new URLSearchParams(window.location.search).get('id') || "";
+    window.studentDocRef = null;
+    window.isSyncing = false;
 
     // Cerrar modales tocando afuera
     window.onclick = function(event) {
@@ -167,11 +175,6 @@
       const loadingState = document.getElementById('loadingState');
       const authError = document.getElementById('authError');
 
-      if (!window.alumnoId) {
-        if(loadingState) loadingState.innerHTML = "⚠️ <strong>Error:</strong> No se especificó el ID de alumno en la URL (?id=nombre).";
-        return;
-      }
-
       if (user) {
         if(loadingState) loadingState.style.display = 'block';
         if(loginCard) loginCard.style.display = 'none';
@@ -184,13 +187,16 @@
 
           if (!querySnapshot.empty) {
             let data = null;
-            querySnapshot.forEach((doc) => { data = doc.data(); });
+            querySnapshot.forEach((docSnap) => { 
+              data = docSnap.data();
+              window.alumnoId = docSnap.id; 
+              window.studentDocRef = doc(db, "alumnos", docSnap.id);
+            });
             
             window.workoutData = data.rutina || {};
             window.spreadsheetId = data.spreadsheet_id || data.google_sheet_url || "";
             window.trainerNotes = data.nota_para_alumno || "";
 
-            // PERFIL: Lectura de la URL de la foto corregida
             const userAvatar = data.foto_url || data.foto || data.foto_perfil || "https://ui-avatars.com/api/?name=Alumno&background=random";
             document.getElementById('profileAvatar').src = userAvatar;
             document.getElementById('modalProfileAvatar').src = userAvatar;
@@ -205,7 +211,18 @@
               document.getElementById('notificationDot').style.display = 'block';
             }
 
+            // Persistencia de Entrenamientos y Cargas en Firebase
+            const todayStr = new Date().toLocaleDateString('es-AR');
+            if (data.entrenamiento_hoy && data.entrenamiento_hoy.fecha === todayStr) {
+                window.sessionLogs = data.entrenamiento_hoy.logs || [];
+            } else {
+                window.sessionLogs = [];
+            }
+            window.historialFechas = data.historial_fechas || [];
+            localStorage.setItem('fst_train_history', JSON.stringify(window.historialFechas));
+
             initDropdowns();
+            window.renderSessionLogs();
             
             if(loadingState) loadingState.style.display = 'none';
             if(appInterface) appInterface.style.display = 'block';
@@ -215,11 +232,9 @@
             window.updateProfileStats();
 
           } else {
-            if(loadingState) {
-              loadingState.style.display = 'none';
-            }
+            if(loadingState) loadingState.style.display = 'none';
             if(loginCard) loginCard.style.display = 'block';
-            if(authError) authError.textContent = `❌ Este enlace pertenece a otro alumno. Tu cuenta (${user.email}) no tiene acceso.`;
+            if(authError) authError.textContent = `❌ Tu cuenta (${user.email}) no se encuentra registrada en la base de datos de alumnos.`;
             signOut(auth);
           }
         } catch (error) {
@@ -249,7 +264,18 @@
     window.toggleTheme = function() {
       const body = document.body;
       const themeIcon = document.getElementById('themeIcon');
-      body.classList.toggle('light-mode');
+      
+      if (body.classList.contains('light-mode')) {
+          body.classList.remove('light-mode');
+          body.classList.add('dark-mode');
+      } else if (body.classList.contains('dark-mode')) {
+          body.classList.remove('dark-mode');
+          body.classList.add('light-mode');
+      } else {
+          const isLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+          body.classList.add(isLight ? 'dark-mode' : 'light-mode');
+      }
+      
       themeIcon.textContent = body.classList.contains('light-mode') ? '🌙' : '☀️';
       if(window.progressChartObj) window.renderChart();
     };
@@ -269,7 +295,6 @@
       }
     };
 
-    // MÓDULO NOTIFICACIONES
     window.openNotifications = function() {
       document.getElementById('notificationDot').style.display = 'none';
       const notifContent = document.getElementById('notificacionesContent');
@@ -294,9 +319,8 @@
       document.getElementById('modalNotificaciones').style.display = 'flex';
     };
 
-    // ESTADÍSTICAS REALES DEL PERFIL & GRÁFICOS
     window.updateProfileStats = function() {
-      const history = JSON.parse(localStorage.getItem('fst_train_history') || '[]');
+      const history = window.historialFechas || [];
       const uniqueDays = new Set(history).size;
       document.getElementById('statTotalDays').textContent = `${uniqueDays} días`;
       
@@ -322,7 +346,7 @@
       const ctx = document.getElementById('progressChart').getContext('2d');
       if (window.progressChartObj) window.progressChartObj.destroy();
       
-      const isLightMode = document.body.classList.contains('light-mode');
+      const isLightMode = document.body.classList.contains('light-mode') || (!document.body.classList.contains('dark-mode') && window.matchMedia('(prefers-color-scheme: light)').matches);
       const textColor = isLightMode ? '#1a1a1e' : '#a0a0b0';
       const gridColor = isLightMode ? '#e2e4e9' : '#2a2a35';
       const accentColor = isLightMode ? '#00b050' : '#00e676';
@@ -352,9 +376,6 @@
       });
     };
 
-    /* =========================================
-       MÓDULO 1: MI RUTINA (Renderizado Rediseñado)
-       ========================================= */
     window.renderDaysNav = function() {
       const daysContainer = document.getElementById('daysNav');
       daysContainer.innerHTML = '';
@@ -410,17 +431,44 @@
                 Carga: ${displayWeights}kg
               </div>
             </div>
-            <button class="btn-main" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.startExercise('${dayName}', '${zone}', ${exIndex})">Empezar</button>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-sec" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.viewExerciseDetails('${dayName}', '${zone}', ${exIndex})">Ver</button>
+                <button class="btn-main" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.startExercise('${dayName}', '${zone}', ${exIndex})">Empezar</button>
+            </div>
           `;
           zoneBlock.appendChild(exCard);
         });
         content.appendChild(zoneBlock);
       });
     };
+    
+    window.viewExerciseDetails = function(day, zone, exIndex) {
+        const ex = window.workoutData[day][zone][exIndex];
+        document.getElementById('verExTitulo').textContent = ex.name;
+        
+        const gallery = document.getElementById('verExGaleria');
+        gallery.innerHTML = '';
+        const images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
+        if (images.length > 0) {
+            images.forEach(url => {
+                gallery.innerHTML += `<img src="${url}" alt="Técnica">`;
+            });
+            gallery.style.display = 'flex';
+        } else {
+            gallery.style.display = 'none';
+        }
 
-    /* =========================================
-       MÓDULO 2: MOTOR DE ENTRENAMIENTO
-       ========================================= */
+        const notas = document.getElementById('verExNotas');
+        if (ex.notes && ex.notes.trim() !== '') {
+            notas.innerHTML = `📌 <strong style="color: var(--accent);">Nota del Entrenador:</strong> ${ex.notes}`;
+            notas.style.display = 'block';
+        } else {
+            notas.style.display = 'none';
+        }
+
+        document.getElementById('modalVerEjercicio').style.display = 'flex';
+    };
+
     let timerInterval = null;
     let endTime = null;
 
@@ -481,27 +529,7 @@
            
            document.getElementById('setNum').value = 1;
            window.updateInputsForSet(1);
-
-           const gallery = document.getElementById('exerciseGallery');
-           const notesDisplay = document.getElementById('exerciseNotesDisplay');
-           
-           gallery.innerHTML = '';
-           const images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
-           if (images.length > 0) {
-             images.forEach(url => {
-               gallery.innerHTML += `<img src="${url}" alt="Técnica">`;
-             });
-             gallery.style.display = 'flex';
-           } else {
-             gallery.style.display = 'none';
-           }
-
-           if (ex.notes) {
-             document.getElementById('exerciseNotesText').textContent = ex.notes;
-             notesDisplay.style.display = 'block';
-           } else {
-             notesDisplay.style.display = 'none';
-           }
+           document.getElementById('timerExerciseName').textContent = ex.name;
         }
       }
     };
@@ -531,7 +559,7 @@
       document.getElementById('setNumLabel').textContent = `Serie Nº (de ${ex.sets || 3})`;
     };
 
-    window.logSet = function() {
+    window.logSet = async function() {
       if (!window.activeExercise) return alert("Selecciona un ejercicio primero.");
 
       const setNum = document.getElementById('setNum').value;
@@ -553,14 +581,25 @@
         Comentarios: comments
       };
 
-      let history = JSON.parse(localStorage.getItem('fst_train_history') || '[]');
-      if (!history.includes(entry.Fecha)) {
-        history.push(entry.Fecha);
-        localStorage.setItem('fst_train_history', JSON.stringify(history));
+      if (!window.historialFechas.includes(entry.Fecha)) {
+        window.historialFechas.push(entry.Fecha);
+        localStorage.setItem('fst_train_history', JSON.stringify(window.historialFechas));
       }
 
       window.sessionLogs.push(entry);
       window.renderSessionLogs();
+
+      // Guardar en Firebase directamente para evitar pérdida de datos si refresca o cambia dispositivo
+      if (window.studentDocRef) {
+        try {
+            await updateDoc(window.studentDocRef, {
+                entrenamiento_hoy: { fecha: entry.Fecha, logs: window.sessionLogs },
+                historial_fechas: window.historialFechas
+            });
+        } catch (error) {
+            console.error("Error al persistir rutina en Firebase:", error);
+        }
+      }
 
       let queue = JSON.parse(localStorage.getItem('fst_sync_queue') || '[]');
       queue.push(entry);
@@ -573,46 +612,57 @@
       document.getElementById('workoutComments').value = '';
       window.updateInputsForSet(nextSet);
       
+      const targetSets = window.activeExercise.sets || 3;
+      if (nextSet > targetSets) {
+          document.getElementById('timerExerciseName').innerHTML = `${window.activeExercise.name} <br><span style="color: var(--accent); font-size: 0.95rem;">✅ Ejercicio completo</span>`;
+      } else {
+          document.getElementById('timerExerciseName').textContent = window.activeExercise.name;
+      }
+      
       window.startTimer(90); 
     };
 
     window.processSyncQueue = async function() {
       if (!window.MASTER_SCRIPT_URL) return;
+      if (window.isSyncing) return;
+      window.isSyncing = true;
       
       let queue = JSON.parse(localStorage.getItem('fst_sync_queue') || '[]');
       const syncBadge = document.getElementById('syncBadge');
 
       if (queue.length === 0) {
         syncBadge.style.display = 'none';
+        window.isSyncing = false;
         return;
       }
 
       syncBadge.style.display = 'block';
-      syncBadge.textContent = `☁️ Sincronizando ${queue.length} series...`;
 
-      try {
+      while (queue.length > 0) {
+        syncBadge.textContent = `☁️ Sincronizando ${queue.length} series...`;
         const entry = queue[0];
-        await fetch(window.MASTER_SCRIPT_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(entry)
-        });
-
-        queue.shift();
-        localStorage.setItem('fst_sync_queue', JSON.stringify(queue));
-        
-        syncBadge.textContent = "✅ Rutina Sincronizada";
-        setTimeout(() => { syncBadge.style.display = 'none'; }, 2000);
-
-        if(queue.length > 0) window.processSyncQueue();
-        
-      } catch (e) {
-        syncBadge.textContent = `⚠️ Sin conexión. Guardado localmente.`;
-        syncBadge.style.color = "var(--danger)";
-        syncBadge.style.borderColor = "var(--danger)";
-        syncBadge.style.background = "rgba(255, 82, 82, 0.1)";
+        try {
+          await fetch(window.MASTER_SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(entry)
+          });
+          queue.shift();
+          localStorage.setItem('fst_sync_queue', JSON.stringify(queue));
+        } catch (e) {
+          syncBadge.textContent = `⚠️ Sin conexión. Guardado localmente.`;
+          syncBadge.style.color = "var(--danger)";
+          syncBadge.style.borderColor = "var(--danger)";
+          syncBadge.style.background = "rgba(255, 82, 82, 0.1)";
+          window.isSyncing = false;
+          return;
+        }
       }
+      
+      syncBadge.textContent = "✅ Rutina Sincronizada";
+      setTimeout(() => { syncBadge.style.display = 'none'; }, 2000);
+      window.isSyncing = false;
     };
 
     window.renderSessionLogs = function() {
@@ -770,6 +820,7 @@
 
           <!-- Cronómetro Flotante -->
           <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
+            <div id="timerExerciseName" style="text-align: center; color: var(--muted); margin-bottom: 10px; font-weight: bold; font-size: 1.1rem;">Selecciona un ejercicio</div>
             <div class="timer-display" id="timerDisplay">00:00</div>
             <div class="grid-3" style="margin-bottom: 8px;">
               <button class="btn-sec" onclick="startTimer(60)">60s</button>
@@ -778,12 +829,6 @@
             </div>
             <button class="btn-sec" style="width: 100%;" onclick="resetTimer()">Detener Cronómetro</button>
           </div>
-
-          <div id="exerciseNotesDisplay" style="display: none; background: var(--input-bg); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 0.9rem; color: var(--text);">
-            📌 <strong style="color: var(--accent);">Nota:</strong> <span id="exerciseNotesText"></span>
-          </div>
-          
-          <div id="exerciseGallery" class="image-gallery" style="display: none;"></div>
 
           <!-- Casilleros de Registro -->
           <div class="grid-3">
@@ -828,6 +873,16 @@
         </div>
 
       </div>
+    </div>
+  </div>
+  
+  <!-- MODAL: Ver Detalles de Ejercicio -->
+  <div id="modalVerEjercicio" class="modal-overlay">
+    <div class="modal-content">
+      <button class="close-modal" onclick="document.getElementById('modalVerEjercicio').style.display='none'">&times;</button>
+      <h2 id="verExTitulo" style="margin-bottom: 16px; font-size: 1.4rem; color: var(--accent);"></h2>
+      <div id="verExGaleria" class="image-gallery"></div>
+      <div id="verExNotas" style="background: var(--input-bg); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 6px; margin-top: 16px; font-size: 0.95rem; color: var(--text); display: none;"></div>
     </div>
   </div>
 
