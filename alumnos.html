@@ -14,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    /* VARIABLES */
+    /* VARIABLES UNIFICADAS CON ADMIN */
     :root {
       --bg: #121214;
       --card: #1e1e24;
@@ -24,19 +24,23 @@
       --muted: #a0a0b0;
       --border: #2a2a35;
       --danger: #ff5252;
-      --shadow: rgba(0, 0, 0, 0.5);
+      --input-bg: #252530;
+      --shadow: rgba(0, 0, 0, 0.4);
     }
 
     /* Tema Claro Dinámico */
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f4f5f8; --card: #ffffff; --text: #1a1a1e; --muted: #6c707e;
+        --border: #e2e4e9; --accent: #00b050; --danger: #e53935; 
+        --shadow: rgba(0, 0, 0, 0.08); --input-bg: #f0f2f5;
+      }
+    }
+
     body.light-mode {
-      --bg: #f4f5f8;
-      --card: #ffffff;
-      --accent: #00b050;
-      --accent-hover: #008a3e;
-      --text: #1a1a1e;
-      --muted: #6c707e;
-      --border: #e2e4e9;
-      --shadow: rgba(0, 0, 0, 0.08);
+      --bg: #f4f5f8; --card: #ffffff; --text: #1a1a1e; --muted: #6c707e;
+      --border: #e2e4e9; --accent: #00b050; --danger: #e53935; 
+      --shadow: rgba(0, 0, 0, 0.08); --input-bg: #f0f2f5;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
@@ -44,7 +48,7 @@
 
     /* CABECERA TOP */
     .top-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
-    .top-header img.logo { height: 20px; width: auto; object-fit: contain; }
+    .top-header img.logo { height: 40px; width: auto; object-fit: contain; }
     .header-actions { display: flex; gap: 12px; align-items: center; }
     .icon-btn { background: transparent; border: 1px solid var(--border); color: var(--text); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; position: relative; }
     .icon-btn:hover { background: var(--border); }
@@ -84,23 +88,17 @@
     .day-pill { padding: 10px 20px; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; white-space: nowrap; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--muted); }
     .day-pill.active { background: var(--text); color: var(--bg); border-color: var(--text); }
 
-    /* ACORDEÓN DE EJERCICIOS */
+    /* LISTADO DE EJERCICIOS */
     .zone-block { margin-bottom: 24px; }
     .zone-title { font-size: 1.1rem; color: var(--accent); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-    .ex-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
-    .ex-header { padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 600; }
-    .ex-header:hover { background: rgba(255,255,255,0.02); }
-    .ex-details { padding: 0 16px 16px 16px; display: none; border-top: 1px solid var(--border); margin-top: 8px; padding-top: 16px; }
-    .ex-details.open { display: block; }
-    .ex-meta { display: flex; gap: 16px; margin-bottom: 16px; font-size: 0.9rem; color: var(--muted); }
-    .ex-status-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--border); display: inline-block; margin-right: 8px; }
-
+    .ex-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; display: flex; justify-content: space-between; align-items: center; padding: 16px; }
+    
     /* ESTILOS DEL MÓDULO DE ENTRENAMIENTO */
     .timer-display { font-size: 3rem; font-weight: bold; text-align: center; color: var(--accent); margin: 10px 0; font-variant-numeric: tabular-nums; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
     label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
-    input, textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 1rem; outline: none; margin-bottom: 12px; }
-    input:focus, textarea:focus { border-color: var(--accent); }
+    input, textarea, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 1rem; outline: none; margin-bottom: 12px; }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
     textarea { resize: vertical; min-height: 70px; }
     
     .image-gallery { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 16px; scroll-snap-type: x mandatory; }
@@ -122,14 +120,14 @@
     .share-stat-value { font-size: 2.2rem; font-weight: 800; color: var(--text); line-height: 1; margin-bottom: 4px; }
     .share-stat-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 
-    .notification-card { background: var(--bg); border: 1px solid var(--accent); padding: 16px; border-radius: 12px; margin-bottom: 12px; border-left: 4px solid var(--accent); }
+    .notification-card { background: var(--input-bg); border: 1px solid var(--border); padding: 16px; border-radius: 12px; margin-bottom: 12px; }
   </style>
 
   <!-- Módulos de Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDC3Wvw3E8IhSnkSKg5Qk98NivuqK-FNzM",
@@ -140,51 +138,44 @@
       appId: "1:36053648611:web:34f519fc41a12024f4f1d6"
     };
 
-    window.MASTER_SCRIPT_URL = "https://script.google.com/macros/s/TU_URL_AQUI/exec";
+    // URL DEL SCRIPT MAESTRO ACTUALIZADA PARA SINCRONIZACIÓN REAL
+    window.MASTER_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxbaZh2vl5h1nR5xchoN0Gx7SnShZv02XXxiijGlpfTDo3XG30KR-LyApLCJkuPE16pYw/exec";
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
     window.workoutData = {};
     window.spreadsheetId = "";
     window.currentDay = "";
     window.activeExercise = null;
     window.sessionLogs = [];
-    window.trainerNotes = ""; // Guarda las notas para el panel de notificaciones
+    window.trainerNotes = ""; 
+    window.alumnoId = new URLSearchParams(window.location.search).get('id');
 
-    // Lógica para PWA (Instalación)
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const installBtn = document.getElementById('btnInstallApp');
-      if (installBtn) installBtn.style.display = 'block';
-    });
-
-    window.installPWA = async function() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          document.getElementById('btnInstallApp').style.display = 'none';
-        }
-        deferredPrompt = null;
+    // Cerrar modales tocando afuera
+    window.onclick = function(event) {
+      if (event.target.classList.contains('modal-overlay')) {
+        event.target.style.display = 'none';
       }
     };
 
-    // Registro del Service Worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Falló:', err));
-      });
-    }
-
     onAuthStateChanged(auth, async (user) => {
-      const loadingState = document.getElementById('loadingState');
+      const loginCard = document.getElementById('studentLoginCard');
       const appInterface = document.getElementById('appInterface');
+      const loadingState = document.getElementById('loadingState');
+      const authError = document.getElementById('authError');
+
+      if (!window.alumnoId) {
+        if(loadingState) loadingState.innerHTML = "⚠️ <strong>Error:</strong> No se especificó el ID de alumno en la URL (?id=nombre).";
+        return;
+      }
 
       if (user) {
+        if(loadingState) loadingState.style.display = 'block';
+        if(loginCard) loginCard.style.display = 'none';
+
         const userEmail = user.email.toLowerCase().trim();
         try {
           const alumnosRef = collection(db, "alumnos");
@@ -199,8 +190,8 @@
             window.spreadsheetId = data.spreadsheet_id || data.google_sheet_url || "";
             window.trainerNotes = data.nota_para_alumno || "";
 
-            // PERFIL: Actualización de foto desde Firebase y estructura
-            const userAvatar = data.foto || data.foto_perfil || "https://ui-avatars.com/api/?name=Alumno&background=random";
+            // PERFIL: Lectura de la URL de la foto corregida
+            const userAvatar = data.foto_url || data.foto || data.foto_perfil || "https://ui-avatars.com/api/?name=Alumno&background=random";
             document.getElementById('profileAvatar').src = userAvatar;
             document.getElementById('modalProfileAvatar').src = userAvatar;
 
@@ -208,36 +199,58 @@
             document.getElementById('modalProfileName').textContent = data.nombre || user.displayName;
             document.getElementById('profileMetrics').textContent = `${data.edad || '--'} años | ${data.peso || '--'} kg | ${data.altura || '--'} cm`;
             document.getElementById('modalProfileMetrics').textContent = `${data.edad || '--'} años | ${data.peso || '--'} kg | ${data.altura || '--'} cm`;
+            document.getElementById('userEmailDisplay').textContent = user.email;
 
             if(window.trainerNotes || data.rutina) {
               document.getElementById('notificationDot').style.display = 'block';
             }
 
-            loadingState.style.display = 'none';
-            appInterface.style.display = 'block';
+            initDropdowns();
+            
+            if(loadingState) loadingState.style.display = 'none';
+            if(appInterface) appInterface.style.display = 'block';
 
             window.renderDaysNav();
             window.processSyncQueue();
             window.updateProfileStats();
 
           } else {
-            loadingState.innerHTML = `❌ Tu correo no tiene rutina asignada.`;
-            setTimeout(() => signOut(auth).then(() => window.location.href='./index.html'), 3000);
+            if(loadingState) {
+              loadingState.style.display = 'none';
+            }
+            if(loginCard) loginCard.style.display = 'block';
+            if(authError) authError.textContent = `❌ Este enlace pertenece a otro alumno. Tu cuenta (${user.email}) no tiene acceso.`;
+            signOut(auth);
           }
         } catch (error) {
-          loadingState.innerHTML = "❌ Error al cargar la base de datos.";
+          if(loadingState) loadingState.innerHTML = "❌ Error al cargar la base de datos.";
         }
       } else {
-        window.location.href = './index.html';
+        if(loadingState) loadingState.style.display = 'none';
+        if(appInterface) appInterface.style.display = 'none';
+        if(loginCard) loginCard.style.display = 'block';
       }
     });
+
+    window.loginStudentGoogle = async function() {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        alert("Error al iniciar sesión: " + error.message);
+      }
+    };
+
+    window.logoutStudent = function() {
+      signOut(auth).then(() => {
+        window.location.reload();
+      });
+    };
 
     window.toggleTheme = function() {
       const body = document.body;
       const themeIcon = document.getElementById('themeIcon');
       body.classList.toggle('light-mode');
       themeIcon.textContent = body.classList.contains('light-mode') ? '🌙' : '☀️';
-      // Actualizar gráficos si están abiertos
       if(window.progressChartObj) window.renderChart();
     };
 
@@ -252,40 +265,39 @@
       document.getElementById('modalPerfil').style.display = show ? 'flex' : 'none';
       if(show) {
         window.updateProfileStats();
-        window.renderChart(); // Renderiza gráfico al abrir
+        window.renderChart();
       }
     };
 
     // MÓDULO NOTIFICACIONES
     window.openNotifications = function() {
-      document.getElementById('notificationDot').style.display = 'none'; // Quita la alerta roja
+      document.getElementById('notificationDot').style.display = 'none';
       const notifContent = document.getElementById('notificacionesContent');
       notifContent.innerHTML = '';
 
       if (window.trainerNotes) {
         notifContent.innerHTML += `
           <div class="notification-card">
-            <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px;">Mensaje de tu Entrenador</div>
+            <div style="font-size: 0.8rem; color: var(--accent); margin-bottom: 4px; font-weight:bold;">Mensaje de tu Entrenador</div>
             <p>${window.trainerNotes}</p>
           </div>
         `;
       }
       
       notifContent.innerHTML += `
-        <div class="notification-card" style="border-left-color: var(--muted);">
+        <div class="notification-card">
           <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px;">Actualización del Sistema</div>
           <p>Tu rutina está sincronizada y lista para hoy. ¡A darle con todo!</p>
         </div>
       `;
       
       document.getElementById('modalNotificaciones').style.display = 'flex';
-    }
+    };
 
     // ESTADÍSTICAS REALES DEL PERFIL & GRÁFICOS
     window.updateProfileStats = function() {
       const history = JSON.parse(localStorage.getItem('fst_train_history') || '[]');
       const uniqueDays = new Set(history).size;
-      
       document.getElementById('statTotalDays').textContent = `${uniqueDays} días`;
       
       const today = new Date();
@@ -302,7 +314,6 @@
         else if (diffDays <= 7) status = "✅ Activo";
         else status = "💤 Inactivo";
       }
-      
       document.getElementById('statStatus').textContent = status;
     };
 
@@ -311,8 +322,6 @@
       const ctx = document.getElementById('progressChart').getContext('2d');
       if (window.progressChartObj) window.progressChartObj.destroy();
       
-      // Simulación de datos extraídos del historial local para graficar progreso
-      // Si la app estuviera offline esto garantiza que el gráfico no se rompa.
       const isLightMode = document.body.classList.contains('light-mode');
       const textColor = isLightMode ? '#1a1a1e' : '#a0a0b0';
       const gridColor = isLightMode ? '#e2e4e9' : '#2a2a35';
@@ -324,7 +333,7 @@
           labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Actual'],
           datasets: [{
             label: 'Volumen Estimado (kg)',
-            data: [1500, 1800, 2200, 2550], // Carga demostrativa. Se reemplazará luego por sumatoria real.
+            data: [1500, 1800, 2200, 2550], 
             borderColor: accentColor,
             backgroundColor: 'rgba(0, 230, 118, 0.1)',
             borderWidth: 2,
@@ -334,9 +343,7 @@
         },
         options: {
           responsive: true,
-          plugins: {
-            legend: { display: false }
-          },
+          plugins: { legend: { display: false } },
           scales: {
             y: { ticks: { color: textColor }, grid: { color: gridColor } },
             x: { ticks: { color: textColor }, grid: { display: false } }
@@ -346,7 +353,7 @@
     };
 
     /* =========================================
-       MÓDULO 1: MI RUTINA (Renderizado)
+       MÓDULO 1: MI RUTINA (Renderizado Rediseñado)
        ========================================= */
     window.renderDaysNav = function() {
       const daysContainer = document.getElementById('daysNav');
@@ -391,19 +398,19 @@
         zones[zone].forEach((ex, exIndex) => {
           const exCard = document.createElement('div');
           exCard.className = 'ex-card';
+          
+          const displayWeights = ex.weights ? ex.weights.join(", ") : (ex.weight || 0);
+          const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || 0);
+
           exCard.innerHTML = `
-            <div class="ex-header" onclick="this.nextElementSibling.classList.toggle('open')">
-              <div><span class="ex-status-dot"></span>${ex.name}</div>
-              <span style="color:var(--muted); font-size:0.8rem;">▼</span>
-            </div>
-            <div class="ex-details">
-              <div class="ex-meta">
-                <div><strong>Series:</strong> ${ex.sets || 3}</div>
-                <div><strong>Reps:</strong> ${ex.reps || 10}</div>
-                <div><strong>Carga:</strong> ${ex.weight || 0}kg</div>
+            <div style="flex-grow: 1; padding-right: 10px;">
+              <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; color: var(--text);">🏋️ ${ex.name}</div>
+              <div style="font-size: 0.85rem; color: var(--muted); line-height: 1.4;">
+                ${ex.sets || 3} series x ${displayReps} reps <br>
+                Carga: ${displayWeights}kg
               </div>
-              <button class="btn-main" onclick="window.startExercise('${dayName}', '${zone}', ${exIndex})">Empezar Ejercicio</button>
             </div>
+            <button class="btn-main" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.startExercise('${dayName}', '${zone}', ${exIndex})">Empezar</button>
           `;
           zoneBlock.appendChild(exCard);
         });
@@ -417,44 +424,107 @@
     let timerInterval = null;
     let endTime = null;
 
+    window.initDropdowns = function() {
+      const daySelect = document.getElementById('daySelect');
+      daySelect.innerHTML = '';
+      
+      const days = Object.keys(window.workoutData);
+      days.forEach(day => {
+        const opt = document.createElement('option');
+        opt.value = day; opt.textContent = day;
+        daySelect.appendChild(opt);
+      });
+      window.onDayChange();
+    };
+
+    window.onDayChange = function() {
+      const day = document.getElementById('daySelect').value;
+      const zoneSelect = document.getElementById('zoneSelect');
+      zoneSelect.innerHTML = '';
+
+      if (day && window.workoutData[day]) {
+        Object.keys(window.workoutData[day]).forEach(zone => {
+          const opt = document.createElement('option');
+          opt.value = zone; opt.textContent = zone;
+          zoneSelect.appendChild(opt);
+        });
+      }
+      window.onZoneChange();
+    };
+
+    window.onZoneChange = function() {
+      const day = document.getElementById('daySelect').value;
+      const zone = document.getElementById('zoneSelect').value;
+      const exSelect = document.getElementById('exerciseSelect');
+      exSelect.innerHTML = '';
+
+      if (day && zone && window.workoutData[day][zone]) {
+        window.workoutData[day][zone].forEach(ex => {
+          const opt = document.createElement('option');
+          opt.value = ex.name; opt.textContent = ex.name;
+          exSelect.appendChild(opt);
+        });
+      }
+      window.onExerciseChange();
+    };
+
+    window.onExerciseChange = function() {
+      const day = document.getElementById('daySelect').value;
+      const zone = document.getElementById('zoneSelect').value;
+      const exName = document.getElementById('exerciseSelect').value;
+      
+      if (day && zone && exName && window.workoutData[day][zone]) {
+        const exIndex = window.workoutData[day][zone].findIndex(e => e.name === exName);
+        if(exIndex !== -1) {
+           const ex = window.workoutData[day][zone][exIndex];
+           window.activeExercise = { day, zone, ...ex };
+           
+           document.getElementById('setNum').value = 1;
+           window.updateInputsForSet(1);
+
+           const gallery = document.getElementById('exerciseGallery');
+           const notesDisplay = document.getElementById('exerciseNotesDisplay');
+           
+           gallery.innerHTML = '';
+           const images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
+           if (images.length > 0) {
+             images.forEach(url => {
+               gallery.innerHTML += `<img src="${url}" alt="Técnica">`;
+             });
+             gallery.style.display = 'flex';
+           } else {
+             gallery.style.display = 'none';
+           }
+
+           if (ex.notes) {
+             document.getElementById('exerciseNotesText').textContent = ex.notes;
+             notesDisplay.style.display = 'block';
+           } else {
+             notesDisplay.style.display = 'none';
+           }
+        }
+      }
+    };
+
     window.startExercise = function(day, zone, exIndex) {
       window.switchTab('entrenamiento');
       
-      const ex = window.workoutData[day][zone][exIndex];
-      window.activeExercise = { day, zone, ...ex };
-
-      document.getElementById('activeExName').textContent = ex.name;
-      document.getElementById('activeExZone').textContent = `${day} - ${zone}`;
+      document.getElementById('daySelect').value = day;
+      window.onDayChange();
+      document.getElementById('zoneSelect').value = zone;
+      window.onZoneChange();
       
-      const notesBox = document.getElementById('activeExNotes');
-      if (ex.notes) {
-        notesBox.innerHTML = `📌 <strong>Nota:</strong> ${ex.notes}`;
-        notesBox.style.display = 'block';
-      } else {
-        notesBox.style.display = 'none';
-      }
-
-      const gallery = document.getElementById('activeExGallery');
-      gallery.innerHTML = '';
-      const images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
-      if (images.length > 0) {
-        images.forEach(url => {
-          gallery.innerHTML += `<img src="${url}" alt="Técnica">`;
-        });
-        gallery.style.display = 'flex';
-      } else {
-        gallery.style.display = 'none';
-      }
-
-      document.getElementById('setNum').value = 1;
-      window.updateInputsForSet(1);
+      const ex = window.workoutData[day][zone][exIndex];
+      document.getElementById('exerciseSelect').value = ex.name;
+      window.onExerciseChange();
     };
 
     window.updateInputsForSet = function(currentSet) {
       const ex = window.activeExercise;
       if (!ex) return;
+      
       let targetWeight = (ex.weights && ex.weights.length >= currentSet) ? ex.weights[currentSet - 1] : (ex.weight || 0);
-      let targetReps = (ex.repsArray && ex.repsArray.length >= currentSet) ? ex.repsArray[currentSet - 1] : (ex.reps || 0);
+      let targetReps = (ex.reps && Array.isArray(ex.reps) && ex.reps.length >= currentSet) ? ex.reps[currentSet - 1] : (ex.reps || 0);
 
       document.getElementById('weight').value = targetWeight;
       document.getElementById('reps').value = targetReps;
@@ -483,7 +553,6 @@
         Comentarios: comments
       };
 
-      // Guardar en estadísticas locales
       let history = JSON.parse(localStorage.getItem('fst_train_history') || '[]');
       if (!history.includes(entry.Fecha)) {
         history.push(entry.Fecha);
@@ -539,7 +608,7 @@
         if(queue.length > 0) window.processSyncQueue();
         
       } catch (e) {
-        syncBadge.textContent = `⚠️ Sin conexión. ${queue.length} series guardadas para enviar luego.`;
+        syncBadge.textContent = `⚠️ Sin conexión. Guardado localmente.`;
         syncBadge.style.color = "var(--danger)";
         syncBadge.style.borderColor = "var(--danger)";
         syncBadge.style.background = "rgba(255, 82, 82, 0.1)";
@@ -561,12 +630,11 @@
       });
     };
 
-    // TEMPORIZADOR CON PUSH Y AUDIO
+    // TEMPORIZADOR
     window.startTimer = function(seconds) {
       clearInterval(timerInterval);
       endTime = Date.now() + (seconds * 1000);
       
-      // Solicitar permisos Push al arrancar si no existen
       if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
         Notification.requestPermission();
       }
@@ -592,13 +660,11 @@
         document.getElementById('timerDisplay').textContent = "00:00";
         if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
         
-        // Disparar Alerta de Audio
         try {
           const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
           audio.play();
-        } catch (err) { console.log('Audio no permitido automáticamente.'); }
+        } catch (err) {}
         
-        // Disparar Push Notification en segundo plano
         if ("Notification" in window && Notification.permission === "granted") {
           new Notification('⏱️ ¡Tiempo de descanso terminado!', {
             body: 'Toca aquí para volver a tu rutina y empezar la siguiente serie.',
@@ -613,7 +679,6 @@
       }
     }
 
-    // GAMIFICACIÓN: FINALIZAR SESIÓN
     window.finishDay = function() {
       if(window.sessionLogs.length === 0) {
         alert("¡Aún no registraste ninguna serie hoy!");
@@ -634,8 +699,15 @@
 </head>
 <body>
 
-  <!-- PANTALLA DE CARGA -->
+  <!-- PANTALLA DE CARGA / LOGIN -->
   <div id="loadingState" class="loading-overlay">⏳ Verificando acceso seguro...</div>
+
+  <div class="card" id="studentLoginCard" style="display: none; text-align: center; padding: 40px 20px; max-width: 400px; margin: 40px auto;">
+    <h2>🏋️ Bienvenido a tu Tracker</h2>
+    <p style="color: var(--muted); margin-bottom: 20px;">Inicia sesión con tu cuenta de Google autorizada.</p>
+    <button class="btn-main" onclick="loginStudentGoogle()">Iniciar Sesión con Google</button>
+    <div id="authError" style="color: var(--danger); margin-top: 16px; font-size: 0.9rem; font-weight: bold;"></div>
+  </div>
 
   <!-- INTERFAZ PRINCIPAL -->
   <div id="appInterface" style="display: none;">
@@ -648,6 +720,7 @@
           🔔<div id="notificationDot" class="notification-dot"></div>
         </button>
         <button class="icon-btn" id="themeIcon" onclick="toggleTheme()" title="Cambiar Tema">☀</button>
+        <button class="icon-btn" style="font-size: 0.85rem;" onclick="logoutStudent()">Salir</button>
       </div>
     </header>
 
@@ -664,7 +737,7 @@
         <div class="card" style="cursor: pointer;" onclick="toggleModal(true)">
           <div class="profile-header" style="margin-bottom: 0;">
             <div class="profile-info">
-              <img src="https://ui-avatars.com/api/?name=Alumno&background=random" alt="Avatar" class="avatar" id="profileAvatar">
+              <img src="" alt="Avatar" class="avatar" id="profileAvatar">
               <div class="profile-details">
                 <h2 id="profileName">Cargando...</h2>
                 <p id="profileMetrics">-- años | -- kg | -- cm</p>
@@ -684,17 +757,19 @@
       <!-- MÓDULO 2: ENTRENAMIENTO ACTIVO -->
       <div id="modulo-entrenamiento" class="module-section">
         
-        <!-- ESTACIÓN DEL EJERCICIO -->
-        <div class="card" style="border-left: 4px solid var(--accent);">
-          <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 4px;" id="activeExZone">Selecciona un ejercicio de tu rutina</div>
-          <h2 id="activeExName" style="margin-bottom: 16px;">Ningún ejercicio activo</h2>
+        <div class="card">
+          <!-- Selectores (Ocultos visualmente pero funcionales para logSet) -->
+          <div style="display:none;">
+             <select id="daySelect"></select>
+             <select id="zoneSelect"></select>
+             <select id="exerciseSelect"></select>
+          </div>
           
-          <div id="activeExNotes" style="background: rgba(0, 230, 118, 0.1); color: var(--accent); padding: 10px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem; border: 1px solid var(--accent); display: none;"></div>
-          
-          <div id="activeExGallery" class="image-gallery" style="display: none;"></div>
+          <h2 id="alumnoNombreHeader" style="display:none;"></h2>
+          <span id="userEmailDisplay" style="display:none;"></span>
 
           <!-- Cronómetro Flotante -->
-          <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
+          <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
             <div class="timer-display" id="timerDisplay">00:00</div>
             <div class="grid-3" style="margin-bottom: 8px;">
               <button class="btn-sec" onclick="startTimer(60)">60s</button>
@@ -703,6 +778,12 @@
             </div>
             <button class="btn-sec" style="width: 100%;" onclick="resetTimer()">Detener Cronómetro</button>
           </div>
+
+          <div id="exerciseNotesDisplay" style="display: none; background: var(--input-bg); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 0.9rem; color: var(--text);">
+            📌 <strong style="color: var(--accent);">Nota:</strong> <span id="exerciseNotesText"></span>
+          </div>
+          
+          <div id="exerciseGallery" class="image-gallery" style="display: none;"></div>
 
           <!-- Casilleros de Registro -->
           <div class="grid-3">
@@ -755,48 +836,40 @@
     <div class="modal-content">
       <button class="close-modal" onclick="document.getElementById('modalNotificaciones').style.display='none'">&times;</button>
       <h2 style="margin-bottom: 20px; font-size: 1.4rem;">📬 Buzón y Alertas</h2>
-      <div id="notificacionesContent">
-        <!-- Se llena por JS -->
-      </div>
+      <div id="notificacionesContent"></div>
     </div>
   </div>
 
-  <!-- MODAL DE PERFIL (Estadísticas Reales + Gráfico + PWA) -->
+  <!-- MODAL DE PERFIL -->
   <div id="modalPerfil" class="modal-overlay">
     <div class="modal-content">
       <button class="close-modal" onclick="toggleModal(false)">&times;</button>
       
-      <!-- Layout del Perfil (Foto a la izquierda, Nombre negrita) -->
       <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 24px;">
-        <img src="https://ui-avatars.com/api/?name=Alumno&background=random" alt="Avatar" class="avatar" id="modalProfileAvatar" style="width: 75px; height: 75px; border: 2px solid var(--accent);">
+        <img src="" alt="Avatar" class="avatar" id="modalProfileAvatar" style="width: 75px; height: 75px; border: 2px solid var(--accent);">
         <div style="text-align: left;">
-          <h3 id="modalProfileName" style="font-size: 1.3rem; margin-bottom: 4px; color: var(--text);">Nombre Alumno</h3>
+          <h3 id="modalProfileName" style="font-size: 1.3rem; margin-bottom: 4px; color: var(--text);">Cargando...</h3>
           <p id="modalProfileMetrics" style="color: var(--muted); font-size: 0.9rem;">-- años | -- kg | -- cm</p>
         </div>
       </div>
       
-      <!-- Panel de Estadísticas -->
-      <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+      <div style="background: var(--input-bg); padding: 16px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border);">
         <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 8px;">🔥 Días Totales Entrenados: <strong id="statTotalDays" style="color: var(--text);">0 días</strong></p>
         <p style="color: var(--muted); font-size: 0.9rem;">📈 Estado Actual: <strong id="statStatus" style="color: var(--accent);">Sin Iniciar</strong></p>
       </div>
 
-      <!-- Gráfico de Evolución -->
       <div style="margin-bottom: 24px;">
         <h4 style="font-size: 1rem; margin-bottom: 12px; color: var(--text);">Historial de Evolución</h4>
-        <div style="background: var(--bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
+        <div style="background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
           <canvas id="progressChart" width="100" height="60"></canvas>
         </div>
       </div>
 
-      <!-- Botón de Instalación (Solo visible si el navegador lo permite) -->
-      <button id="btnInstallApp" class="btn-sec" style="display: none; width: 100%; margin-bottom: 16px; border-color: var(--accent); color: var(--accent);" onclick="installPWA()">📲 Instalar App en el Celular</button>
-
-      <button class="btn-sec" style="width: 100%; border-color: var(--danger); color: var(--danger);" onclick="import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js').then(m => m.signOut(getAuth()).then(() => window.location.href='./index.html'))">Cerrar Sesión</button>
+      <button class="btn-sec" style="width: 100%; border-color: var(--danger); color: var(--danger);" onclick="logoutStudent()">Cerrar Sesión</button>
     </div>
   </div>
 
-  <!-- MODAL SHARE CARD (GAMIFICACIÓN) -->
+  <!-- MODAL SHARE CARD -->
   <div id="shareOverlay" class="modal-overlay">
     <div class="modal-content" style="background: linear-gradient(145deg, var(--card), #05100a); border: 1px solid var(--accent); text-align: center;">
       <h2 style="color: var(--accent); margin-bottom: 8px; font-size: 1.6rem;">¡MISIÓN CUMPLIDA! 🚀</h2>
