@@ -355,10 +355,73 @@
       container.innerHTML = html;
     }
 
-    window.scanNotifications = function() {
+    // --- SISTEMA DE NOTIFICACIONES ---
+    window.scanNotifications = async function() {
       const notifBadge = document.getElementById('notifBadge');
-      notifBadge.style.display = 'block';
-      notifBadge.textContent = '1';
+      const notifList = document.getElementById('notifListContainer');
+      notifList.innerHTML = '<p style="color:var(--muted); font-size:0.9rem;">⏳ Buscando comentarios...</p>';
+      
+      let notifs = [];
+
+      // 1. Revisar colección global (si existe)
+      try {
+         const notifSnap = await getDocs(collection(db, "notificaciones"));
+         notifSnap.forEach(doc => {
+             let d = doc.data();
+             notifs.push({ nombre: d.alumno || 'Alumno', mensaje: d.mensaje || d.comentario, fecha: d.fecha || '' });
+         });
+      } catch(e) {}
+
+      // 2. Revisar el historial de ejercicios en Firebase de todos los alumnos buscando comentarios recientes
+      for (const student of window.allStudentsList) {
+         try {
+            // Buscamos en "historial" y "registros" por si acaso
+            const cols = ["historial", "registros"];
+            for (let col of cols) {
+                const histSnap = await getDocs(collection(db, "alumnos", student.id, col));
+                histSnap.forEach(docSnap => {
+                   let d = docSnap.data();
+                   let comentario = d.comentario || d.Comentarios || d.comentarios;
+                   if (comentario && typeof comentario === 'string' && comentario.trim() !== '') {
+                      notifs.push({ 
+                          nombre: student.nombre || student.id, 
+                          mensaje: comentario, 
+                          fecha: d.fecha || d.Fecha || 'Reciente'
+                      });
+                   }
+                });
+            }
+         } catch(e) {}
+      }
+
+      if (notifs.length > 0) {
+         // Quitar duplicados por si se leyó el mismo comentario dos veces
+         let uniqueNotifs = [];
+         let seen = new Set();
+         notifs.forEach(n => {
+             let key = n.nombre + n.mensaje + n.fecha;
+             if(!seen.has(key)) {
+                 seen.add(key);
+                 uniqueNotifs.push(n);
+             }
+         });
+
+         notifBadge.style.display = 'block';
+         notifBadge.textContent = uniqueNotifs.length;
+         notifList.innerHTML = '';
+         
+         uniqueNotifs.reverse().forEach(n => {
+            notifList.innerHTML += `
+              <div class="log-card">
+                💬 <strong>${n.nombre}:</strong> "${n.mensaje}" <br>
+                <small style="color:var(--muted)">${n.fecha}</small>
+              </div>
+            `;
+         });
+      } else {
+         notifBadge.style.display = 'none';
+         notifList.innerHTML = '<p style="color:var(--muted); font-size:0.9rem;">No hay notificaciones ni comentarios recientes de alumnos.</p>';
+      }
     };
 
     window.openNotifModal = function() { document.getElementById('notifModal').classList.add('show'); };
@@ -463,8 +526,9 @@
         document.body.classList.add('modal-open'); 
         switchSubTab('datos');
 
-        if (window.currentStudentData.spreadsheet_id) {
-          loadLogs30Days(window.currentStudentData.spreadsheet_id);
+        // Cargar logs siempre (ahora lee tanto de Firebase como de Sheets)
+        if (window.currentStudentData) {
+           loadLogs30Days();
         }
       }
     };
@@ -571,64 +635,101 @@
       }
     };
 
-    async function loadLogs30Days(spreadsheetId) {
+    // --- CARGA DE HISTORIAL (AHORA INTEGRA FIREBASE Y GOOGLE SHEETS) ---
+    async function loadLogs30Days() {
       const container = document.getElementById('unifiedLogsContainer');
-      container.innerHTML = "⏳ Consultando registros de los últimos 30 días...";
+      container.innerHTML = "⏳ Consultando registros recientes...";
+      
+      let allLogs = [];
+      window.currentStudentData.logs = [];
 
+      // 1. Extraer desde Firebase (subcolecciones 'historial' o 'registros')
       try {
-        const res = await fetch(`${MASTER_SCRIPT_URL}?action=GET_WEEKLY_LOGS&spreadsheetId=${spreadsheetId}&days=30`);
-        const data = await res.json();
-
-        if (data.status === "success" && data.logs.length > 0) {
-          window.currentStudentData.logs = data.logs;
-          container.innerHTML = "";
-          
-          let maxWeights = {};
-          data.logs.forEach(log => {
-            const ex = log.Ejercicio;
-            const w = Number(log["Peso (kg)"]) || 0;
-            if(!maxWeights[ex] || w > maxWeights[ex]) maxWeights[ex] = w;
-          });
-
-          let prHtml = `<div style="background:rgba(255, 215, 0, 0.1); border: 1px solid #ffd700; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-                          <h4 style="margin:0 0 8px 0; color:#ffd700;">🌟 Récords Personales (30 días)</h4>
-                          <div style="display:flex; flex-wrap:wrap; gap:10px;">`;
-          Object.keys(maxWeights).forEach(ex => {
-            prHtml += `<span style="font-size:0.9rem; font-weight:bold;">🏆 ${ex}: ${maxWeights[ex]}kg</span>`;
-          });
-          prHtml += `</div></div>`;
-          container.innerHTML += prHtml;
-
-          const logsByDay = {};
-          data.logs.slice(0, 50).forEach(log => {
-             const key = `${log.Fecha}`;
-             if (!logsByDay[key]) logsByDay[key] = [];
-             logsByDay[key].push(log);
-          });
-
-          Object.keys(logsByDay).forEach(dayKey => {
-            const dayCard = document.createElement('div');
-            dayCard.className = 'tree-node';
-            dayCard.innerHTML = `<h4 style="color:var(--accent); margin-bottom:8px;">📅 ${dayKey}</h4>`;
-            
-            logsByDay[dayKey].forEach(log => {
-               dayCard.innerHTML += `
-                 <div class="log-card">
-                   🏋️ ${log.Ejercicio}: Serie ${log.Serie} - <strong>${log["Peso (kg)"]} kg</strong> x ${log.Repeticiones} reps
-                   ${log.Comentarios ? `<br>💬 <em>${log.Comentarios}</em>` : ''}
-                 </div>
-               `;
+        const colsToTry = ["historial", "registros"];
+        for (let colName of colsToTry) {
+            const histSnap = await getDocs(collection(db, "alumnos", window.currentStudentId, colName));
+            histSnap.forEach(docSnap => {
+              let d = docSnap.data();
+              allLogs.push({
+                Fecha: d.fecha || d.Fecha || new Date().toLocaleDateString(),
+                Ejercicio: d.ejercicio || d.Ejercicio || "Desconocido",
+                Serie: d.serie || d.Serie || 1,
+                "Peso (kg)": d.peso || d["Peso (kg)"] || d.peso_kg || 0,
+                Repeticiones: d.reps || d.Repeticiones || d.repeticiones || 0,
+                Comentarios: d.comentario || d.Comentarios || d.comentarios || ""
+              });
             });
-            container.appendChild(dayCard);
-          });
-
-          populateExerciseChartSelector(data.logs);
-        } else {
-          window.currentStudentData.logs = [];
-          container.innerHTML = "<p style='color:var(--muted); font-size:0.9rem;'>Sin registros en los últimos 30 días.</p>";
         }
-      } catch (e) {
-        container.innerHTML = "<p style='color:var(--danger); font-size:0.85rem;'>Error al obtener historial.</p>";
+      } catch(e) {
+        console.error("Error leyendo historial de Firebase", e);
+      }
+
+      // 2. Extraer desde Google Sheets (compatibilidad con datos antiguos)
+      if (window.currentStudentData.spreadsheet_id) {
+        try {
+          const res = await fetch(`${MASTER_SCRIPT_URL}?action=GET_WEEKLY_LOGS&spreadsheetId=${window.currentStudentData.spreadsheet_id}&days=30`);
+          const data = await res.json();
+          if (data.status === "success" && data.logs && data.logs.length > 0) {
+            data.logs.forEach(l => allLogs.push(l));
+          }
+        } catch (e) {
+          console.error("Error al obtener historial de Google Sheets.", e);
+        }
+      }
+
+      if (allLogs.length > 0) {
+        window.currentStudentData.logs = allLogs;
+        container.innerHTML = "";
+        
+        let maxWeights = {};
+        allLogs.forEach(log => {
+          const ex = log.Ejercicio;
+          const w = Number(log["Peso (kg)"]) || 0;
+          if(!maxWeights[ex] || w > maxWeights[ex]) maxWeights[ex] = w;
+        });
+
+        let prHtml = `<div style="background:rgba(255, 215, 0, 0.1); border: 1px solid #ffd700; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                        <h4 style="margin:0 0 8px 0; color:#ffd700;">🌟 Récords Personales (30 días)</h4>
+                        <div style="display:flex; flex-wrap:wrap; gap:10px;">`;
+        Object.keys(maxWeights).forEach(ex => {
+          prHtml += `<span style="font-size:0.9rem; font-weight:bold;">🏆 ${ex}: ${maxWeights[ex]}kg</span>`;
+        });
+        prHtml += `</div></div>`;
+        container.innerHTML += prHtml;
+
+        const logsByDay = {};
+        // Tomamos los 50 más recientes para el resumen visual
+        allLogs.slice(0, 50).forEach(log => {
+           const key = `${log.Fecha}`;
+           if (!logsByDay[key]) logsByDay[key] = [];
+           logsByDay[key].push(log);
+        });
+
+        Object.keys(logsByDay).forEach(dayKey => {
+          const dayCard = document.createElement('div');
+          dayCard.className = 'tree-node';
+          dayCard.innerHTML = `<h4 style="color:var(--accent); margin-bottom:8px;">📅 ${dayKey}</h4>`;
+          
+          logsByDay[dayKey].forEach(log => {
+             dayCard.innerHTML += `
+               <div class="log-card">
+                 🏋️ ${log.Ejercicio}: Serie ${log.Serie} - <strong>${log["Peso (kg)"]} kg</strong> x ${log.Repeticiones} reps
+                 ${log.Comentarios ? `<br>💬 <em>${log.Comentarios}</em>` : ''}
+               </div>
+             `;
+          });
+          container.appendChild(dayCard);
+        });
+
+        populateExerciseChartSelector(allLogs);
+      } else {
+        window.currentStudentData.logs = [];
+        container.innerHTML = "<p style='color:var(--muted); font-size:0.9rem;'>Sin registros recientes encontrados.</p>";
+        
+        // Limpiar el gráfico
+        const select = document.getElementById('chartExerciseSelect');
+        if(select) select.innerHTML = '';
+        if (progressChartInstance) progressChartInstance.destroy();
       }
     }
 
@@ -893,6 +994,9 @@
       document.getElementById('editGlobalExName').value = ex.nombre || "";
       document.getElementById('editGlobalExZone').value = ex.zona || "";
       
+      // Mostrar observaciones guardadas
+      document.getElementById('editGlobalExObs').value = ex.observaciones || "";
+      
       window.currentEditExImages = ex.imageUrls ? [...ex.imageUrls] : [];
       renderEditGlobalExImages();
       document.getElementById('editExUploadStatus').textContent = "";
@@ -951,6 +1055,8 @@
       const id = document.getElementById('editGlobalExId').value;
       const newName = document.getElementById('editGlobalExName').value.trim();
       const newZone = document.getElementById('editGlobalExZone').value.trim();
+      const newObs = document.getElementById('editGlobalExObs').value.trim();
+      
       if(!newName) return alert('El nombre no puede estar vacío');
       
       const files = Array.from(document.getElementById('editGlobalExNewFiles').files).slice(0, 3);
@@ -974,7 +1080,12 @@
       }
       
       status.textContent = "⏳ Guardando cambios...";
-      await updateDoc(doc(db, "ejercicios_base", id), { nombre: newName, zona: newZone, imageUrls: uploadedUrls });
+      await updateDoc(doc(db, "ejercicios_base", id), { 
+          nombre: newName, 
+          zona: newZone, 
+          imageUrls: uploadedUrls, 
+          observaciones: newObs 
+      });
       status.textContent = "";
       
       closeEditGlobalExModal();
@@ -1039,6 +1150,7 @@
       const name = document.getElementById('newGlobalExInput').value.trim();
       const zoneSelect = document.getElementById('newGlobalExZoneSelect').value;
       const zoneManual = document.getElementById('newGlobalExZoneManual').value.trim();
+      const obs = document.getElementById('newGlobalExObs').value.trim();
       const zone = zoneManual || zoneSelect;
       const files = Array.from(document.getElementById('newGlobalExFiles').files).slice(0, 3);
 
@@ -1060,11 +1172,19 @@
         }
       }
 
-      await addDoc(collection(db, "ejercicios_base"), { nombre: name, zona: zone, imageUrls: uploadedUrls });
+      await addDoc(collection(db, "ejercicios_base"), { 
+          nombre: name, 
+          zona: zone, 
+          imageUrls: uploadedUrls,
+          observaciones: obs
+      });
+      
       document.getElementById('newGlobalExInput').value = '';
       document.getElementById('newGlobalExZoneSelect').value = '';
       document.getElementById('newGlobalExZoneManual').value = '';
+      document.getElementById('newGlobalExObs').value = '';
       document.getElementById('newGlobalExFiles').value = '';
+      
       closeNewGlobalExModal();
       await loadGlobalExercises();
       populateZoneDropdowns();
@@ -1677,7 +1797,7 @@
       </div>
       <p style="color: var(--muted); font-size: 0.9rem;">Mensajes recientes de tus alumnos en sus entrenamientos.</p>
       <div id="notifListContainer" style="margin-top: 15px;">
-        <div class="log-card">💬 <strong>Maria Gomez:</strong> "Me costó mucho la última repetición en Sentadilla Búlgara." <br><small style="color:var(--muted)">Hoy, 14:30</small></div>
+        <!-- Se inyectarán dinámicamente -->
       </div>
     </div>
   </div>
@@ -1754,7 +1874,7 @@
 
     <div class="tabs">
       <div id="tab-alumnos" class="tab-btn active" onclick="switchModule('alumnos')">👥 Mis Alumnos</div>
-      <div id="tab-ejercicios" class="tab-btn" onclick="switchModule('ejercicios')">📚 Ejercicios y Rutinas</div>
+      <div id="tab-ejercicios" class="tab-btn" onclick="switchModule('ejercicios')">📚 Banco de Ejercicios</div>
     </div>
 
     <!-- MÓDULO 1: MIS ALUMNOS -->
@@ -1782,7 +1902,7 @@
       <!-- Sub-pestañas para Ejercicios y Plantillas -->
       <div class="sub-tabs" style="margin-bottom: 20px;">
         <button id="bank-subtab-btn-ejercicios" class="sub-tab-btn active" onclick="switchBankSubTab('ejercicios')">🏋️ Ejercicios</button>
-        <button id="bank-subtab-btn-plantillas" class="sub-tab-btn" onclick="switchBankSubTab('plantillas')">📋 Rutinas</button>
+        <button id="bank-subtab-btn-plantillas" class="sub-tab-btn" onclick="switchBankSubTab('plantillas')">📋 Plantillas</button>
       </div>
 
       <!-- Sección Banco de Ejercicios -->
@@ -1913,7 +2033,7 @@
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <h3 style="margin:0;">📋 Resumen de la Rutina Asignada</h3>
-            <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">⬇️ Descargar Rutina</button>
+            <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">⬇️ Descargar Rutina (PDF)</button>
           </div>
           <div id="routineDetailsDisplay" style="padding: 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border);">
           </div>
@@ -1930,7 +2050,7 @@
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap:10px;">
             <h3 style="margin:0;">📊 Historial y Avance (30 Días)</h3>
-            <button class="btn-main" onclick="generateConsolidatedPDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">📄 Exportar Datos</button>
+            <button class="btn-main" onclick="generateConsolidatedPDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">📄 Exportar Ficha PDF</button>
           </div>
           <div style="margin-top:15px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
             <label>Seleccionar ejercicio para ver progreso de cargas:</label>
@@ -2038,7 +2158,7 @@
         <label style="margin-top:6px;">O escribir uno nuevo (se guardará en el banco):</label>
         <input type="text" id="manualExName" placeholder="Ej: Press Francés" oninput="document.getElementById('selectGlobalExercise').value=''">
 
-        <label style="margin-top:6px;">Observación / Nota para este alumno (opcional):</label>
+        <label style="margin-top:6px;">Observación / Nota para este alumno en particular (opcional):</label>
         <input type="text" id="newExNotes" placeholder="Ej: Controlar la bajada / Usar agarre neutro">
 
         <div class="grid-3">
@@ -2133,6 +2253,9 @@
       <select id="newGlobalExZoneSelect"><option value="">-- Seleccionar Zona --</option></select>
       <input type="text" id="newGlobalExZoneManual" placeholder="O escribe una zona nueva...">
 
+      <label>Observaciones / Detalles técnicos (Opcional)</label>
+      <textarea id="newGlobalExObs" placeholder="Ej: Mantener la espalda recta, bajar en 3 segundos..."></textarea>
+
       <label>Fotos / GIFs demostrativos (hasta 3 archivos)</label>
       <input type="file" id="newGlobalExFiles" accept="image/*" multiple>
       
@@ -2155,6 +2278,9 @@
       
       <label>Zona Muscular / Categoría</label>
       <input type="text" id="editGlobalExZone">
+
+      <label>Observaciones / Detalles técnicos</label>
+      <textarea id="editGlobalExObs"></textarea>
       
       <label style="margin-top: 10px;">Miniaturas (Click en la X para eliminar)</label>
       <div id="editGlobalExThumbnails" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;"></div>
