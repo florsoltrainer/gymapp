@@ -10,8 +10,9 @@
   <meta name="theme-color" content="#121214">
   <link rel="apple-touch-icon" href="logo chico.png">
 
-  <!-- LIBRERÍA CHART.JS PARA GRÁFICOS -->
+  <!-- LIBRERÍAS (CHART.JS PARA GRÁFICOS Y HTML2CANVAS PARA CAPTURAS) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
     /* VARIABLES UNIFICADAS CON ADMIN */
@@ -97,10 +98,11 @@
     /* LISTADO DE EJERCICIOS */
     .zone-block { margin-bottom: 24px; }
     .zone-title { font-size: 1.1rem; color: var(--accent); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-    .ex-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; display: flex; justify-content: space-between; align-items: center; padding: 16px; }
+    .ex-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; padding: 16px; }
     
     /* ESTILOS DEL MÓDULO DE ENTRENAMIENTO */
     .timer-display { font-size: 3rem; font-weight: bold; text-align: center; color: var(--accent); margin: 10px 0; font-variant-numeric: tabular-nums; }
+    .grid-timer { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
     label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
     input, textarea, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 1rem; outline: none; margin-bottom: 12px; }
@@ -123,8 +125,8 @@
     .loading-overlay { display: flex; align-items: center; justify-content: center; min-height: 80vh; color: var(--muted); font-size: 1.1rem; }
     
     .share-stat-box { flex: 1; text-align: center; }
-    .share-stat-value { font-size: 2.2rem; font-weight: 800; color: var(--text); line-height: 1; margin-bottom: 4px; }
-    .share-stat-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .share-stat-value { font-size: 1.8rem; font-weight: 800; color: var(--text); line-height: 1; margin-bottom: 4px; }
+    .share-stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 
     .notification-card { background: var(--input-bg); border: 1px solid var(--border); padding: 16px; border-radius: 12px; margin-bottom: 12px; }
   </style>
@@ -157,6 +159,7 @@
     window.activeExercise = null;
     window.sessionLogs = [];
     window.historialFechas = [];
+    window.historialCompleto = [];
     window.trainerNotes = ""; 
     window.alumnoId = new URLSearchParams(window.location.search).get('id') || "";
     window.studentDocRef = null;
@@ -207,14 +210,14 @@
             document.getElementById('modalProfileMetrics').textContent = `${data.edad || '--'} años | ${data.peso || '--'} kg | ${data.altura || '--'} cm`;
             document.getElementById('userEmailDisplay').textContent = user.email;
 
-            // Revisar si las notificaciones ya fueron descartadas
+            // Notificaciones
             if(window.trainerNotes && localStorage.getItem('hide_note') !== window.trainerNotes) {
               document.getElementById('notificationDot').style.display = 'block';
             } else if (localStorage.getItem('hide_update') !== 'true' && Object.keys(window.workoutData).length > 0) {
               document.getElementById('notificationDot').style.display = 'block';
             }
 
-            // Persistencia de Entrenamientos y Cargas en Firebase
+            // Persistencia Hoy
             const todayStr = new Date().toLocaleDateString('es-AR');
             if (data.entrenamiento_hoy && data.entrenamiento_hoy.fecha === todayStr) {
                 window.sessionLogs = data.entrenamiento_hoy.logs || [];
@@ -233,6 +236,9 @@
             window.renderDaysNav();
             window.processSyncQueue();
             window.updateProfileStats();
+            
+            // Cargar Historial Completo para Récords y Resumen
+            window.fetchHistorialData();
 
           } else {
             if(loadingState) loadingState.style.display = 'none';
@@ -249,6 +255,28 @@
         if(loginCard) loginCard.style.display = 'block';
       }
     });
+
+    window.fetchHistorialData = async function() {
+        if(!window.alumnoId) return;
+        try {
+            const histRef = collection(db, `alumnos/${window.alumnoId}/historial`);
+            const snap = await getDocs(histRef);
+            window.historialCompleto = [];
+            snap.forEach(doc => {
+                window.historialCompleto.push(doc.data());
+            });
+            // Ordenar por fecha descendente
+            window.historialCompleto.sort((a,b) => {
+                const pA = a.fecha.split('/');
+                const pB = b.fecha.split('/');
+                return new Date(pB[2], pB[1]-1, pB[0]) - new Date(pA[2], pA[1]-1, pA[0]);
+            });
+            window.renderUltimoEntrenamiento();
+            window.renderRecordsPersonales();
+        } catch(e) {
+            console.error("Error cargando historial", e);
+        }
+    };
 
     window.loginStudentGoogle = async function() {
       try {
@@ -294,7 +322,6 @@
       document.getElementById('modalPerfil').style.display = show ? 'flex' : 'none';
       if(show) {
         window.updateProfileStats();
-        // Retrasamos unos ms para que el Canvas tenga dimensiones físicas y se renderice correctamente
         setTimeout(() => window.renderChart(), 50);
       }
     };
@@ -378,6 +405,115 @@
       document.getElementById('statStatus').textContent = status;
     };
 
+    window.renderRecordsPersonales = function() {
+      const container = document.getElementById('prListContainer');
+      let allLogs = [...window.sessionLogs];
+      window.historialCompleto.forEach(h => { if(h.logs) allLogs = allLogs.concat(h.logs); });
+      
+      if(allLogs.length === 0) {
+          container.innerHTML = '<p style="color:var(--muted);">Aún no hay récords registrados.</p>';
+          return;
+      }
+      
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      let records = {};
+      allLogs.forEach(log => {
+          if(!log.Fecha) return;
+          const parts = log.Fecha.split('/');
+          const logDate = new Date(parts[2], parts[1]-1, parts[0]);
+          if(logDate >= thirtyDaysAgo) {
+              const ex = log.Ejercicio;
+              const weight = Number(log['Peso (kg)']) || 0;
+              if(!records[ex] || weight > records[ex].weight) {
+                  records[ex] = { weight: weight, reps: log.Repeticiones };
+              }
+          }
+      });
+      
+      if(Object.keys(records).length === 0) {
+          container.innerHTML = '<p style="color:var(--muted);">No hay récords en los últimos 30 días.</p>';
+          return;
+      }
+      
+      container.innerHTML = '';
+      Object.keys(records).forEach(ex => {
+          container.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px;">
+              <span style="color: var(--text); font-weight: 500;">${ex}</span>
+              <span style="color: var(--accent); font-weight: bold;">${records[ex].weight}kg <span style="font-size:0.8rem; color:var(--muted); font-weight:normal;">x ${records[ex].reps}</span></span>
+          </div>`;
+      });
+    };
+
+    window.renderUltimoEntrenamiento = function(targetDate = null) {
+      const container = document.getElementById('ueListContainer');
+      const label = document.getElementById('ueFechaLabel');
+      
+      let logsToShow = [];
+      let displayDate = "";
+      
+      if(targetDate) {
+          const parts = targetDate.split('-');
+          displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+          const found = window.historialCompleto.find(h => h.fecha === displayDate);
+          if(found && found.logs) logsToShow = found.logs;
+      } else {
+          if(window.sessionLogs.length > 0) {
+              logsToShow = window.sessionLogs;
+              displayDate = new Date().toLocaleDateString('es-AR');
+          } else if(window.historialCompleto.length > 0) {
+              logsToShow = window.historialCompleto[0].logs || [];
+              displayDate = window.historialCompleto[0].fecha;
+          }
+      }
+      
+      if(logsToShow.length === 0) {
+          label.textContent = targetDate ? displayDate : "Sin entrenamientos";
+          container.innerHTML = '<p style="color:var(--muted);">No hay datos para mostrar en esta fecha.</p>';
+          return;
+      }
+      
+      label.textContent = displayDate;
+      
+      let grouped = {};
+      logsToShow.forEach(log => {
+          const z = log.Zona || "General";
+          if(!grouped[z]) grouped[z] = [];
+          grouped[z].push(log);
+      });
+      
+      container.innerHTML = '';
+      Object.keys(grouped).forEach(zona => {
+          let html = `<div style="margin-bottom: 12px;"><h5 style="color: var(--accent); border-bottom: 1px solid var(--border); margin-bottom: 6px; padding-bottom: 4px;">${zona}</h5>`;
+          
+          let exGrouped = {};
+          grouped[zona].forEach(log => {
+              if(!exGrouped[log.Ejercicio]) exGrouped[log.Ejercicio] = [];
+              exGrouped[log.Ejercicio].push(log);
+          });
+          
+          Object.keys(exGrouped).forEach(ex => {
+              html += `<div style="margin-bottom: 8px;">
+                  <strong style="color: var(--text); font-size: 0.95rem;">${ex}</strong>`;
+              exGrouped[ex].forEach(l => {
+                  html += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--muted); margin-left: 8px;">
+                      <span>Serie ${l.Serie}</span>
+                      <span>${l['Peso (kg)']}kg x ${l.Repeticiones}</span>
+                  </div>`;
+              });
+              html += `</div>`;
+          });
+          html += `</div>`;
+          container.innerHTML += html;
+      });
+    };
+
+    window.loadHistDate = function(dateVal) {
+      if(!dateVal) return;
+      window.renderUltimoEntrenamiento(dateVal);
+    };
+
     window.progressChartObj = null;
     window.renderChart = function() {
       const ctx = document.getElementById('progressChart').getContext('2d');
@@ -459,19 +595,28 @@
           
           const displayWeights = ex.weights ? ex.weights.join(", ") : (ex.weight || 0);
           const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || 0);
+          
+          const notaText = ex.notes || ex.nota || ex.nota_alumno || '';
+          let notasHtml = '';
+          if (notaText.trim() !== '') {
+              notasHtml = `<div style="font-size: 0.85rem; color: var(--accent); margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">📌 <strong>Nota:</strong> ${notaText}</div>`;
+          }
 
           exCard.innerHTML = `
-            <div style="flex-grow: 1; padding-right: 10px;">
-              <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; color: var(--text);">🏋️ ${ex.name}</div>
-              <div style="font-size: 0.85rem; color: var(--muted); line-height: 1.4;">
-                ${ex.sets || 3} series x ${displayReps} reps <br>
-                Carga: ${displayWeights}kg
-              </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: ${notasHtml ? '0' : '0'};">
+                <div style="flex-grow: 1; padding-right: 10px;">
+                  <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; color: var(--text);">🏋️ ${ex.name}</div>
+                  <div style="font-size: 0.85rem; color: var(--muted); line-height: 1.4;">
+                    ${ex.sets || 3} series x ${displayReps} reps <br>
+                    Carga: ${displayWeights}kg
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-sec" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.viewExerciseDetails('${dayName}', '${zone}', ${exIndex})">Ver</button>
+                    <button class="btn-main" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.startExercise('${dayName}', '${zone}', ${exIndex})">Empezar</button>
+                </div>
             </div>
-            <div style="display: flex; gap: 8px;">
-                <button class="btn-sec" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.viewExerciseDetails('${dayName}', '${zone}', ${exIndex})">Ver</button>
-                <button class="btn-main" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.startExercise('${dayName}', '${zone}', ${exIndex})">Empezar</button>
-            </div>
+            ${notasHtml}
           `;
           zoneBlock.appendChild(exCard);
         });
@@ -489,28 +634,30 @@
         
         if (images.length > 0) {
             images.forEach(url => {
-                if(url) gallery.innerHTML += `<img src="${url}" alt="Técnica">`;
+                if(url && url.trim() !== '') gallery.innerHTML += `<img src="${url}" alt="Técnica">`;
             });
-            gallery.style.display = 'flex';
+            if(gallery.innerHTML !== '') {
+                gallery.style.display = 'flex';
+            } else {
+                gallery.innerHTML = '<p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 10px;">No hay imágenes ilustrativas cargadas.</p>';
+                gallery.style.display = 'block';
+            }
         } else {
-            gallery.innerHTML = '<p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 10px;">No hay imágenes ilustrativas cargadas para este ejercicio.</p>';
+            gallery.innerHTML = '<p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 10px;">No hay imágenes ilustrativas cargadas.</p>';
             gallery.style.display = 'block';
         }
 
         const notas = document.getElementById('verExNotas');
-        const notaText = ex.notes || ex.nota || ex.observaciones || '';
-        if (notaText.trim() !== '') {
-            notas.innerHTML = `📌 <strong style="color: var(--accent);">Nota del Entrenador:</strong> ${notaText}`;
+        const obsText = ex.observaciones || ex.detalles_tecnicos || '';
+        
+        if (obsText.trim() !== '') {
+            notas.innerHTML = `💡 <strong style="color: var(--text);">Detalles Técnicos:</strong> ${obsText}`;
             notas.style.display = 'block';
             notas.style.borderLeft = '3px solid var(--accent)';
             notas.style.background = 'var(--input-bg)';
             notas.style.padding = '10px 14px';
         } else {
-            notas.innerHTML = `<p style="color:var(--muted); font-size: 0.9rem;">Sin observaciones adicionales por parte de tu entrenador.</p>`;
-            notas.style.display = 'block';
-            notas.style.borderLeft = 'none';
-            notas.style.background = 'transparent';
-            notas.style.padding = '0';
+            notas.style.display = 'none';
         }
 
         document.getElementById('modalVerEjercicio').style.display = 'flex';
@@ -714,11 +861,9 @@
     window.deleteSessionLog = async function(index) {
         if(!confirm("¿Eliminar esta serie registrada?")) return;
         
-        // Quitar localmente
         const deletedLog = window.sessionLogs.splice(index, 1)[0];
         window.renderSessionLogs();
 
-        // Actualizar en Firebase para evitar que se restaure
         if (window.studentDocRef) {
             try {
                 const todayStr = new Date().toLocaleDateString('es-AR');
@@ -730,7 +875,6 @@
             }
         }
         
-        // Remover de la cola de sincronización si aún no se había subido al drive
         let queue = JSON.parse(localStorage.getItem('fst_sync_queue') || '[]');
         const qIdx = queue.findIndex(q => q.Hora === deletedLog.Hora && q.Ejercicio === deletedLog.Ejercicio && q.Serie === deletedLog.Serie);
         if (qIdx > -1) {
@@ -762,7 +906,6 @@
       });
     };
 
-    // TEMPORIZADOR
     window.startTimer = function(seconds) {
       clearInterval(timerInterval);
       endTime = Date.now() + (seconds * 1000);
@@ -798,7 +941,7 @@
         } catch (err) {}
         
         if ("Notification" in window && Notification.permission === "granted") {
-          new Notification('⏱️️ ¡Tiempo de descanso terminado!', {
+          new Notification('⏱ ¡Tiempo de descanso terminado!', {
             body: 'Toca aquí para volver a tu rutina y empezar la siguiente serie.',
             icon: 'logo chico.png'
           });
@@ -818,14 +961,31 @@
       }
       
       let totalVolume = 0;
+      let uniqueEx = new Set();
+      
       window.sessionLogs.forEach(log => {
         totalVolume += (log['Peso (kg)'] * log.Repeticiones);
+        uniqueEx.add(log.Ejercicio);
       });
 
+      document.getElementById('shareTotalEx').textContent = uniqueEx.size;
       document.getElementById('shareTotalSets').textContent = window.sessionLogs.length;
       document.getElementById('shareTotalVolume').textContent = totalVolume.toLocaleString();
       
       document.getElementById('shareOverlay').style.display = 'flex';
+    };
+
+    window.descargarShareCard = function() {
+        const captureDiv = document.getElementById('shareCardCapture');
+        html2canvas(captureDiv, {
+            backgroundColor: document.body.classList.contains('light-mode') ? '#ffffff' : '#1e1e24',
+            scale: 2
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'FST_Entrenamiento.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
     };
   </script>
 </head>
@@ -890,7 +1050,6 @@
       <div id="modulo-entrenamiento" class="module-section">
         
         <div class="card">
-          <!-- Selectores (Ocultos visualmente pero funcionales para logSet) -->
           <div style="display:none;">
              <select id="daySelect"></select>
              <select id="zoneSelect"></select>
@@ -904,11 +1063,14 @@
           <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
             <div id="timerExerciseName" style="text-align: center; color: var(--muted); margin-bottom: 10px; font-weight: bold; font-size: 1.1rem;">Selecciona un ejercicio</div>
             <div class="timer-display" id="timerDisplay">00:00</div>
-            <div class="grid-3" style="margin-bottom: 8px;">
+            
+            <div class="grid-timer">
               <button class="btn-sec" onclick="startTimer(60)">60s</button>
               <button class="btn-sec" onclick="startTimer(90)">90s</button>
               <button class="btn-sec" onclick="startTimer(120)">120s</button>
+              <button class="btn-sec" onclick="startTimer(180)">180s</button>
             </div>
+            
             <button class="btn-sec" style="width: 100%;" onclick="resetTimer()">Detener Cronómetro</button>
           </div>
 
@@ -965,7 +1127,7 @@
       <button class="close-modal" onclick="document.getElementById('modalVerEjercicio').style.display='none'">&times;</button>
       <h2 id="verExTitulo" style="margin-bottom: 16px; font-size: 1.4rem; color: var(--accent);"></h2>
       <div id="verExGaleria" class="image-gallery"></div>
-      <div id="verExNotas" style="background: var(--input-bg); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 6px; margin-top: 16px; font-size: 0.95rem; color: var(--text); display: none;"></div>
+      <div id="verExNotas" style="display: none;"></div>
     </div>
   </div>
 
@@ -996,10 +1158,34 @@
         <p style="color: var(--muted); font-size: 0.9rem;">📈 Estado Actual: <strong id="statStatus" style="color: var(--accent);">Sin Iniciar</strong></p>
       </div>
 
+      <!-- Historial Evolución -->
       <div style="margin-bottom: 24px;">
         <h4 style="font-size: 1rem; margin-bottom: 12px; color: var(--text);">Historial de Evolución</h4>
         <div style="background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
           <canvas id="progressChart" width="100" height="60"></canvas>
+        </div>
+      </div>
+
+      <!-- Último Entrenamiento -->
+      <div style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h4 style="font-size: 1rem; color: var(--text);">🏋️ Último Entrenamiento</h4>
+            <div style="position: relative;">
+               <button class="btn-sec" style="padding: 4px 8px; font-size: 1.2rem; border: none; background: transparent;" onclick="document.getElementById('histDatePicker').showPicker()">📅</button>
+               <input type="date" id="histDatePicker" style="visibility: hidden; position: absolute; right: 0; width: 0; height: 0;" onchange="loadHistDate(this.value)">
+            </div>
+        </div>
+        <p id="ueFechaLabel" style="font-size: 0.9rem; color: var(--accent); font-weight: bold; margin-bottom: 8px;">Cargando...</p>
+        <div id="ueListContainer" style="background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border); font-size: 0.9rem; max-height: 250px; overflow-y: auto;">
+            <p style="color:var(--muted);">Buscando datos...</p>
+        </div>
+      </div>
+
+      <!-- Récords Personales -->
+      <div style="margin-bottom: 24px;">
+        <h4 style="font-size: 1rem; margin-bottom: 12px; color: var(--text);">🏆 Récords Personales (30 días)</h4>
+        <div id="prListContainer" style="background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border); font-size: 0.9rem;">
+           <p style="color: var(--muted);">Buscando récords...</p>
         </div>
       </div>
 
@@ -1008,24 +1194,31 @@
   </div>
 
   <!-- MODAL SHARE CARD -->
-  <div id="shareOverlay" class="modal-overlay">
-    <div class="modal-content" style="background: linear-gradient(145deg, var(--card), #05100a); border: 1px solid var(--accent); text-align: center;">
+  <div id="shareOverlay" class="modal-overlay" style="flex-direction: column;">
+    <div class="modal-content" id="shareCardCapture" style="background: var(--card); border: 1px solid var(--border); text-align: center; padding: 30px 20px; margin-bottom: 16px;">
+      <img src="logo chico.png" alt="Logo Flor Sol Trainer" style="height: 45px; margin-bottom: 16px; object-fit: contain;">
       <h2 style="color: var(--accent); margin-bottom: 8px; font-size: 1.6rem;">¡MISIÓN CUMPLIDA! 🚀</h2>
-      <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 24px;">Resumen de tu entrenamiento de hoy:</p>
+      <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 24px;">Resumen de tu entrenamiento de hoy</p>
 
-      <div style="display: flex; gap: 12px; margin-bottom: 24px;">
-        <div class="share-stat-box" style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 16px;">
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <div class="share-stat-box" style="background: var(--input-bg); padding: 16px; border-radius: 16px;">
+          <div class="share-stat-value" id="shareTotalEx">0</div>
+          <div class="share-stat-label">Ejercicios</div>
+        </div>
+        <div class="share-stat-box" style="background: var(--input-bg); padding: 16px; border-radius: 16px;">
           <div class="share-stat-value" id="shareTotalSets">0</div>
           <div class="share-stat-label">Series</div>
         </div>
         <div class="share-stat-box" style="background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); padding: 16px; border-radius: 16px;">
           <div class="share-stat-value" style="color: var(--accent);" id="shareTotalVolume">0</div>
-          <div class="share-stat-label" style="color: var(--accent);">Kg Movidos</div>
+          <div class="share-stat-label" style="color: var(--accent);">Kg Totales</div>
         </div>
       </div>
-      
-      <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 20px;">📸 Sácale captura y compartilo en tus historias</p>
-      <button class="btn-main" onclick="document.getElementById('shareOverlay').style.display='none'">Excelente</button>
+    </div>
+    
+    <div style="width: 100%; max-width: 400px; display: flex; gap: 10px;">
+        <button class="btn-sec" style="flex: 1; background: var(--card);" onclick="descargarShareCard()">⬇️ Descargar</button>
+        <button class="btn-main" style="flex: 1;" onclick="document.getElementById('shareOverlay').style.display='none'">Excelente</button>
     </div>
   </div>
 
