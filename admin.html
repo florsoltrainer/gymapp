@@ -51,7 +51,7 @@
     .header-logo { height: 30px; width: auto; object-fit: contain; }
     
     .user-menu-container { position: relative; display: flex; gap: 10px; align-items: center; }
-    .user-menu-btn { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 0; width: auto; transition: background 0.2s; }
+    .user-menu-btn { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); border-radius: 50%; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; margin-bottom: 0; width: 42px; height: 42px; padding: 0; transition: background 0.2s; font-size: 1.1rem; }
     .user-menu-btn:hover { background: var(--border); }
     
     .user-menu-dropdown { display: none; position: absolute; top: 115%; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 220px; box-shadow: 0 8px 24px var(--shadow); z-index: 100; flex-direction: column; gap: 12px; }
@@ -160,24 +160,21 @@
     window.currentStudentId = "";
     window.globalExercises = [];
     window.globalTemplates = [];
-    window.editorContext = { type: 'student' }; // Maneja el contexto del editor de rutinas
+    window.editorContext = { type: 'student' }; 
     window.currentTemplateId = null; 
     window.templatePromptContext = '';
-    window.currentEditorDay = null; // Para la gestión de días de entrenamiento por tabs
-    window.currentEditExImages = []; // Array temporal de imágenes editadas en el banco
+    window.currentEditorDay = null; 
+    window.currentEditExImages = []; 
     
     let progressChartInstance = null;
 
     // --- MANEJO DE CLICS FUERA DE MODALES Y MENÚS ---
     window.addEventListener('click', function(event) {
-      // Cerrar dropdown de ajustes
       const dropdown = document.getElementById('userMenuDropdown');
       const menuContainer = document.querySelector('.user-menu-container');
       if (dropdown && dropdown.classList.contains('show') && !menuContainer.contains(event.target)) {
         dropdown.classList.remove('show');
       }
-      
-      // Cerrar modales si se cliquea en el fondo oscuro
       if (event.target.classList.contains('modal-overlay')) {
         event.target.classList.remove('show');
       }
@@ -255,6 +252,35 @@
       document.getElementById(`bank-subtab-content-${subName}`).style.display = 'block';
       document.getElementById(`bank-subtab-btn-${subName}`).classList.add('active');
     };
+
+    // --- PARSEO ROBUSTO DE FECHAS ---
+    function parseToISODate(rawFecha) {
+        if (!rawFecha) return new Date().toISOString().split('T')[0];
+        if (rawFecha.toDate) return rawFecha.toDate().toISOString().split('T')[0];
+        if (rawFecha instanceof Date) {
+            if(!isNaN(rawFecha.getTime())) return rawFecha.toISOString().split('T')[0];
+        }
+        if (typeof rawFecha === 'object' && rawFecha.seconds) return new Date(rawFecha.seconds * 1000).toISOString().split('T')[0];
+        if (typeof rawFecha === 'string') {
+            if (rawFecha.includes('/')) {
+                const parts = rawFecha.split('/');
+                if(parts.length === 3) {
+                    const year = parts[2].length === 2 ? '20'+parts[2] : parts[2];
+                    return `${year}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                }
+            }
+            const d = new Date(rawFecha);
+            if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+        }
+        return new Date().toISOString().split('T')[0];
+    }
+
+    function formatDisplayDate(isoDate) {
+        if(!isoDate) return '';
+        const parts = isoDate.split('-');
+        if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return isoDate;
+    }
 
     // --- MÓDULO 1: MIS ALUMNOS ---
     window.toggleNewStudentForm = function() {
@@ -363,54 +389,44 @@
       
       let notifs = [];
 
-      // Función auxiliar para extraer de cualquier formato
       const extractComments = (d, studentName) => {
           let rawFecha = d.fecha || d.Fecha || d.date || d.timestamp;
-          let fechaStr = rawFecha;
-          if (rawFecha && rawFecha.toDate) fechaStr = rawFecha.toDate().toLocaleDateString();
-          else if (rawFecha instanceof Date) fechaStr = rawFecha.toLocaleDateString();
-          else if (!rawFecha) fechaStr = 'Reciente';
+          let isoDate = parseToISODate(rawFecha);
+          let fechaStr = formatDisplayDate(isoDate);
 
           // Comentarios a nivel de sesión completa
           let globalComment = d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas;
           if (globalComment && typeof globalComment === 'string' && globalComment.trim() !== '') {
-              notifs.push({ nombre: studentName, mensaje: globalComment, fecha: fechaStr });
+              notifs.push({ nombre: studentName, mensaje: globalComment, fecha: fechaStr, isoDate: isoDate });
           }
 
-          // Comentarios a nivel de ejercicio (si se guardan como un arreglo)
+          // Comentarios a nivel de ejercicio
           if (d.ejercicios && Array.isArray(d.ejercicios)) {
               d.ejercicios.forEach(ej => {
                   let ejComment = ej.comentario || ej.Comentarios || ej.comentarios || ej.nota || ej.notas;
                   if (ejComment && typeof ejComment === 'string' && ejComment.trim() !== '') {
-                      notifs.push({ nombre: studentName, mensaje: `(${ej.ejercicio || ej.nombre || 'Ejercicio'}) ${ejComment}`, fecha: fechaStr });
+                      notifs.push({ nombre: studentName, mensaje: `(${ej.ejercicio || ej.nombre || 'Ejercicio'}) ${ejComment}`, fecha: fechaStr, isoDate: isoDate });
                   }
               });
           }
       };
 
-      // 1. Revisar colección global notificaciones (si existe)
       try {
          const notifSnap = await getDocs(collection(db, "notificaciones"));
          notifSnap.forEach(doc => {
              let d = doc.data();
-             let rawFecha = d.fecha || d.Fecha || d.timestamp;
-             let fechaStr = rawFecha;
-             if (rawFecha && rawFecha.toDate) fechaStr = rawFecha.toDate().toLocaleDateString();
-             notifs.push({ nombre: d.alumno || d.nombreAlumno || 'Alumno', mensaje: d.mensaje || d.comentario || d.nota, fecha: fechaStr || 'Reciente' });
+             extractComments(d, d.alumno || d.nombreAlumno || 'Alumno');
          });
       } catch(e) {}
 
-      // 2. Revisar historial global (por si la app lo guarda de esta manera)
       try {
          const histSnap = await getDocs(collection(db, "historial"));
          histSnap.forEach(doc => {
              let d = doc.data();
-             let studentName = d.alumno || d.nombreAlumno || 'Alumno';
-             extractComments(d, studentName);
+             extractComments(d, d.alumno || d.nombreAlumno || 'Alumno');
          });
       } catch(e) {}
 
-      // 3. Revisar el historial de subcolecciones de cada alumno
       for (const student of window.allStudentsList) {
          try {
             const cols = ["historial", "registros", "entrenamientos"];
@@ -425,7 +441,6 @@
       }
 
       if (notifs.length > 0) {
-         // Quitar duplicados por si se leyó el mismo comentario de varios lugares
          let uniqueNotifs = [];
          let seen = new Set();
          notifs.forEach(n => {
@@ -436,15 +451,18 @@
              }
          });
 
+         // Ordenar por fecha más reciente primero
+         uniqueNotifs.sort((a, b) => b.isoDate.localeCompare(a.isoDate));
+
          notifBadge.style.display = 'block';
          notifBadge.textContent = uniqueNotifs.length;
          notifList.innerHTML = '';
          
-         uniqueNotifs.reverse().forEach(n => {
+         uniqueNotifs.forEach(n => {
             notifList.innerHTML += `
               <div class="log-card">
-                💬 <strong>${n.nombre}:</strong> "${n.mensaje}" <br>
-                <small style="color:var(--muted)">${n.fecha}</small>
+                <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px;">📅 ${n.fecha} - 👤 ${n.nombre}</div>
+                💬 <em>"${n.mensaje}"</em>
               </div>
             `;
          });
@@ -556,7 +574,7 @@
         document.body.classList.add('modal-open'); 
         switchSubTab('datos');
 
-        // Cargar logs siempre (ahora lee tanto de Firebase como de Sheets)
+        // Cargar logs
         if (window.currentStudentData) {
            loadLogs30Days();
         }
@@ -665,40 +683,29 @@
       }
     };
 
-    // --- CARGA DE HISTORIAL (AHORA INTEGRA FIREBASE Y GOOGLE SHEETS) ---
+    // --- CARGA DE HISTORIAL ESTRUCTURADO ---
     async function loadLogs30Days() {
-      const container = document.getElementById('unifiedLogsContainer');
-      container.innerHTML = "⏳ Consultando registros recientes...";
+      const container = document.getElementById('historialSelectedWorkoutDetails');
+      container.innerHTML = "<p style='color:var(--muted); font-size: 0.9rem;'>⏳ Consultando registros recientes...</p>";
       
       let allLogs = [];
       window.currentStudentData.logs = [];
 
-      // 1. Extraer desde Firebase (subcolecciones 'historial', 'registros' o 'entrenamientos')
       try {
         const colsToTry = ["historial", "registros", "entrenamientos"];
         for (let colName of colsToTry) {
             const histSnap = await getDocs(collection(db, "alumnos", window.currentStudentId, colName));
             histSnap.forEach(docSnap => {
               let d = docSnap.data();
-              
-              // Evitar error [object Object] si la fecha es un Timestamp de Firestore
               let rawFecha = d.fecha || d.Fecha || d.date || d.timestamp;
-              let fechaStr = rawFecha;
-              if (rawFecha && rawFecha.toDate) {
-                  fechaStr = rawFecha.toDate().toLocaleDateString();
-              } else if (rawFecha instanceof Date) {
-                  fechaStr = rawFecha.toLocaleDateString();
-              } else if (typeof rawFecha === 'object') {
-                  fechaStr = new Date(rawFecha.seconds * 1000).toLocaleDateString() || new Date().toLocaleDateString();
-              } else if (!rawFecha) {
-                  fechaStr = new Date().toLocaleDateString();
-              }
+              let isoDate = parseToISODate(rawFecha);
+              let displayDate = formatDisplayDate(isoDate);
 
-              // Soportar estructura donde se guarda un arreglo de ejercicios
               if (d.ejercicios && Array.isArray(d.ejercicios)) {
                   d.ejercicios.forEach(ej => {
                       allLogs.push({
-                          Fecha: fechaStr,
+                          isoDate: isoDate,
+                          Fecha: displayDate,
                           Ejercicio: ej.ejercicio || ej.nombre || ej.name || "Desconocido",
                           Serie: ej.serie || ej.sets || ej.Serie || 1,
                           "Peso (kg)": ej.peso || ej["Peso (kg)"] || ej.peso_kg || ej.weight || 0,
@@ -708,7 +715,8 @@
                   });
               } else {
                   allLogs.push({
-                    Fecha: fechaStr,
+                    isoDate: isoDate,
+                    Fecha: displayDate,
                     Ejercicio: d.ejercicio || d.Ejercicio || d.nombre || "Desconocido",
                     Serie: d.serie || d.Serie || d.sets || 1,
                     "Peso (kg)": d.peso || d["Peso (kg)"] || d.peso_kg || d.weight || 0,
@@ -718,27 +726,22 @@
               }
             });
         }
-      } catch(e) {
-        console.error("Error leyendo historial de Firebase subcolecciones", e);
-      }
+      } catch(e) {}
       
-      // 1.5 Revisar colección global "historial" por si la App lo guarda así
       try {
           const globalHistSnap = await getDocs(collection(db, "historial"));
           globalHistSnap.forEach(docSnap => {
               let d = docSnap.data();
               if (d.alumnoId === window.currentStudentId || (d.email && d.email === window.currentStudentData.email) || d.alumno === window.currentStudentData.nombre) {
                   let rawFecha = d.fecha || d.Fecha || d.date || d.timestamp;
-                  let fechaStr = rawFecha;
-                  if (rawFecha && rawFecha.toDate) fechaStr = rawFecha.toDate().toLocaleDateString();
-                  else if (rawFecha instanceof Date) fechaStr = rawFecha.toLocaleDateString();
-                  else if (typeof rawFecha === 'object') fechaStr = new Date(rawFecha.seconds * 1000).toLocaleDateString() || new Date().toLocaleDateString();
-                  else if (!rawFecha) fechaStr = new Date().toLocaleDateString();
+                  let isoDate = parseToISODate(rawFecha);
+                  let displayDate = formatDisplayDate(isoDate);
 
                   if (d.ejercicios && Array.isArray(d.ejercicios)) {
                       d.ejercicios.forEach(ej => {
                           allLogs.push({
-                              Fecha: fechaStr,
+                              isoDate: isoDate,
+                              Fecha: displayDate,
                               Ejercicio: ej.ejercicio || ej.nombre || ej.name || "Desconocido",
                               Serie: ej.serie || ej.sets || 1,
                               "Peso (kg)": ej.peso || ej.weight || 0,
@@ -748,7 +751,8 @@
                       });
                   } else {
                       allLogs.push({
-                          Fecha: fechaStr,
+                          isoDate: isoDate,
+                          Fecha: displayDate,
                           Ejercicio: d.ejercicio || d.Ejercicio || d.nombre || "Desconocido",
                           Serie: d.serie || d.Serie || d.sets || 1,
                           "Peso (kg)": d.peso || d["Peso (kg)"] || d.peso_kg || d.weight || 0,
@@ -758,76 +762,163 @@
                   }
               }
           });
-      } catch(e) { /* Colección no existe, ignorar */ }
+      } catch(e) {}
 
-      // 2. Extraer desde Google Sheets (compatibilidad con datos antiguos)
       if (window.currentStudentData.spreadsheet_id) {
         try {
           const res = await fetch(`${MASTER_SCRIPT_URL}?action=GET_WEEKLY_LOGS&spreadsheetId=${window.currentStudentData.spreadsheet_id}&days=30`);
           const data = await res.json();
           if (data.status === "success" && data.logs && data.logs.length > 0) {
-            data.logs.forEach(l => allLogs.push(l));
+            data.logs.forEach(l => {
+                let isoDate = parseToISODate(l.Fecha);
+                l.isoDate = isoDate;
+                l.Fecha = formatDisplayDate(isoDate);
+                allLogs.push(l);
+            });
           }
-        } catch (e) {
-          console.error("Error al obtener historial de Google Sheets.", e);
-        }
+        } catch (e) {}
       }
 
       if (allLogs.length > 0) {
+        allLogs.sort((a, b) => b.isoDate.localeCompare(a.isoDate));
         window.currentStudentData.logs = allLogs;
-        container.innerHTML = "";
-        
-        let maxWeights = {};
-        allLogs.forEach(log => {
-          const ex = log.Ejercicio;
-          const w = Number(log["Peso (kg)"]) || 0;
-          if(!maxWeights[ex] || w > maxWeights[ex]) maxWeights[ex] = w;
-        });
-
-        let prHtml = `<div style="background:rgba(255, 215, 0, 0.1); border: 1px solid #ffd700; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-                        <h4 style="margin:0 0 8px 0; color:#ffd700;">🌟 Récords Personales (30 días)</h4>
-                        <div style="display:flex; flex-wrap:wrap; gap:10px;">`;
-        Object.keys(maxWeights).forEach(ex => {
-          prHtml += `<span style="font-size:0.9rem; font-weight:bold;">🏆 ${ex}: ${maxWeights[ex]}kg</span>`;
-        });
-        prHtml += `</div></div>`;
-        container.innerHTML += prHtml;
-
-        const logsByDay = {};
-        // Tomamos los 50 más recientes para el resumen visual (al no poder ordenar strings de fechas de forma fácil, al menos evitamos el error [object Object])
-        allLogs.slice(0, 50).forEach(log => {
-           const key = `${log.Fecha}`;
-           if (!logsByDay[key]) logsByDay[key] = [];
-           logsByDay[key].push(log);
-        });
-
-        Object.keys(logsByDay).forEach(dayKey => {
-          const dayCard = document.createElement('div');
-          dayCard.className = 'tree-node';
-          dayCard.innerHTML = `<h4 style="color:var(--accent); margin-bottom:8px;">📅 ${dayKey}</h4>`;
-          
-          logsByDay[dayKey].forEach(log => {
-             dayCard.innerHTML += `
-               <div class="log-card">
-                 🏋️ ${log.Ejercicio}: Serie ${log.Serie} - <strong>${log["Peso (kg)"]} kg</strong> x ${log.Repeticiones} reps
-                 ${log.Comentarios ? `<br>💬 <em>${log.Comentarios}</em>` : ''}
-               </div>
-             `;
-          });
-          container.appendChild(dayCard);
-        });
-
-        populateExerciseChartSelector(allLogs);
+        renderHistorialTab();
       } else {
         window.currentStudentData.logs = [];
-        container.innerHTML = "<p style='color:var(--muted); font-size:0.9rem;'>Sin registros recientes encontrados.</p>";
-        
-        // Limpiar el gráfico
+        container.innerHTML = "<p style='color:var(--muted); font-size:0.9rem;'>Sin registros encontrados.</p>";
         const select = document.getElementById('chartExerciseSelect');
         if(select) select.innerHTML = '';
         if (progressChartInstance) progressChartInstance.destroy();
+        renderPRs([]);
       }
     }
+
+    window.renderHistorialTab = function() {
+        const logs = window.currentStudentData.logs || [];
+        const uniqueDates = [...new Set(logs.map(l => l.isoDate))];
+
+        const datePicker = document.getElementById('historialDatePicker');
+        if(uniqueDates.length > 0) {
+            if(!datePicker.value || !uniqueDates.includes(datePicker.value)) {
+                datePicker.value = uniqueDates[0]; // Mostrar el último entrenamiento automáticamente
+            }
+        } else {
+            datePicker.value = '';
+        }
+
+        populateExerciseChartSelector(logs);
+        changeHistorialDate();
+        renderPRs(logs);
+    };
+
+    window.changeHistorialDate = function() {
+        const selectedIsoDate = document.getElementById('historialDatePicker').value;
+        const container = document.getElementById('historialSelectedWorkoutDetails');
+        const displayTitle = document.getElementById('historialSelectedDateDisplay');
+
+        if(!selectedIsoDate) {
+            displayTitle.textContent = "📅 Seleccionar Fecha";
+            container.innerHTML = "<p style='color:var(--muted);'>No hay registros para mostrar.</p>";
+            renderProgressChart();
+            return;
+        }
+
+        const parts = selectedIsoDate.split('-');
+        displayTitle.textContent = `📅 ${parts[2]}/${parts[1]}/${parts[0]}`;
+
+        const dayLogs = (window.currentStudentData.logs || []).filter(l => l.isoDate === selectedIsoDate);
+
+        if(dayLogs.length === 0) {
+            container.innerHTML = "<p style='color:var(--muted);'>No hay registros para esta fecha.</p>";
+            renderProgressChart();
+            return;
+        }
+
+        // Agrupar por Zona -> Ejercicio
+        let grouped = {};
+        dayLogs.forEach(l => {
+            let exData = window.globalExercises.find(e => e.nombre === l.Ejercicio);
+            let zona = exData && exData.zona ? exData.zona : "General";
+            if(!grouped[zona]) grouped[zona] = {};
+            if(!grouped[zona][l.Ejercicio]) grouped[zona][l.Ejercicio] = [];
+            grouped[zona][l.Ejercicio].push(l);
+        });
+
+        container.innerHTML = '';
+        for(let zona in grouped) {
+            let zonaDiv = document.createElement('div');
+            zonaDiv.style.marginBottom = '15px';
+            zonaDiv.innerHTML = `<h5 style="color:var(--muted); margin-bottom:8px; font-size:1rem; text-transform: uppercase;">💪 ${zona}</h5>`;
+
+            for(let exName in grouped[zona]) {
+                let exDiv = document.createElement('div');
+                exDiv.style.background = 'var(--bg)';
+                exDiv.style.padding = '10px';
+                exDiv.style.borderRadius = '8px';
+                exDiv.style.marginBottom = '8px';
+                exDiv.style.border = '1px solid var(--border)';
+
+                let header = document.createElement('strong');
+                header.textContent = `🏋️ ${exName}`;
+                header.style.display = 'block';
+                header.style.marginBottom = '6px';
+                header.style.color = 'var(--text)';
+                exDiv.appendChild(header);
+
+                let notesSet = new Set();
+                grouped[zona][exName].forEach(log => {
+                    let seriesDiv = document.createElement('div');
+                    seriesDiv.style.fontSize = '0.9rem';
+                    seriesDiv.style.marginLeft = '10px';
+                    seriesDiv.style.color = 'var(--muted)';
+                    seriesDiv.innerHTML = `Serie ${log.Serie}: <strong>${log["Peso (kg)"]} kg</strong> x ${log.Repeticiones} reps`;
+                    exDiv.appendChild(seriesDiv);
+
+                    if(log.Comentarios) notesSet.add(log.Comentarios);
+                });
+
+                if(notesSet.size > 0) {
+                    let notesDiv = document.createElement('div');
+                    notesDiv.style.marginTop = '8px';
+                    notesDiv.style.paddingTop = '8px';
+                    notesDiv.style.borderTop = '1px solid var(--border)';
+                    notesDiv.style.fontSize = '0.85rem';
+                    notesDiv.style.color = 'var(--accent)';
+                    notesSet.forEach(n => {
+                        notesDiv.innerHTML += `📌 <em>${n}</em><br>`;
+                    });
+                    exDiv.appendChild(notesDiv);
+                }
+                zonaDiv.appendChild(exDiv);
+            }
+            container.appendChild(zonaDiv);
+        }
+        renderProgressChart();
+    };
+
+    window.renderPRs = function(logs) {
+        const container = document.getElementById('historialPRContainer');
+        if(!logs || logs.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let maxWeights = {};
+        logs.forEach(log => {
+            const ex = log.Ejercicio;
+            const w = Number(log["Peso (kg)"]) || 0;
+            if(!maxWeights[ex] || w > maxWeights[ex]) maxWeights[ex] = w;
+        });
+
+        let prHtml = `<div style="background:rgba(255, 215, 0, 0.1); border: 1px solid #ffd700; padding: 12px; border-radius: 8px; margin-top: 20px;">
+                        <h4 style="margin:0 0 8px 0; color:#ffd700;">🌟 Récords Personales (30 días)</h4>
+                        <div style="display:flex; flex-wrap:wrap; gap:10px;">`;
+        Object.keys(maxWeights).forEach(ex => {
+            prHtml += `<span style="font-size:0.9rem; font-weight:bold;">🏆 ${ex}: ${maxWeights[ex]}kg</span>`;
+        });
+        prHtml += `</div></div>`;
+        container.innerHTML = prHtml;
+    };
 
     function populateExerciseChartSelector(logs) {
       const select = document.getElementById('chartExerciseSelect');
@@ -838,14 +929,34 @@
         opt.value = ex; opt.textContent = ex;
         select.appendChild(opt);
       });
-      if (uniqueEx.length > 0) renderProgressChart();
     }
 
     window.renderProgressChart = function() {
       const selectedEx = document.getElementById('chartExerciseSelect').value;
-      if (!selectedEx || !window.currentStudentData.logs) return;
+      const timeRange = document.getElementById('chartTimeRangeSelect').value;
+      const selectedIsoDate = document.getElementById('historialDatePicker').value;
 
-      const filteredLogs = window.currentStudentData.logs.filter(l => l.Ejercicio === selectedEx).reverse();
+      if (!selectedEx || !window.currentStudentData || !window.currentStudentData.logs) return;
+
+      let filteredLogs = window.currentStudentData.logs.filter(l => l.Ejercicio === selectedEx);
+
+      if(timeRange === 'selected') {
+          filteredLogs = filteredLogs.filter(l => l.isoDate === selectedIsoDate);
+      } else if(timeRange === '7') {
+          let d7 = new Date();
+          d7.setDate(d7.getDate() - 7);
+          let iso7 = d7.toISOString().split('T')[0];
+          filteredLogs = filteredLogs.filter(l => l.isoDate >= iso7);
+      } else {
+          let d30 = new Date();
+          d30.setDate(d30.getDate() - 30);
+          let iso30 = d30.toISOString().split('T')[0];
+          filteredLogs = filteredLogs.filter(l => l.isoDate >= iso30);
+      }
+
+      // Revertir para mostrar progreso cronológico real de izquierda a derecha
+      filteredLogs.reverse();
+
       const labels = filteredLogs.map(l => `${l.Fecha} (S${l.Serie})`);
       const weights = filteredLogs.map(l => Number(l["Peso (kg)"]) || 0);
 
@@ -1090,7 +1201,6 @@
       document.getElementById('editGlobalExName').value = ex.nombre || "";
       document.getElementById('editGlobalExZone').value = ex.zona || "";
       
-      // Mostrar observaciones guardadas
       document.getElementById('editGlobalExObs').value = ex.observaciones || "";
       
       window.currentEditExImages = ex.imageUrls ? [...ex.imageUrls] : [];
@@ -1388,7 +1498,7 @@
         } else {
            window.currentStudentData.rutina = JSON.parse(JSON.stringify(found.rutina));
         }
-        window.currentEditorDay = null; // Reiniciar para que tome el primer día de la nueva plantilla
+        window.currentEditorDay = null; 
         renderEditor();
         if(window.editorContext.type === 'student') renderRoutineDetails();
         alert("✅ Plantilla aplicada.");
@@ -1576,7 +1686,6 @@
       const rut = getActiveRoutine();
       const days = Object.keys(rut || {});
       
-      // Auto-seleccionar el primer día si no hay ninguno seleccionado o si se eliminó el activo
       if (days.length > 0 && !days.includes(window.currentEditorDay)) {
          window.currentEditorDay = days[0];
       } else if (days.length === 0) {
@@ -1686,7 +1795,7 @@
 
     window.closeEditDayExercisesModal = function() {
       document.getElementById('editDayExercisesModal').classList.remove('show');
-      renderEditorSelectedDay(); // Actualizar vista resumen al cerrar
+      renderEditorSelectedDay(); 
     };
 
     function populateZoneDropdowns() {
@@ -1792,7 +1901,7 @@
       document.getElementById('editSingleExSets').value = ex.sets || 3;
       document.getElementById('editSingleExWeights').value = ex.weights ? ex.weights.join(", ") : (ex.weight || "");
       document.getElementById('editSingleExReps').value = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || "");
-      document.getElementById('editSingleExNotes').value = ex.notes || ""; // CARGAMOS LA NOTA
+      document.getElementById('editSingleExNotes').value = ex.notes || ""; 
       
       document.getElementById('editSingleExerciseModal').classList.add('show');
     };
@@ -1807,7 +1916,7 @@
       const sets = Number(document.getElementById('editSingleExSets').value) || 3;
       const weightsInput = document.getElementById('editSingleExWeights').value.trim();
       const repsInput = document.getElementById('editSingleExReps').value.trim();
-      const notesInput = document.getElementById('editSingleExNotes').value.trim(); // LEEMOS LA NOTA
+      const notesInput = document.getElementById('editSingleExNotes').value.trim(); 
       
       let weightsArray = [];
       if (weightsInput.includes(',')) {
@@ -1831,7 +1940,7 @@
       rut[day][zone][idx].weights = weightsArray;
       rut[day][zone][idx].weight = weightsArray[0] || 0;
       rut[day][zone][idx].reps = repsArray;
-      rut[day][zone][idx].notes = notesInput; // GUARDAMOS LA NOTA
+      rut[day][zone][idx].notes = notesInput; 
       
       closeEditSingleExerciseModal();
       renderExercisesListEditor();
@@ -1871,7 +1980,7 @@
 
           div.innerHTML = `
             <div>
-              <span>🏋️ <strong>${ex.name}</strong> (${ex.sets || 3} series x [${displayReps}] reps @ [${displayWeights}]) ${imgCount > 0 ? `🖼️ (${imgCount})` : ''}</span>
+              <span>🏋️️ <strong>${ex.name}</strong> (${ex.sets || 3} series x [${displayReps}] reps @ [${displayWeights}]) ${imgCount > 0 ? `🖼️ (${imgCount})` : ''}</span>
               ${ex.notes ? `<div style="font-size:0.8rem; color:var(--accent); margin-top:2px;">📌 <em>${ex.notes}</em></div>` : ''}
             </div>
             <div style="display:flex; gap:8px;">
@@ -1950,9 +2059,9 @@
       <img src="logo chico.png" alt="Flor Sol Trainer" class="header-logo">
       
       <div class="user-menu-container">
-        <button id="themeToggleBtn" class="user-menu-btn" onclick="toggleTheme()" style="padding: 8px 10px; font-size: 1.1rem; border-radius: 50%;">☀️</button>
+        <button id="themeToggleBtn" class="user-menu-btn" onclick="toggleTheme()">☀️</button>
         
-        <button class="user-menu-btn" onclick="openNotifModal()" style="position: relative; padding: 8px 10px;">
+        <button class="user-menu-btn" onclick="openNotifModal()" style="position: relative;">
           🔔 <span id="notifBadge" class="badge-notif">0</span>
         </button>
         <button class="user-menu-btn" onclick="document.getElementById('userMenuDropdown').classList.toggle('show')">
@@ -2082,7 +2191,7 @@
           <div style="font-size: 0.95rem; display: flex; flex-direction: column; gap: 8px;">
             <div><strong>📧 Email:</strong> <span id="lblEmail">...</span></div>
             <div><strong>💰 Último pago:</strong> <span id="lblPago">...</span></div>
-            <div><strong>⚠️ Patologías:</strong> <span id="lblPatologias" style="color:var(--danger);">...</span></div>
+            <div><strong>⚠️️ Patologías:</strong> <span id="lblPatologias" style="color:var(--danger);">...</span></div>
             
             <div style="margin-top: 8px;">
               <strong>📝 Notas del Entrenador:</strong>
@@ -2092,7 +2201,10 @@
         </div>
 
         <div class="card" id="studentDataEdit" style="display: none; border-left: 4px solid var(--accent);">
-          <h3>✏️ Editando Datos</h3>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0;">✏️ Editando Datos</h3>
+            <button class="btn-danger" onclick="deleteCurrentStudent()" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">🗑️ Eliminar Alumno</button>
+          </div>
           <div style="display:flex; align-items:center; gap: 15px; margin-bottom:15px;">
             <img id="previewStudentPhoto" src="" class="profile-img-circular" alt="Foto">
             <div>
@@ -2147,25 +2259,51 @@
       <!-- Pestaña Historial -->
       <div id="subtab-content-historial-avance" class="sub-tab-content" style="display: none;">
         <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap:10px;">
-            <h3 style="margin:0;">📊 Historial y Avance (30 Días)</h3>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap:10px; margin-bottom: 15px;">
+            <h3 style="margin:0;">📈 Historial de Entrenamientos</h3>
             <button class="btn-main" onclick="generateConsolidatedPDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">📄 Exportar Ficha PDF</button>
           </div>
-          <div style="margin-top:15px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
-            <label>Seleccionar ejercicio para ver progreso de cargas:</label>
-            <select id="chartExerciseSelect" onchange="renderProgressChart()"></select>
-            <div style="position: relative; height:300px; width:100%;"><canvas id="progressChart"></canvas></div>
+
+          <!-- Sección de Entrenamiento Seleccionado (Calendario y Rutina del Día) -->
+          <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;">
+                 <h4 style="margin:0; color:var(--accent);" id="historialSelectedDateDisplay">📅 Seleccionar Fecha</h4>
+                 <div style="display: flex; gap: 8px; align-items: center;">
+                     <label style="margin:0; font-size:0.85rem;">Ver otra fecha:</label>
+                     <input type="date" id="historialDatePicker" onchange="changeHistorialDate()" style="margin:0; width:auto; padding: 6px; background: var(--card);">
+                 </div>
+              </div>
+              <div id="historialSelectedWorkoutDetails">
+                 <p style='color:var(--muted); font-size: 0.9rem;'>⏳ Consultando registros...</p>
+              </div>
           </div>
-          <div style="margin-top: 20px;">
-            <div id="unifiedLogsContainer"></div>
+
+          <!-- Gráfico de Progreso -->
+          <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+            <h4 style="margin-top:0;">📊 Evolución de Cargas</h4>
+            <div class="grid-2">
+                <div>
+                    <label>Ejercicio:</label>
+                    <select id="chartExerciseSelect" onchange="renderProgressChart()"></select>
+                </div>
+                <div>
+                    <label>Rango de tiempo:</label>
+                    <select id="chartTimeRangeSelect" onchange="renderProgressChart()">
+                        <option value="selected">Día Seleccionado</option>
+                        <option value="7">Últimos 7 días</option>
+                        <option value="30" selected>Últimos 30 días</option>
+                    </select>
+                </div>
+            </div>
+            <div style="position: relative; height:300px; width:100%; margin-top:15px;"><canvas id="progressChart"></canvas></div>
+          </div>
+
+          <!-- Récords Personales (Cargas Máximas) -->
+          <div id="historialPRContainer">
+             <!-- Récords inyectados dinámicamente aquí -->
           </div>
         </div>
       </div>
-
-      <div style="margin-top: 20px; margin-bottom: 40px; text-align: center;">
-        <button class="btn-danger" onclick="deleteCurrentStudent()" style="width: auto; padding: 10px 18px;">🗑️ Eliminar Alumno de la Base de Datos</button>
-      </div>
-      
     </div>
   </div>
 
@@ -2318,14 +2456,14 @@
       </div>
       
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button class="btn-danger" style="width:auto; padding: 10px 20px;" onclick="deleteCurrentTemplate()">🗑️ Eliminar</button>
+        <button class="btn-danger" style="width:auto; padding: 10px 20px;" onclick="deleteCurrentTemplate()">🗑️️ Eliminar</button>
         <button class="btn-main" style="width:auto; padding: 10px 20px;" onclick="editCurrentTemplate()">✏️ Editar</button>
         <button class="btn-sec" style="width:auto; padding: 10px 20px;" onclick="downloadTemplatePDF()">⬇️ Descargar</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: Nombre de la nueva Plantilla (En lugar de prompt) -->
+  <!-- MODAL: Nombre de la nueva Plantilla -->
   <div id="newTemplatePromptModal" class="modal-overlay" style="z-index: 3500;">
     <div class="modal-content" style="max-width: 400px; border-left: 4px solid var(--accent);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
