@@ -134,7 +134,7 @@
   <!-- Módulos de Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -164,6 +164,9 @@
     window.alumnoId = new URLSearchParams(window.location.search).get('id') || "";
     window.studentDocRef = null;
     window.isSyncing = false;
+
+    // Exportar db globalmente para viewExerciseDetails
+    window.db = db;
 
     // Cerrar modales tocando afuera
     window.onclick = function(event) {
@@ -453,18 +456,36 @@
       let logsToShow = [];
       let displayDate = "";
       
+      // Función para asegurar formato estricto (D/M/YYYY)
+      const normalizeDate = (dateStr) => {
+          if(!dateStr) return "";
+          const p = dateStr.split('/');
+          if(p.length !== 3) return dateStr;
+          return `${parseInt(p[0], 10)}/${parseInt(p[1], 10)}/${parseInt(p[2], 10)}`;
+      };
+
+      const todayStr = normalizeDate(new Date().toLocaleDateString('es-AR'));
+      
       if(targetDate) {
-          const parts = targetDate.split('-');
-          displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
-          const found = window.historialCompleto.find(h => h.fecha === displayDate);
-          if(found && found.logs) logsToShow = found.logs;
+          const parts = targetDate.split('-'); // Formato del input es YYYY-MM-DD
+          const d = parseInt(parts[2], 10);
+          const m = parseInt(parts[1], 10);
+          const y = parseInt(parts[0], 10);
+          displayDate = `${d}/${m}/${y}`;
+          
+          if (displayDate === todayStr && window.sessionLogs.length > 0) {
+              logsToShow = window.sessionLogs;
+          } else {
+              const found = window.historialCompleto.find(h => normalizeDate(h.fecha) === displayDate);
+              if(found && found.logs) logsToShow = found.logs;
+          }
       } else {
           if(window.sessionLogs.length > 0) {
               logsToShow = window.sessionLogs;
-              displayDate = new Date().toLocaleDateString('es-AR');
+              displayDate = todayStr;
           } else if(window.historialCompleto.length > 0) {
               logsToShow = window.historialCompleto[0].logs || [];
-              displayDate = window.historialCompleto[0].fecha;
+              displayDate = normalizeDate(window.historialCompleto[0].fecha);
           }
       }
       
@@ -624,14 +645,49 @@
       });
     };
     
-    window.viewExerciseDetails = function(day, zone, exIndex) {
+    // Función Asyncrona que va a buscar info Global para no perder fotos agregadas post-creación
+    window.viewExerciseDetails = async function(day, zone, exIndex) {
         const ex = window.workoutData[day][zone][exIndex];
         document.getElementById('verExTitulo').textContent = ex.name;
         
         const gallery = document.getElementById('verExGaleria');
-        gallery.innerHTML = '';
-        const images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
+        const notas = document.getElementById('verExNotas');
+
+        gallery.innerHTML = '<p style="color:var(--muted); font-size: 0.9rem; text-align:center; width:100%;">Cargando detalles...</p>';
+        gallery.style.display = 'block';
+        notas.style.display = 'none';
+        document.getElementById('modalVerEjercicio').style.display = 'flex';
+
+        // 1. Datos que ya tiene la rutina guardados
+        let images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
+        let localNote = ex.notes || ex.nota || ex.nota_alumno || '';
+        let globalObs = ex.observaciones || ex.detalles_tecnicos || '';
+
+        // 2. Traer info fresca de la Base Global si es necesario
+        try {
+            // Importación dinámica a partir de la instancia db configurada arriba
+            const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+            const q = query(collection(window.db, "ejercicios_base"), where("nombre", "==", ex.name));
+            const snap = await getDocs(q);
+            
+            if(!snap.empty) {
+                const globalEx = snap.docs[0].data();
+                // Si la rutina vieja no tenía las fotos, pero en el banco ya hay: las mostramos.
+                if(images.length === 0) {
+                    if(globalEx.imageUrls && globalEx.imageUrls.length > 0) images = globalEx.imageUrls;
+                    else if(globalEx.imageUrl) images = [globalEx.imageUrl];
+                }
+                // Si la rutina vieja no tenía observaciones globales: las mostramos.
+                if(!globalObs) {
+                    globalObs = globalEx.observaciones || globalEx.detalles_tecnicos || '';
+                }
+            }
+        } catch(e) {
+            console.error("Error buscando info global del ejercicio:", e);
+        }
         
+        // 3. Renderizar Galería
+        gallery.innerHTML = '';
         if (images.length > 0) {
             images.forEach(url => {
                 if(url && url.trim() !== '') gallery.innerHTML += `<img src="${url}" alt="Técnica">`;
@@ -640,27 +696,27 @@
                 gallery.style.display = 'flex';
             } else {
                 gallery.innerHTML = '<p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 10px;">No hay imágenes ilustrativas cargadas.</p>';
-                gallery.style.display = 'block';
             }
         } else {
             gallery.innerHTML = '<p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 10px;">No hay imágenes ilustrativas cargadas.</p>';
-            gallery.style.display = 'block';
         }
 
-        const notas = document.getElementById('verExNotas');
-        const obsText = ex.observaciones || ex.detalles_tecnicos || '';
-        
-        if (obsText.trim() !== '') {
-            notas.innerHTML = `💡 <strong style="color: var(--text);">Detalles Técnicos:</strong> ${obsText}`;
+        // 4. Renderizar Notas Combinadas
+        let combinedNotes = '';
+        if (localNote.trim() !== '') {
+            combinedNotes += `<div style="margin-bottom: ${globalObs ? '12px' : '0'};">📌 <strong style="color: var(--accent);">Nota para ti:</strong> ${localNote}</div>`;
+        }
+        if (globalObs.trim() !== '') {
+            combinedNotes += `<div>💡 <strong style="color: var(--text);">Detalles Técnicos:</strong> ${globalObs}</div>`;
+        }
+
+        if (combinedNotes !== '') {
+            notas.innerHTML = combinedNotes;
             notas.style.display = 'block';
             notas.style.borderLeft = '3px solid var(--accent)';
             notas.style.background = 'var(--input-bg)';
             notas.style.padding = '10px 14px';
-        } else {
-            notas.style.display = 'none';
         }
-
-        document.getElementById('modalVerEjercicio').style.display = 'flex';
     };
 
     let timerInterval = null;
@@ -785,10 +841,23 @@
 
       if (window.studentDocRef) {
         try {
+            // Importar librerías específicas necesarias aquí
+            const { updateDoc, setDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+            
+            // 1. Guardar el estado local de "entrenamiento de hoy"
             await updateDoc(window.studentDocRef, {
                 entrenamiento_hoy: { fecha: entry.Fecha, logs: window.sessionLogs },
                 historial_fechas: window.historialFechas
             });
+
+            // 2. Persistir oficialmente en la subcolección para que el calendario tenga de donde leer
+            const dateId = entry.Fecha.replaceAll('/', '-'); 
+            const histDocRef = doc(window.db, `alumnos/${window.alumnoId}/historial`, dateId);
+            await setDoc(histDocRef, {
+                fecha: entry.Fecha,
+                logs: window.sessionLogs
+            }, { merge: true });
+
         } catch (error) {
             console.error("Error al persistir rutina en Firebase:", error);
         }
@@ -866,10 +935,20 @@
 
         if (window.studentDocRef) {
             try {
+                const { updateDoc, setDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
                 const todayStr = new Date().toLocaleDateString('es-AR');
+                
                 await updateDoc(window.studentDocRef, {
                     entrenamiento_hoy: { fecha: todayStr, logs: window.sessionLogs }
                 });
+
+                const dateId = todayStr.replaceAll('/', '-'); 
+                const histDocRef = doc(window.db, `alumnos/${window.alumnoId}/historial`, dateId);
+                await setDoc(histDocRef, {
+                    fecha: todayStr,
+                    logs: window.sessionLogs
+                }, { merge: true });
+
             } catch (error) {
                 console.error("Error al actualizar Firebase:", error);
             }
@@ -995,7 +1074,7 @@
   <div id="loadingState" class="loading-overlay">⏳ Verificando acceso seguro...</div>
 
   <div class="card" id="studentLoginCard" style="display: none; text-align: center; padding: 40px 20px; max-width: 400px; margin: 40px auto;">
-    <h2>🏋️ Bienvenido a tu Tracker</h2>
+    <h2>🏋️ Bienvenido a tu entrenamiento</h2>
     <p style="color: var(--muted); margin-bottom: 20px;">Inicia sesión con tu cuenta de Google autorizada.</p>
     <button class="btn-main" onclick="loginStudentGoogle()">Iniciar Sesión con Google</button>
     <div id="authError" style="color: var(--danger); margin-top: 16px; font-size: 0.9rem; font-weight: bold;"></div>
@@ -1011,8 +1090,7 @@
         <button class="icon-btn" title="Notificaciones" onclick="openNotifications()">
           🔔<div id="notificationDot" class="notification-dot"></div>
         </button>
-        <button class="icon-btn" id="themeIcon" onclick="toggleTheme()" title="Cambiar Tema">☀</button>
-        <button class="icon-btn" style="font-size: 0.85rem;" onclick="logoutStudent()">Salir</button>
+        <button class="icon-btn" id="themeIcon" onclick="toggleTheme()" title="Cambiar Tema">☁️</button>
       </div>
     </header>
 
@@ -1093,18 +1171,18 @@
           <label>Comentarios (Opcional)</label>
           <textarea id="workoutComments" placeholder="Ej: Costó la última, molestias, sentí bien el peso..."></textarea>
 
-          <button class="btn-main" onclick="logSet()">Completar Serie y Descansar</button>
+          <button class="btn-main" onclick="logSet()">Completar serie y descansar</button>
           <div class="sync-status" style="margin-top: 12px;" id="syncBadge"></div>
         </div>
 
         <!-- HISTORIAL DE LA SESIÓN -->
         <div class="card">
-          <h3 style="margin-bottom: 12px; font-size: 1.1rem;">📊 Series Completadas Hoy</h3>
+          <h3 style="margin-bottom: 12px; font-size: 1.1rem;">📊 Series completadas hoy</h3>
           <table class="session-log-table">
             <thead>
               <tr>
                 <th>Ejercicio</th>
-                <th>S</th>
+                <th>Serie</th>
                 <th>Carga</th>
                 <th style="width: 40px;"></th>
               </tr>
@@ -1135,7 +1213,7 @@
   <div id="modalNotificaciones" class="modal-overlay">
     <div class="modal-content">
       <button class="close-modal" onclick="document.getElementById('modalNotificaciones').style.display='none'">&times;</button>
-      <h2 style="margin-bottom: 20px; font-size: 1.4rem;">📬 Buzón y Alertas</h2>
+      <h2 style="margin-bottom: 20px; font-size: 1.4rem;">📬 Notificaciones</h2>
       <div id="notificacionesContent"></div>
     </div>
   </div>
@@ -1197,7 +1275,7 @@
   <div id="shareOverlay" class="modal-overlay" style="flex-direction: column;">
     <div class="modal-content" id="shareCardCapture" style="background: var(--card); border: 1px solid var(--border); text-align: center; padding: 30px 20px; margin-bottom: 16px;">
       <img src="logo chico.png" alt="Logo Flor Sol Trainer" style="height: 45px; margin-bottom: 16px; object-fit: contain;">
-      <h2 style="color: var(--accent); margin-bottom: 8px; font-size: 1.6rem;">¡MISIÓN CUMPLIDA! 🚀</h2>
+      <h2 style="color: var(--accent); margin-bottom: 8px; font-size: 1.6rem;">¡MISIÓN CUMPLIDA!</h2>
       <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 24px;">Resumen de tu entrenamiento de hoy</p>
 
       <div style="display: flex; gap: 8px; margin-bottom: 10px;">
@@ -1217,7 +1295,7 @@
     </div>
     
     <div style="width: 100%; max-width: 400px; display: flex; gap: 10px;">
-        <button class="btn-sec" style="flex: 1; background: var(--card);" onclick="descargarShareCard()">⬇️ Descargar</button>
+        <button class="btn-sec" style="flex: 1; background: var(--card);" onclick="descargarShareCard()">Descargar</button>
         <button class="btn-main" style="flex: 1;" onclick="document.getElementById('shareOverlay').style.display='none'">Excelente</button>
     </div>
   </div>
