@@ -5,17 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mi Entrenamiento - Flor Sol Trainer</title>
   
-  <!-- ENLACE AL MANIFEST PARA PWA -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#121214">
   <link rel="apple-touch-icon" href="logo chico.png">
 
-  <!-- LIBRERÍAS (CHART.JS PARA GRÁFICOS Y HTML2CANVAS PARA CAPTURAS) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
-    /* VARIABLES UNIFICADAS CON ADMIN */
     :root {
       --bg: #121214;
       --card: #1e1e24;
@@ -29,7 +26,6 @@
       --shadow: rgba(0, 0, 0, 0.4);
     }
 
-    /* Tema Claro Dinámico */
     @media (prefers-color-scheme: light) {
       :root {
         --bg: #f4f5f8; --card: #ffffff; --text: #1a1a1e; --muted: #6c707e;
@@ -53,7 +49,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: var(--bg); color: var(--text); transition: background-color 0.3s, color 0.3s; padding-bottom: 40px; }
 
-    /* CABECERA TOP */
     .top-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
     .top-header img.logo { height: 30px; width: auto; object-fit: contain; }
     .header-actions { display: flex; gap: 12px; align-items: center; }
@@ -61,27 +56,23 @@
     .icon-btn:hover { background: var(--border); }
     .notification-dot { position: absolute; top: 0; right: 0; width: 10px; height: 10px; background: var(--danger); border-radius: 50%; display: none; }
 
-    /* NAVEGACIÓN PRINCIPAL */
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
     .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
     .tab-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); padding: 14px; text-align: center; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; }
     .tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
 
-    /* MÓDULOS */
     .module-section { display: none; animation: fadeIn 0.3s ease; }
     .module-section.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px var(--shadow); }
 
-    /* PERFIL HEADER */
     .profile-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
     .profile-info { display: flex; align-items: center; gap: 16px; }
     .avatar { width: 60px; height: 60px; border-radius: 50%; background: var(--border); object-fit: cover; }
     .profile-details h2 { font-size: 1.2rem; margin-bottom: 4px; }
     .profile-details p { font-size: 0.85rem; color: var(--muted); }
     
-    /* BOTONES GLOBALES */
     button.btn-sec { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
     button.btn-sec:hover { background: var(--border); }
     button.btn-main { background: var(--accent); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 1rem; width: 100%; cursor: pointer; transition: 0.2s; }
@@ -89,18 +80,15 @@
     button.btn-done { background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 14px; border-radius: 12px; font-weight: 700; font-size: 1rem; width: 100%; cursor: pointer; margin-top: 16px; transition: 0.2s;}
     button.btn-done:hover { background: rgba(0, 230, 118, 0.1); }
 
-    /* NAVEGACIÓN DE DÍAS */
     .days-nav { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 16px; scrollbar-width: none; }
     .days-nav::-webkit-scrollbar { display: none; }
     .day-pill { padding: 10px 20px; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; white-space: nowrap; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--muted); }
     .day-pill.active { background: var(--text); color: var(--bg); border-color: var(--text); }
 
-    /* LISTADO DE EJERCICIOS */
     .zone-block { margin-bottom: 24px; }
     .zone-title { font-size: 1.1rem; color: var(--accent); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-    .ex-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; padding: 16px; }
+    .ex-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; padding: 16px; transition: background-color 0.3s; }
     
-    /* ESTILOS DEL MÓDULO DE ENTRENAMIENTO */
     .timer-display { font-size: 3rem; font-weight: bold; text-align: center; color: var(--accent); margin: 10px 0; font-variant-numeric: tabular-nums; }
     .grid-timer { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
@@ -118,7 +106,6 @@
 
     .sync-badge { background: rgba(255, 152, 0, 0.1); color: #ff9800; border: 1px solid #ff9800; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; text-align: center; margin-top: 16px; display: none; }
 
-    /* MODAL Y SHARE CARD */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(5px); }
     .modal-content { background: var(--card); width: 100%; max-width: 400px; border-radius: 20px; padding: 24px; position: relative; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto;}
     .close-modal { position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; z-index: 10; }
@@ -131,7 +118,6 @@
     .notification-card { background: var(--input-bg); border: 1px solid var(--border); padding: 16px; border-radius: 12px; margin-bottom: 12px; }
   </style>
 
-  <!-- Módulos de Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, query, where, getDocs, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -165,10 +151,8 @@
     window.studentDocRef = null;
     window.isSyncing = false;
 
-    // Exportar db globalmente para viewExerciseDetails
     window.db = db;
 
-    // Cerrar modales tocando afuera
     window.onclick = function(event) {
       if (event.target.classList.contains('modal-overlay')) {
         event.target.style.display = 'none';
@@ -203,6 +187,14 @@
             window.spreadsheetId = data.spreadsheet_id || data.google_sheet_url || "";
             window.trainerNotes = data.nota_para_alumno || "";
 
+            // Routine Update Detection
+            const routineStr = JSON.stringify(window.workoutData);
+            const cachedRoutine = localStorage.getItem('fst_cached_routine');
+            if (cachedRoutine && cachedRoutine !== routineStr) {
+                localStorage.setItem('hide_routine_update', 'false');
+            }
+            localStorage.setItem('fst_cached_routine', routineStr);
+
             const userAvatar = data.foto_url || data.foto || data.foto_perfil || "https://ui-avatars.com/api/?name=Alumno&background=random";
             document.getElementById('profileAvatar').src = userAvatar;
             document.getElementById('modalProfileAvatar').src = userAvatar;
@@ -213,14 +205,14 @@
             document.getElementById('modalProfileMetrics').textContent = `${data.edad || '--'} años | ${data.peso || '--'} kg | ${data.altura || '--'} cm`;
             document.getElementById('userEmailDisplay').textContent = user.email;
 
-            // Notificaciones
             if(window.trainerNotes && localStorage.getItem('hide_note') !== window.trainerNotes) {
+              document.getElementById('notificationDot').style.display = 'block';
+            } else if (localStorage.getItem('hide_routine_update') === 'false') {
               document.getElementById('notificationDot').style.display = 'block';
             } else if (localStorage.getItem('hide_update') !== 'true' && Object.keys(window.workoutData).length > 0) {
               document.getElementById('notificationDot').style.display = 'block';
             }
 
-            // Persistencia Hoy
             const todayStr = new Date().toLocaleDateString('es-AR');
             if (data.entrenamiento_hoy && data.entrenamiento_hoy.fecha === todayStr) {
                 window.sessionLogs = data.entrenamiento_hoy.logs || [];
@@ -239,8 +231,6 @@
             window.renderDaysNav();
             window.processSyncQueue();
             window.updateProfileStats();
-            
-            // Cargar Historial Completo para Récords y Resumen
             window.fetchHistorialData();
 
           } else {
@@ -268,7 +258,6 @@
             snap.forEach(doc => {
                 window.historialCompleto.push(doc.data());
             });
-            // Ordenar por fecha descendente
             window.historialCompleto.sort((a,b) => {
                 const pA = a.fecha.split('/');
                 const pB = b.fecha.split('/');
@@ -348,6 +337,19 @@
           </div>
         `;
       }
+
+      if (localStorage.getItem('hide_routine_update') === 'false') {
+        hasNotifications = true;
+        notifContent.innerHTML += `
+          <div class="notification-card" id="notif-routine">
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+              <div style="font-size: 0.8rem; color: var(--accent); margin-bottom: 4px; font-weight:bold;">¡Rutina Modificada!</div>
+              <button onclick="dismissNotification('routine')" style="background:transparent; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer; line-height:1;">&times;</button>
+            </div>
+            <p>Tu entrenador ha actualizado los parámetros de tu rutina.</p>
+          </div>
+        `;
+      }
       
       if (localStorage.getItem('hide_update') !== 'true' && Object.keys(window.workoutData).length > 0) {
         hasNotifications = true;
@@ -374,6 +376,10 @@
            localStorage.setItem('hide_note', value);
            const el = document.getElementById('notif-note');
            if(el) el.style.display = 'none';
+       } else if (type === 'routine') {
+           localStorage.setItem('hide_routine_update', 'true');
+           const el = document.getElementById('notif-routine');
+           if(el) el.style.display = 'none';
        } else if (type === 'sys') {
            localStorage.setItem('hide_update', 'true');
            const el = document.getElementById('notif-sys');
@@ -391,19 +397,32 @@
       const uniqueDays = new Set(history).size;
       document.getElementById('statTotalDays').textContent = `${uniqueDays} días`;
       
-      const today = new Date();
-      const lastTrainStr = history[history.length - 1];
       let status = "Sin Iniciar";
       
-      if(lastTrainStr) {
-        const parts = lastTrainStr.split('/');
-        const lastTrainDate = new Date(parts[2], parts[1]-1, parts[0]);
-        const diffTime = Math.abs(today - lastTrainDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if(history.length > 0) {
+        const today = new Date();
+        const daysInRoutine = Object.keys(window.workoutData).length || 3;
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
         
-        if (diffDays <= 3) status = "🔥 En Racha";
-        else if (diffDays <= 7) status = "✅ Activo";
-        else status = "💤 Inactivo";
+        const lastWeekDates = new Set();
+        history.forEach(dateStr => {
+            const parts = dateStr.split('/');
+            if(parts.length === 3) {
+                const trainDate = new Date(parts[2], parts[1]-1, parts[0]);
+                if(trainDate >= sevenDaysAgo) {
+                    lastWeekDates.add(dateStr);
+                }
+            }
+        });
+        
+        if (lastWeekDates.size >= daysInRoutine) {
+            status = "🔥 En Racha";
+        } else if (lastWeekDates.size > 0) {
+            status = "✅ Activo";
+        } else {
+            status = "💤 Inactivo";
+        }
       }
       document.getElementById('statStatus').textContent = status;
     };
@@ -456,9 +475,12 @@
       let logsToShow = [];
       let displayDate = "";
       
-      // Función para asegurar formato estricto (D/M/YYYY)
       const normalizeDate = (dateStr) => {
           if(!dateStr) return "";
+          if (dateStr.includes('-')) {
+             const p = dateStr.split('-');
+             return `${parseInt(p[2], 10)}/${parseInt(p[1], 10)}/${parseInt(p[0], 10)}`;
+          }
           const p = dateStr.split('/');
           if(p.length !== 3) return dateStr;
           return `${parseInt(p[0], 10)}/${parseInt(p[1], 10)}/${parseInt(p[2], 10)}`;
@@ -467,11 +489,7 @@
       const todayStr = normalizeDate(new Date().toLocaleDateString('es-AR'));
       
       if(targetDate) {
-          const parts = targetDate.split('-'); // Formato del input es YYYY-MM-DD
-          const d = parseInt(parts[2], 10);
-          const m = parseInt(parts[1], 10);
-          const y = parseInt(parts[0], 10);
-          displayDate = `${d}/${m}/${y}`;
+          displayDate = normalizeDate(targetDate);
           
           if (displayDate === todayStr && window.sessionLogs.length > 0) {
               logsToShow = window.sessionLogs;
@@ -612,7 +630,16 @@
 
         zones[zone].forEach((ex, exIndex) => {
           const exCard = document.createElement('div');
+          
+          const loggedSetsCount = window.sessionLogs.filter(log => log.Ejercicio === ex.name).length;
+          const targetSets = Number(ex.sets || 3);
+          const isComplete = loggedSetsCount >= targetSets;
+          
           exCard.className = 'ex-card';
+          if (isComplete) {
+              exCard.style.background = 'rgba(0, 230, 118, 0.05)';
+              exCard.style.borderColor = 'var(--accent)';
+          }
           
           const displayWeights = ex.weights ? ex.weights.join(", ") : (ex.weight || 0);
           const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || 0);
@@ -623,18 +650,20 @@
               notasHtml = `<div style="font-size: 0.85rem; color: var(--accent); margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">📌 <strong>Nota:</strong> ${notaText}</div>`;
           }
 
+          const titleHtml = isComplete ? `🏋️ ${ex.name} <span style="color: var(--accent); margin-left: 6px; font-size: 0.9rem;">✅</span>` : `🏋️ ${ex.name}`;
+
           exCard.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: ${notasHtml ? '0' : '0'};">
                 <div style="flex-grow: 1; padding-right: 10px;">
-                  <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; color: var(--text);">🏋️ ${ex.name}</div>
+                  <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; color: var(--text);">${titleHtml}</div>
                   <div style="font-size: 0.85rem; color: var(--muted); line-height: 1.4;">
-                    ${ex.sets || 3} series x ${displayReps} reps <br>
+                    ${targetSets} series x ${displayReps} reps <br>
                     Carga: ${displayWeights}kg
                   </div>
                 </div>
                 <div style="display: flex; gap: 8px;">
                     <button class="btn-sec" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.viewExerciseDetails('${dayName}', '${zone}', ${exIndex})">Ver</button>
-                    <button class="btn-main" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.startExercise('${dayName}', '${zone}', ${exIndex})">Empezar</button>
+                    <button class="btn-main" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.startExercise('${dayName}', '${zone}', ${exIndex})">Ir</button>
                 </div>
             </div>
             ${notasHtml}
@@ -643,9 +672,16 @@
         });
         content.appendChild(zoneBlock);
       });
+
+      if (window.trainerNotes && window.trainerNotes.trim() !== '') {
+          content.innerHTML += `
+          <div style="background: var(--input-bg); border-left: 3px solid var(--accent); padding: 16px; margin-top: 24px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow);">
+              <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 1rem;">💬 Observaciones de tu entrenador:</h4>
+              <p style="font-size: 0.9rem; color: var(--text); line-height: 1.5;">${window.trainerNotes}</p>
+          </div>`;
+      }
     };
     
-    // Función Asyncrona que va a buscar info Global para no perder fotos agregadas post-creación
     window.viewExerciseDetails = async function(day, zone, exIndex) {
         const ex = window.workoutData[day][zone][exIndex];
         document.getElementById('verExTitulo').textContent = ex.name;
@@ -658,26 +694,21 @@
         notas.style.display = 'none';
         document.getElementById('modalVerEjercicio').style.display = 'flex';
 
-        // 1. Datos que ya tiene la rutina guardados
         let images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
         let localNote = ex.notes || ex.nota || ex.nota_alumno || '';
         let globalObs = ex.observaciones || ex.detalles_tecnicos || '';
 
-        // 2. Traer info fresca de la Base Global si es necesario
         try {
-            // Importación dinámica a partir de la instancia db configurada arriba
             const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
             const q = query(collection(window.db, "ejercicios_base"), where("nombre", "==", ex.name));
             const snap = await getDocs(q);
             
             if(!snap.empty) {
                 const globalEx = snap.docs[0].data();
-                // Si la rutina vieja no tenía las fotos, pero en el banco ya hay: las mostramos.
                 if(images.length === 0) {
                     if(globalEx.imageUrls && globalEx.imageUrls.length > 0) images = globalEx.imageUrls;
                     else if(globalEx.imageUrl) images = [globalEx.imageUrl];
                 }
-                // Si la rutina vieja no tenía observaciones globales: las mostramos.
                 if(!globalObs) {
                     globalObs = globalEx.observaciones || globalEx.detalles_tecnicos || '';
                 }
@@ -686,7 +717,6 @@
             console.error("Error buscando info global del ejercicio:", e);
         }
         
-        // 3. Renderizar Galería
         gallery.innerHTML = '';
         if (images.length > 0) {
             images.forEach(url => {
@@ -701,10 +731,9 @@
             gallery.innerHTML = '<p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 10px;">No hay imágenes ilustrativas cargadas.</p>';
         }
 
-        // 4. Renderizar Notas Combinadas
         let combinedNotes = '';
         if (localNote.trim() !== '') {
-            combinedNotes += `<div style="margin-bottom: ${globalObs ? '12px' : '0'};">📌 <strong style="color: var(--accent);">Nota para ti:</strong> ${localNote}</div>`;
+            combinedNotes += `<div style="margin-bottom: ${globalObs ? '12px' : '0'};">📌 <strong style="color: var(--accent);">Nota para vos:</strong> ${localNote}</div>`;
         }
         if (globalObs.trim() !== '') {
             combinedNotes += `<div>💡 <strong style="color: var(--text);">Detalles Técnicos:</strong> ${globalObs}</div>`;
@@ -839,18 +868,19 @@
       window.sessionLogs.push(entry);
       window.renderSessionLogs();
 
+      if (window.currentDay) {
+         window.selectDay(window.currentDay, document.querySelector('.day-pill.active'));
+      }
+
       if (window.studentDocRef) {
         try {
-            // Importar librerías específicas necesarias aquí
             const { updateDoc, setDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
             
-            // 1. Guardar el estado local de "entrenamiento de hoy"
             await updateDoc(window.studentDocRef, {
                 entrenamiento_hoy: { fecha: entry.Fecha, logs: window.sessionLogs },
                 historial_fechas: window.historialFechas
             });
 
-            // 2. Persistir oficialmente en la subcolección para que el calendario tenga de donde leer
             const dateId = entry.Fecha.replaceAll('/', '-'); 
             const histDocRef = doc(window.db, `alumnos/${window.alumnoId}/historial`, dateId);
             await setDoc(histDocRef, {
@@ -933,6 +963,10 @@
         const deletedLog = window.sessionLogs.splice(index, 1)[0];
         window.renderSessionLogs();
 
+        if (window.currentDay) {
+            window.selectDay(window.currentDay, document.querySelector('.day-pill.active'));
+        }
+
         if (window.studentDocRef) {
             try {
                 const { updateDoc, setDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -966,6 +1000,24 @@
       const tbody = document.getElementById('sessionLogsBody');
       tbody.innerHTML = '';
       
+      let totalSetsDay = 0;
+      const dayKey = window.currentDay || document.getElementById('daySelect').value;
+      if (dayKey && window.workoutData[dayKey]) {
+        Object.keys(window.workoutData[dayKey]).forEach(zone => {
+          window.workoutData[dayKey][zone].forEach(ex => {
+            totalSetsDay += Number(ex.sets || 3);
+          });
+        });
+      }
+      
+      const completedSets = window.sessionLogs.length;
+      let progressPct = 0;
+      if (totalSetsDay > 0) {
+          progressPct = Math.min(Math.round((completedSets / totalSetsDay) * 100), 100);
+      }
+      document.getElementById('progressText').textContent = `${progressPct}%`;
+      document.getElementById('progressBar').style.width = `${progressPct}%`;
+
       if(window.sessionLogs.length === 0) {
          tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 16px;">Aún no registraste series hoy.</td></tr>`;
          return;
@@ -1070,7 +1122,6 @@
 </head>
 <body>
 
-  <!-- PANTALLA DE CARGA / LOGIN -->
   <div id="loadingState" class="loading-overlay">⏳ Verificando acceso seguro...</div>
 
   <div class="card" id="studentLoginCard" style="display: none; text-align: center; padding: 40px 20px; max-width: 400px; margin: 40px auto;">
@@ -1080,30 +1131,25 @@
     <div id="authError" style="color: var(--danger); margin-top: 16px; font-size: 0.9rem; font-weight: bold;"></div>
   </div>
 
-  <!-- INTERFAZ PRINCIPAL -->
   <div id="appInterface" style="display: none;">
-    
-    <!-- CABECERA SUPERIOR -->
     <header class="top-header">
       <img src="logo chico.png" alt="Flor Sol Trainer" class="logo" onerror="this.style.display='none'">
       <div class="header-actions">
         <button class="icon-btn" title="Notificaciones" onclick="openNotifications()">
           🔔<div id="notificationDot" class="notification-dot"></div>
         </button>
-        <button class="icon-btn" id="themeIcon" onclick="toggleTheme()" title="Cambiar Tema">☁️</button>
+        <button class="icon-btn" id="themeIcon" onclick="toggleTheme()" title="Cambiar Tema">☀</button>
+        <button class="icon-btn" style="font-size: 0.85rem;" onclick="logoutStudent()">Salir</button>
       </div>
     </header>
 
     <div class="container">
-      <!-- NAVEGACIÓN -->
       <div class="tabs">
         <div id="btn-rutina" class="tab-btn active" onclick="switchTab('rutina')">Mi Rutina</div>
         <div id="btn-entrenamiento" class="tab-btn" onclick="switchTab('entrenamiento')">Entrenamiento</div>
       </div>
 
-      <!-- MÓDULO 1: MI RUTINA -->
       <div id="modulo-rutina" class="module-section active">
-        <!-- PERFIL ESTÁTICO -->
         <div class="card" style="cursor: pointer;" onclick="toggleModal(true)">
           <div class="profile-header" style="margin-bottom: 0;">
             <div class="profile-info">
@@ -1124,9 +1170,7 @@
         </div>
       </div>
 
-      <!-- MÓDULO 2: ENTRENAMIENTO ACTIVO -->
       <div id="modulo-entrenamiento" class="module-section">
-        
         <div class="card">
           <div style="display:none;">
              <select id="daySelect"></select>
@@ -1137,7 +1181,6 @@
           <h2 id="alumnoNombreHeader" style="display:none;"></h2>
           <span id="userEmailDisplay" style="display:none;"></span>
 
-          <!-- Cronómetro Flotante -->
           <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
             <div id="timerExerciseName" style="text-align: center; color: var(--muted); margin-bottom: 10px; font-weight: bold; font-size: 1.1rem;">Selecciona un ejercicio</div>
             <div class="timer-display" id="timerDisplay">00:00</div>
@@ -1152,7 +1195,6 @@
             <button class="btn-sec" style="width: 100%;" onclick="resetTimer()">Detener Cronómetro</button>
           </div>
 
-          <!-- Casilleros de Registro -->
           <div class="grid-3">
             <div>
               <label id="setNumLabel">Serie Nº</label>
@@ -1171,18 +1213,28 @@
           <label>Comentarios (Opcional)</label>
           <textarea id="workoutComments" placeholder="Ej: Costó la última, molestias, sentí bien el peso..."></textarea>
 
-          <button class="btn-main" onclick="logSet()">Completar serie y descansar</button>
+          <button class="btn-main" onclick="logSet()">Completar Serie y Descansar</button>
           <div class="sync-status" style="margin-top: 12px;" id="syncBadge"></div>
         </div>
 
-        <!-- HISTORIAL DE LA SESIÓN -->
         <div class="card">
-          <h3 style="margin-bottom: 12px; font-size: 1.1rem;">📊 Series completadas hoy</h3>
+          <h3 style="margin-bottom: 12px; font-size: 1.1rem;">📊 Series Completadas Hoy</h3>
+          
+          <div style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px;">
+                <span>Progreso de la rutina diaria</span>
+                <span id="progressText" style="font-weight: bold; color: var(--accent);">0%</span>
+            </div>
+            <div style="width: 100%; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; height: 10px; overflow: hidden;">
+                <div id="progressBar" style="height: 100%; background: var(--accent); width: 0%; transition: width 0.4s ease;"></div>
+            </div>
+          </div>
+
           <table class="session-log-table">
             <thead>
               <tr>
                 <th>Ejercicio</th>
-                <th>Serie</th>
+                <th>S</th>
                 <th>Carga</th>
                 <th style="width: 40px;"></th>
               </tr>
@@ -1199,7 +1251,6 @@
     </div>
   </div>
   
-  <!-- MODAL: Ver Detalles de Ejercicio -->
   <div id="modalVerEjercicio" class="modal-overlay">
     <div class="modal-content">
       <button class="close-modal" onclick="document.getElementById('modalVerEjercicio').style.display='none'">&times;</button>
@@ -1209,7 +1260,6 @@
     </div>
   </div>
 
-  <!-- MODAL DE NOTIFICACIONES -->
   <div id="modalNotificaciones" class="modal-overlay">
     <div class="modal-content">
       <button class="close-modal" onclick="document.getElementById('modalNotificaciones').style.display='none'">&times;</button>
@@ -1218,7 +1268,6 @@
     </div>
   </div>
 
-  <!-- MODAL DE PERFIL -->
   <div id="modalPerfil" class="modal-overlay">
     <div class="modal-content">
       <button class="close-modal" onclick="toggleModal(false)">&times;</button>
@@ -1236,7 +1285,6 @@
         <p style="color: var(--muted); font-size: 0.9rem;">📈 Estado Actual: <strong id="statStatus" style="color: var(--accent);">Sin Iniciar</strong></p>
       </div>
 
-      <!-- Historial Evolución -->
       <div style="margin-bottom: 24px;">
         <h4 style="font-size: 1rem; margin-bottom: 12px; color: var(--text);">Historial de Evolución</h4>
         <div style="background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
@@ -1244,10 +1292,9 @@
         </div>
       </div>
 
-      <!-- Último Entrenamiento -->
       <div style="margin-bottom: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h4 style="font-size: 1rem; color: var(--text);">🏋️ Último Entrenamiento</h4>
+            <h4 style="font-size: 1rem; color: var(--text);">🏋️ Mis entrenamientos</h4>
             <div style="position: relative;">
                <button class="btn-sec" style="padding: 4px 8px; font-size: 1.2rem; border: none; background: transparent;" onclick="document.getElementById('histDatePicker').showPicker()">📅</button>
                <input type="date" id="histDatePicker" style="visibility: hidden; position: absolute; right: 0; width: 0; height: 0;" onchange="loadHistDate(this.value)">
@@ -1259,7 +1306,6 @@
         </div>
       </div>
 
-      <!-- Récords Personales -->
       <div style="margin-bottom: 24px;">
         <h4 style="font-size: 1rem; margin-bottom: 12px; color: var(--text);">🏆 Récords Personales (30 días)</h4>
         <div id="prListContainer" style="background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border); font-size: 0.9rem;">
@@ -1271,7 +1317,6 @@
     </div>
   </div>
 
-  <!-- MODAL SHARE CARD -->
   <div id="shareOverlay" class="modal-overlay" style="flex-direction: column;">
     <div class="modal-content" id="shareCardCapture" style="background: var(--card); border: 1px solid var(--border); text-align: center; padding: 30px 20px; margin-bottom: 16px;">
       <img src="logo chico.png" alt="Logo Flor Sol Trainer" style="height: 45px; margin-bottom: 16px; object-fit: contain;">
@@ -1296,9 +1341,11 @@
     
     <div style="width: 100%; max-width: 400px; display: flex; gap: 10px;">
         <button class="btn-sec" style="flex: 1; background: var(--card);" onclick="descargarShareCard()">Descargar</button>
-        <button class="btn-main" style="flex: 1;" onclick="document.getElementById('shareOverlay').style.display='none'">Excelente</button>
+        <button class="btn-main" style="flex: 1;" onclick="document.getElementById('shareOverlay').style.display='none'">Volver</button>
     </div>
   </div>
 
+</body>
+</html>
 </body>
 </html>
