@@ -693,7 +693,7 @@
                 </div>
                 <div style="display: flex; gap: 8px;">
                     <button class="btn-sec" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.viewExerciseDetails('${dayName}', '${zone}', ${exIndex})">Ver</button>
-                    <button class="btn-main" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.startExercise('${dayName}', '${zone}', ${exIndex})">Empezar</button>
+                    <button class="btn-main" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.startExercise('${dayName}', '${zone}', ${exIndex})">Ir</button>
                 </div>
             </div>
             ${notasHtml}
@@ -1236,7 +1236,7 @@
               <button class="btn-sec timer-opt active-timer" style="background: var(--accent); color: #000;" onclick="setRestTime(60, this)">60s</button>
               <button class="btn-sec timer-opt" onclick="setRestTime(90, this)">90s</button>
               <button class="btn-sec timer-opt" onclick="setRestTime(120, this)">120s</button>
-              <button class="btn-sec timer-opt" onclick="setRestTime(180, this)">180s</button>
+              <button class="btn-sec timer-opt" onclick="setRestTime(150, this)">150s</button>
             </div>
             
             <button class="btn-sec" style="width: 100%;" onclick="resetTimer()">Detener Cronómetro</button>
