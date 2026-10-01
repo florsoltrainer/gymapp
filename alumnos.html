@@ -424,7 +424,7 @@
         if (lastWeekDates.size >= daysInRoutine) {
             status = "🔥 En Racha";
         } else {
-            status = "💤 Inactivo";
+            status = "💪 Activo";
         }
       }
       document.getElementById('statStatus').textContent = status;
@@ -478,11 +478,17 @@
       let logsToShow = [];
       let displayDate = "";
       
+      // MODIFICACIÓN: Función de normalización de fecha mejorada para procesar formatos conflictivos (guiones, caracteres invisibles de locale).
       const normalizeDate = (dateStr) => {
           if(!dateStr) return "";
+          dateStr = String(dateStr).replace(/[^\d\/\-]/g, ''); // Limpia caracteres ocultos/invisibles generados por toLocaleDateString
           if (dateStr.includes('-')) {
              const p = dateStr.split('-');
-             return `${parseInt(p[2], 10)}/${parseInt(p[1], 10)}/${parseInt(p[0], 10)}`;
+             if (p[0].length === 4) { // Formato YYYY-MM-DD
+                 return `${parseInt(p[2], 10)}/${parseInt(p[1], 10)}/${parseInt(p[0], 10)}`;
+             } else { // Formato DD-MM-YYYY
+                 return `${parseInt(p[0], 10)}/${parseInt(p[1], 10)}/${parseInt(p[2], 10)}`;
+             }
           }
           const p = dateStr.split('/');
           if(p.length !== 3) return dateStr;
@@ -667,7 +673,7 @@
                 </div>
                 <div style="display: flex; gap: 8px;">
                     <button class="btn-sec" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.viewExerciseDetails('${dayName}', '${zone}', ${exIndex})">Ver</button>
-                    <button class="btn-main" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.startExercise('${dayName}', '${zone}', ${exIndex})">Empezar</button>
+                    <button class="btn-main" style="width: auto; padding: 10px 16px; font-size: 0.9rem;" onclick="window.startExercise('${dayName}', '${zone}', ${exIndex})">Ir</button>
                 </div>
             </div>
             ${notasHtml}
@@ -951,7 +957,7 @@
       syncBadge.style.display = 'block';
 
       while (queue.length > 0) {
-        syncBadge.textContent = `☁️ Sincronizando ${queue.length} series...`;
+        syncBadge.textContent = `☁️️ Sincronizando ${queue.length} series...`;
         const entry = queue[0];
         try {
           await fetch(window.MASTER_SCRIPT_URL, {
@@ -1290,9 +1296,9 @@
     </div>
   </div>
 
-  <!-- MODAL DE PERFIL MODIFICADO A PANTALLA COMPLETA -->
+  <!-- MODAL DE PERFIL MODIFICADO A PANTALLA COMPLETA Y BORDES REDONDEADOS A 12px -->
   <div id="modalPerfil" class="modal-overlay">
-    <div class="modal-content" style="width: 100%; height: 100%; max-width: none; border-radius: 0; max-height: 100vh;">
+    <div class="modal-content" style="width: 100%; height: 100%; max-width: none; border-radius: 12px; max-height: 100vh;">
       <button class="close-modal" onclick="toggleModal(false)">&times;</button>
       
       <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 24px;">
