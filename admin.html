@@ -109,7 +109,7 @@
       position: fixed;
       top: 0;
       left: 0;
-      width: 100vw;
+      width: 80vw;
       height: 100vh;
       background: var(--bg);
       z-index: 2000;
@@ -1427,7 +1427,7 @@
         const chip = document.createElement('div');
         chip.className = 'item-chip';
         chip.innerHTML = `
-          <div><strong>${data.nombre_plantilla}</strong></div>
+          <div><strong>📋 ${data.nombre_plantilla}</strong></div>
           <button class="btn-sec" style="width:auto; padding:4px 12px;" onclick="openViewTemplateModal('${data.id}')">Ver Plantilla</button>
         `;
         listContainer.appendChild(chip);
@@ -1509,7 +1509,7 @@
       window.currentTemplateId = id;
       const template = window.globalTemplates.find(t => t.id === id);
       if(!template) return;
-      document.getElementById('viewTemplateTitle').textContent = `${template.nombre_plantilla}`;
+      document.getElementById('viewTemplateTitle').textContent = `📋 ${template.nombre_plantilla}`;
       renderTemplateDetails(template);
       document.getElementById('viewTemplateModal').classList.add('show');
     };
@@ -2189,6 +2189,7 @@
           </div>
           
           <div style="font-size: 0.95rem; display: flex; flex-direction: column; gap: 8px;">
+            <div><strong>📧 Email:</strong> <span id="lblEmail">...</span></div>
             <div><strong>💰 Último pago:</strong> <span id="lblPago">...</span></div>
             <div><strong>⚠️️ Patologías:</strong> <span id="lblPatologias" style="color:var(--danger);">...</span></div>
             
@@ -2233,7 +2234,7 @@
           <textarea id="editStudentNotes"></textarea>
           
           <div style="margin-top: 16px; display: flex; gap: 10px;">
-            <button class="btn-main" onclick="saveToFirebase()">Guardar Cambios</button>
+            <button class="btn-main" onclick="saveToFirebase()">💾 Guardar Cambios</button>
             <button class="btn-sec" onclick="toggleEditData(false)">Cancelar</button>
           </div>
           <div id="saveDataStatus" class="status-msg"></div>
@@ -2242,8 +2243,8 @@
         <!-- Rutina Integrada -->
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h3 style="margin:0;">Detalles de la rutina</h3>
-            <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">Descargar</button>
+            <h3 style="margin:0;">Resumen de la Rutina Asignada</h3>
+            <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">Descargar Rutina</button>
           </div>
           <div id="routineDetailsDisplay" style="padding: 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border);">
           </div>
@@ -2455,7 +2456,7 @@
       </div>
       
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button class="btn-danger" style="width:auto; padding: 10px 20px;" onclick="deleteCurrentTemplate()">Eliminar</button>
+        <button class="btn-danger" style="width:auto; padding: 10px 20px;" onclick="deleteCurrentTemplate()">🗑Eliminar</button>
         <button class="btn-main" style="width:auto; padding: 10px 20px;" onclick="editCurrentTemplate()">Editar</button>
         <button class="btn-sec" style="width:auto; padding: 10px 20px;" onclick="downloadTemplatePDF()">Descargar</button>
       </div>
