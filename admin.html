@@ -1133,8 +1133,8 @@
       const rut = window.currentStudentData.rutina;
       if (!rut || Object.keys(rut).length === 0) {
         container.innerHTML = `
-          <p style="color:var(--muted); margin-bottom: 12px;">No hay rutina configurada aún.</p>
-          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openRoutineEditorModal()">Configurar Rutina</button>
+          <p style="color:var(--muted); margin-bottom: 12px;">Sin rutina.</p>
+          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openRoutineEditorModal()">Crear rutina</button>
         `;
         return;
       }
@@ -2234,7 +2234,7 @@
           <textarea id="editStudentNotes"></textarea>
           
           <div style="margin-top: 16px; display: flex; gap: 10px;">
-            <button class="btn-main" onclick="saveToFirebase()">💾 Guardar Cambios</button>
+            <button class="btn-main" onclick="saveToFirebase()">Guardar Cambios</button>
             <button class="btn-sec" onclick="toggleEditData(false)">Cancelar</button>
           </div>
           <div id="saveDataStatus" class="status-msg"></div>
