@@ -550,7 +550,6 @@
         if (!window.currentStudentData.rutina) window.currentStudentData.rutina = {};
 
         document.getElementById('lblNombre').textContent = window.currentStudentData.nombre || "-";
-        document.getElementById('lblEmail').textContent = window.currentStudentData.email || "-";
         document.getElementById('lblEdad').textContent = window.currentStudentData.edad || "-";
         document.getElementById('lblPeso').textContent = window.currentStudentData.peso || "-";
         document.getElementById('lblAltura').textContent = window.currentStudentData.altura || "-";
@@ -558,6 +557,12 @@
         document.getElementById('lblPago').textContent = window.currentStudentData.fecha_pago || "-";
         document.getElementById('lblNotasAdmin').textContent = window.currentStudentData.notas_admin || "Sin notas.";
         document.getElementById('viewStudentPhoto').src = window.currentStudentData.foto_url || 'https://via.placeholder.com/100?text=👤';
+        
+        const lblEstado = document.getElementById('lblEstado');
+        if(lblEstado) {
+            lblEstado.textContent = "Calculando...";
+            lblEstado.style.color = "var(--text)";
+        }
 
         document.getElementById('editStudentName').value = window.currentStudentData.nombre || "";
         document.getElementById('editStudentEmail').value = window.currentStudentData.email || "";
@@ -788,6 +793,42 @@
       if (allLogs.length > 0) {
         allLogs.sort((a, b) => b.isoDate.localeCompare(a.isoDate));
         window.currentStudentData.logs = allLogs;
+        
+        // --- LOGICA DE CÁLCULO DE ESTADO ---
+        const uniqueDates = [...new Set(allLogs.map(l => l.isoDate))];
+        const today = new Date();
+        let estado = "Inactivo 😴";
+        let colorEstado = "var(--muted)";
+
+        if (uniqueDates.length > 0) {
+            const lastWorkoutDate = new Date(uniqueDates[0] + "T00:00:00");
+            const diffDays = Math.floor((today - lastWorkoutDate) / (1000 * 60 * 60 * 24));
+
+            if (diffDays <= 7) {
+                // Evaluamos si entrenó también la semana anterior a la actual (entre 8 y 15 días atrás)
+                const hasPreviousWeek = uniqueDates.some(d => {
+                    const dDate = new Date(d + "T00:00:00");
+                    const diff = Math.floor((today - dDate) / (1000 * 60 * 60 * 24));
+                    return diff > 7 && diff <= 15;
+                });
+
+                if (hasPreviousWeek) {
+                    estado = "En Racha 🔥";
+                    colorEstado = "#ff9800";
+                } else {
+                    estado = "Activo ⚡";
+                    colorEstado = "var(--accent)";
+                }
+            }
+        }
+        
+        const lblEstado = document.getElementById('lblEstado');
+        if(lblEstado) {
+            lblEstado.textContent = estado;
+            lblEstado.style.color = colorEstado;
+        }
+        // ------------------------------------
+        
         renderHistorialTab();
       } else {
         window.currentStudentData.logs = [];
@@ -796,6 +837,12 @@
         if(select) select.innerHTML = '';
         if (progressChartInstance) progressChartInstance.destroy();
         renderPRs([]);
+        
+        const lblEstado = document.getElementById('lblEstado');
+        if(lblEstado) {
+            lblEstado.textContent = "Inactivo 😴";
+            lblEstado.style.color = "var(--muted)";
+        }
       }
     }
 
@@ -1062,7 +1109,6 @@
         }
         
         document.getElementById('lblNombre').textContent = window.currentStudentData.nombre || "-";
-        document.getElementById('lblEmail').textContent = window.currentStudentData.email || "-";
         document.getElementById('lblEdad').textContent = window.currentStudentData.edad || "-";
         document.getElementById('lblPeso').textContent = window.currentStudentData.peso || "-";
         document.getElementById('lblAltura').textContent = window.currentStudentData.altura || "-";
@@ -2203,9 +2249,19 @@
             </div>
           </div>
           
+          <!-- Nuevos cuadritos de Pago y Estado -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+            <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center;">
+              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">💰 Último Pago</div>
+              <strong id="lblPago" style="color: var(--text); font-size: 1.1rem;">...</strong>
+            </div>
+            <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center;">
+              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">📊 Estado</div>
+              <strong id="lblEstado" style="font-size: 1.1rem;">Calculando...</strong>
+            </div>
+          </div>
+          
           <div style="font-size: 0.95rem; display: flex; flex-direction: column; gap: 8px;">
-            <div><strong>📧 Email:</strong> <span id="lblEmail">...</span></div>
-            <div><strong>💰 Último pago:</strong> <span id="lblPago">...</span></div>
             <div><strong>⚠ Patologías:</strong> <span id="lblPatologias" style="color:var(--danger);">...</span></div>
             
             <div style="margin-top: 8px;">
@@ -2552,7 +2608,7 @@
 
       <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 20px;">
         <button class="btn-main" onclick="saveGlobalExerciseEdit()">💾 Guardar Cambios</button>
-        <button class="btn-danger" onclick="deleteGlobalExerciseFromModal()">🗑️️ Eliminar</button>
+        <button class="btn-danger" onclick="deleteGlobalExerciseFromModal()">🗑 Eliminar</button>
       </div>
     </div>
   </div>
