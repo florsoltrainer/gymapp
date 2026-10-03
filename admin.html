@@ -352,7 +352,7 @@
             </div>
           </div>
           <div style="display:flex; gap:8px; flex-shrink: 0;">
-            <button class="btn-main" style="width: auto; padding: 8px 14px; font-size: 0.85rem;" onclick="selectStudentToEdit('${student.id}')">Ver</button>
+            <button class="btn-main" style="width: auto; padding: 8px 14px; font-size: 0.85rem;" onclick="selectStudentToEdit('${student.id}')">👁️</button>
           </div>
         `;
         container.appendChild(div);
@@ -1138,14 +1138,14 @@
       const applyTplDiv = document.getElementById('applyTemplateContainer');
       
       if(window.editorContext.type === 'template') {
-        if(editorTitle) editorTitle.textContent = window.editorContext.nombre ? `Editando Plantilla: ${window.editorContext.nombre}` : `Nueva Plantilla`;
-        btnContainer.innerHTML = `<button class="btn-main" onclick="saveTemplateToFirebase()" style="padding: 12px; grid-column: 1 / -1;">Guardar Plantilla</button>`;
+        if(editorTitle) editorTitle.textContent = window.editorContext.nombre ? `⚙️ Editando plantilla: ${window.editorContext.nombre}` : `⚙️ Nueva plantilla`;
+        btnContainer.innerHTML = `<button class="btn-main" onclick="saveTemplateToFirebase()" style="padding: 12px; grid-column: 1 / -1;">💾 Guardar plantilla</button>`;
         if(applyTplDiv) applyTplDiv.style.display = 'none';
       } else {
-        if(editorTitle) editorTitle.textContent = `Diseñar y Publicar Rutina`;
+        if(editorTitle) editorTitle.textContent = `⚙️ Diseñar y publicar rutina`;
         btnContainer.innerHTML = `
-          <button class="btn-main" onclick="saveToFirebase()" style="padding: 12px;">Guardar Rutina</button>
-          <button class="btn-sec" onclick="saveCurrentAsTemplate()" style="padding: 12px;">Guardar como Plantilla</button>
+          <button class="btn-main" onclick="saveToFirebase()" style="padding: 12px;">💾 Guardar rutina</button>
+          <button class="btn-sec" onclick="saveCurrentAsTemplate()" style="padding: 12px;">⭐ Guardar como plantilla</button>
         `;
         if(applyTplDiv) applyTplDiv.style.display = 'block';
       }
@@ -1186,7 +1186,7 @@
       if (!rut || Object.keys(rut).length === 0) {
         container.innerHTML = `
           <p style="color:var(--muted); margin-bottom: 12px;">No hay rutina configurada aún.</p>
-          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openRoutineEditorModal()">Configurar Rutina</button>
+          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openRoutineEditorModal()">⚙️ Configurar rutina</button>
         `;
         return;
       }
@@ -1845,7 +1845,7 @@
 
     window.openEditDayExercisesModal = function() {
       if(!window.currentEditorDay) return;
-      document.getElementById('editDayExercisesTitle').textContent = `Editar: ${window.currentEditorDay}`;
+      document.getElementById('editDayExercisesTitle').textContent = `⚙️ Editar: ${window.currentEditorDay}`;
       document.getElementById('editDayExercisesModal').classList.add('show');
       updateGlobalExerciseDropdown();
       renderExercisesListEditor();
@@ -2061,7 +2061,7 @@
   <div id="notifModal" class="modal-overlay">
     <div class="modal-content">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        <h3 style="margin: 0;">Notificaciones</h3>
+        <h3 style="margin: 0;">🔔 Notificaciones</h3>
         <button onclick="closeNotifModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       <p style="color: var(--muted); font-size: 0.9rem;">Mensajes recientes de tus alumnos en sus entrenamientos.</p>
@@ -2075,7 +2075,7 @@
   <div id="newStudentModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 600px; border-left: 4px solid var(--accent);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        <h3 style="margin: 0;">Nuevo Alumno</h3>
+        <h3 style="margin: 0;">➕ Nuevo alumno</h3>
         <button onclick="closeNewStudentForm()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       <div class="grid-2">
@@ -2109,7 +2109,7 @@
   </div>
 
   <div id="loginBox" class="card" style="text-align: center; padding: 40px 20px; max-width: 400px; margin: 40px auto;">
-    <h2>Panel Administrador</h2>
+    <h2>🔐 Panel Administrador</h2>
     <p style="color: var(--muted); margin-bottom: 20px;">Inicia sesión con tu cuenta de Google autorizada.</p>
     <button class="btn-google" onclick="loginGoogle()">Iniciar Sesión con Google</button>
     <div id="authError" style="color: var(--danger); margin-top: 16px;"></div>
@@ -2142,8 +2142,8 @@
     </header>
 
     <div class="tabs">
-      <div id="tab-alumnos" class="tab-btn active" onclick="switchModule('alumnos')">Mis Alumnos</div>
-      <div id="tab-ejercicios" class="tab-btn" onclick="switchModule('ejercicios')">Ejercicios</div>
+      <div id="tab-alumnos" class="tab-btn active" onclick="switchModule('alumnos')">👥 Mis Alumnos</div>
+      <div id="tab-ejercicios" class="tab-btn" onclick="switchModule('ejercicios')">📚 Ejercicios</div>
     </div>
 
     <!-- MÓDULO 1: MIS ALUMNOS -->
@@ -2151,14 +2151,14 @@
       
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-          <h2 style="margin: 0;">Alumnos</h2>
+          <h2 style="margin: 0;">👥 Alumnos</h2>
           <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="toggleNewStudentForm()">➕</button>
         </div>
         <input type="text" id="searchStudentInput" placeholder="🔍 Buscar por nombre, mail o ID..." oninput="filterStudents()">
         <div id="studentsListContainer" style="margin-top: 10px;"></div>
         
         <div style="margin-top: 25px; border-top: 1px solid var(--border); padding-top: 15px;">
-          <h3 style="margin-bottom: 5px;">Ranking de Cumplimiento de Rutinas</h3>
+          <h3 style="margin-bottom: 5px;">🏆 Ranking de Cumplimiento</h3>
           <p style="color:var(--muted); font-size:0.85rem;">Basado en los datos de entrenamiento registrados por los alumnos.</p>
           <div id="rankingContainer"></div>
         </div>
@@ -2178,7 +2178,7 @@
       <div id="bank-subtab-content-ejercicios" class="bank-sub-tab-content" style="display: block;">
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-            <h2 style="margin: 0;">Ejercicios</h2>
+            <h2 style="margin: 0;">📚 Ejercicios</h2>
             <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openNewGlobalExModal()">➕</button>
           </div>
 
@@ -2201,7 +2201,7 @@
       <div id="bank-subtab-content-plantillas" class="bank-sub-tab-content" style="display: none;">
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-            <h2 style="margin: 0;">Plantillas de Rutinas</h2>
+            <h2 style="margin: 0;">📋 Plantillas de rutinas</h2>
             <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openTemplateEditor()">➕</button>
           </div>
           
@@ -2220,13 +2220,13 @@
     <div style="max-width: 900px; margin: 0 auto;">
       
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
-        <h2 style="margin: 0;">Panel del Alumno</h2>
+        <h2 style="margin: 0;">⚙️ Panel del alumno</h2>
         <button class="btn-sec" onclick="closeEditorModal()" style="width: auto; padding: 6px 16px;">Cerrar ✖</button>
       </div>
 
       <div class="sub-tabs">
-        <button id="subtab-btn-datos" class="sub-tab-btn active" onclick="switchSubTab('datos')">👤 Datos y Resumen</button>
-        <button id="subtab-btn-historial-avance" class="sub-tab-btn" onclick="switchSubTab('historial-avance')">📈 Historial y Avance</button>
+        <button id="subtab-btn-datos" class="sub-tab-btn active" onclick="switchSubTab('datos')">👤 Datos y resumen</button>
+        <button id="subtab-btn-historial-avance" class="sub-tab-btn" onclick="switchSubTab('historial-avance')">📈 Historial y avance</button>
       </div>
 
       <!-- Pestaña Datos -->
@@ -2252,11 +2252,11 @@
           <!-- Nuevos cuadritos de Pago y Estado -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
             <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center;">
-              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">Último Pago</div>
+              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">💰 Último Pago</div>
               <strong id="lblPago" style="color: var(--text); font-size: 1.1rem;">...</strong>
             </div>
             <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center;">
-              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">Estado</div>
+              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">📊 Estado</div>
               <strong id="lblEstado" style="font-size: 1.1rem;">Calculando...</strong>
             </div>
           </div>
@@ -2273,8 +2273,8 @@
 
         <div class="card" id="studentDataEdit" style="display: none; border-left: 4px solid var(--accent);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="margin: 0;">Editando Datos</h3>
-            <button class="btn-danger" onclick="deleteCurrentStudent()" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">Eliminar</button>
+            <h3 style="margin: 0;">✏️ Editar Datos</h3>
+            <button class="btn-danger" onclick="deleteCurrentStudent()" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">🗑️ Eliminar</button>
           </div>
           <div style="display:flex; align-items:center; gap: 15px; margin-bottom:15px;">
             <img id="previewStudentPhoto" src="" class="profile-img-circular" alt="Foto">
@@ -2305,7 +2305,7 @@
           <textarea id="editStudentNotes"></textarea>
           
           <div style="margin-top: 16px; display: flex; gap: 10px;">
-            <button class="btn-main" onclick="saveToFirebase()">Guardar Cambios</button>
+            <button class="btn-main" onclick="saveToFirebase()">💾 Guardar cambios</button>
             <button class="btn-sec" onclick="toggleEditData(false)">Cancelar</button>
           </div>
           <div id="saveDataStatus" class="status-msg"></div>
@@ -2314,13 +2314,13 @@
         <!-- Rutina Integrada -->
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h3 style="margin:0;">Resumen de la Rutina</h3>
-            <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">Descargar Rutina</button>
+            <h3 style="margin:0;">📋 Resumen de la Rutina</h3>
+            <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">Descargar</button>
           </div>
           <div id="routineDetailsDisplay" style="padding: 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border);">
           </div>
           <div style="margin-top:15px; padding-top: 15px; border-top: 1px solid var(--border);">
-            <label style="color:var(--accent);">Mensaje Adicional (Visible para el alumno en su app)</label>
+            <label style="color:var(--accent);">💬 Mensaje Adicional (Visible para el alumno en su app)</label>
             <textarea id="editStudentAppNote" placeholder="Escribe aquí un mensaje general, aviso o recomendación que el alumno verá al abrir su rutina..."></textarea>
             <button class="btn-sec" onclick="saveToFirebase()">Guardar Mensaje</button>
           </div>
@@ -2331,8 +2331,8 @@
       <div id="subtab-content-historial-avance" class="sub-tab-content" style="display: none;">
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap:10px; margin-bottom: 15px;">
-            <h3 style="margin:0;">Historial de Entrenamientos</h3>
-            <button class="btn-main" onclick="generateConsolidatedPDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">Exportar</button>
+            <h3 style="margin:0;">📈 Historial de Entrenamientos</h3>
+            <button class="btn-main" onclick="generateConsolidatedPDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">📄 Exportar Ficha PDF</button>
           </div>
 
           <!-- Sección de Entrenamiento Seleccionado (Calendario y Rutina del Día) -->
@@ -2351,7 +2351,7 @@
 
           <!-- Gráfico de Progreso -->
           <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
-            <h4 style="margin-top:0;">Evolución de Cargas</h4>
+            <h4 style="margin-top:0;">📊 Evolución de Cargas</h4>
             <div class="grid-2">
                 <div>
                     <label>Ejercicio:</label>
@@ -2382,7 +2382,7 @@
   <div id="routineEditorModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 800px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        <h3 style="margin: 0;" id="routineEditorTitle">Diseñar y Publicar Rutina</h3>
+        <h3 style="margin: 0;" id="routineEditorTitle">⚙️ Diseñar y publicar rutina</h3>
         <button onclick="closeRoutineEditorModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       
@@ -2400,7 +2400,7 @@
           <div id="editorDaysTabs" class="sub-tabs" style="margin-bottom: 0; border-bottom: none; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; flex-grow: 1;">
              <!-- Las pestañas se generarán aquí -->
           </div>
-          <button class="btn-sec" onclick="promptNewDay()" style="width: auto; padding: 6px 12px; font-size: 0.85rem; flex-shrink: 0;">Sumar día</button>
+          <button class="btn-sec" onclick="promptNewDay()" style="width: auto; padding: 6px 12px; font-size: 0.85rem; flex-shrink: 0;">➕ Sumar día</button>
         </div>
       </div>
 
@@ -2409,8 +2409,8 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
           <h3 id="editorSelectedDayTitle" style="margin: 0; color: var(--accent);">Día</h3>
           <div style="display: flex; gap: 8px;">
-            <button class="btn-sec" onclick="openEditDayExercisesModal()" style="width: auto; padding: 6px 12px; font-size: 0.9rem;">Editar Ejercicios</button>
-            <button class="btn-danger" onclick="deleteSelectedDay()" style="width: auto; padding: 6px 12px; font-size: 0.9rem;">Eliminar Día</button>
+            <button class="btn-sec" onclick="openEditDayExercisesModal()" style="width: auto; padding: 6px 12px; font-size: 0.9rem;">✏️ Editar ejercicios</button>
+            <button class="btn-danger" onclick="deleteSelectedDay()" style="width: auto; padding: 6px 12px; font-size: 0.9rem;">🗑️ Eliminar día</button>
           </div>
         </div>
         
@@ -2431,7 +2431,7 @@
   <div id="newDayNameModal" class="modal-overlay" style="z-index: 3200;">
     <div class="modal-content" style="max-width: 400px; border-left: 4px solid var(--accent);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        <h3 style="margin: 0;">Añadir Día</h3>
+        <h3 style="margin: 0;">➕ Sumar día</h3>
         <button onclick="document.getElementById('newDayNameModal').classList.remove('show')" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       <label>Ingresa el nombre del día de entrenamiento:</label>
@@ -2446,12 +2446,12 @@
   <div id="editDayExercisesModal" class="modal-overlay" style="z-index: 3200;">
     <div class="modal-content" style="max-width: 800px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        <h3 style="margin: 0;" id="editDayExercisesTitle">Editar Ejercicios</h3>
+        <h3 style="margin: 0;" id="editDayExercisesTitle">⚙️ Editar ejercicios</h3>
         <button onclick="closeEditDayExercisesModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       
       <div style="background:var(--bg); padding:15px; border-radius:10px; margin-bottom:20px; border: 1px solid var(--border);">
-        <h4 style="margin-top:0; margin-bottom: 12px; color: var(--accent);">Añadir Nuevo Ejercicio</h4>
+        <h4 style="margin-top:0; margin-bottom: 12px; color: var(--accent);">➕ Sumar ejercicio</h4>
         <div class="grid-2">
           <div>
             <label>Grupo Muscular (Categoría):</label>
@@ -2492,7 +2492,7 @@
   <div id="editSingleExerciseModal" class="modal-overlay" style="z-index: 3300;">
     <div class="modal-content" style="max-width: 400px; border-left: 4px solid var(--accent);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        <h3 style="margin: 0;">Editar Parámetros</h3>
+        <h3 style="margin: 0;">⚙️ Editar parámetros</h3>
         <button onclick="closeEditSingleExerciseModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       
@@ -2519,7 +2519,7 @@
   <div id="viewTemplateModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 800px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        <h3 style="margin: 0;" id="viewTemplateTitle">Detalles de Plantilla</h3>
+        <h3 style="margin: 0;" id="viewTemplateTitle">📋 Detalles de plantilla</h3>
         <button onclick="closeViewTemplateModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       
@@ -2527,7 +2527,7 @@
       </div>
       
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button class="btn-danger" style="width:auto; padding: 10px 20px;" onclick="deleteCurrentTemplate()">🗑 Eliminar</button>
+        <button class="btn-danger" style="width:auto; padding: 10px 20px;" onclick="deleteCurrentTemplate()">Eliminar</button>
         <button class="btn-main" style="width:auto; padding: 10px 20px;" onclick="editCurrentTemplate()">Editar</button>
         <button class="btn-sec" style="width:auto; padding: 10px 20px;" onclick="downloadTemplatePDF()">Descargar</button>
       </div>
@@ -2538,7 +2538,7 @@
   <div id="newTemplatePromptModal" class="modal-overlay" style="z-index: 3500;">
     <div class="modal-content" style="max-width: 400px; border-left: 4px solid var(--accent);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        <h3 style="margin: 0;">Nombre de Plantilla</h3>
+        <h3 style="margin: 0;">📋 Nombre de plantilla</h3>
         <button onclick="document.getElementById('newTemplatePromptModal').classList.remove('show')" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       <label>Ingresa el nombre para la plantilla:</label>
@@ -2553,7 +2553,7 @@
   <div id="newGlobalExModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 500px; border-left: 4px solid var(--accent);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        <h3 style="margin: 0;">Nuevo Ejercicio</h3>
+        <h3 style="margin: 0;">➕ Nuevo ejercicio</h3>
         <button onclick="closeNewGlobalExModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       
@@ -2581,7 +2581,7 @@
   <div id="editGlobalExModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 500px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-        <h3 style="margin: 0;">Detalles del Ejercicio</h3>
+        <h3 style="margin: 0;">⚙️ Detalles del ejercicio</h3>
         <button onclick="closeEditGlobalExModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       
@@ -2607,7 +2607,7 @@
       <div id="editExUploadStatus" class="status-msg" style="margin-top: 5px;"></div>
 
       <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 20px;">
-        <button class="btn-main" onclick="saveGlobalExerciseEdit()">Guardar Cambios</button>
+        <button class="btn-main" onclick="saveGlobalExerciseEdit()">Guardar cambios</button>
         <button class="btn-danger" onclick="deleteGlobalExerciseFromModal()">Eliminar</button>
       </div>
     </div>
