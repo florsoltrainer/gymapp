@@ -10,7 +10,8 @@
   
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#121214">
-  <link rel="apple-touch-icon" href="logo chico.png">
+  <link rel="icon" type="image/png" href="favico.png">
+  <link rel="apple-touch-icon" href="favico.png">
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -715,15 +716,18 @@
         
         const gallery = document.getElementById('verExGaleria');
         const notas = document.getElementById('verExNotas');
+        const videoBtnContainer = document.getElementById('verExVideoBtnContainer');
 
         gallery.innerHTML = '<p style="color:var(--muted); font-size: 0.9rem; text-align:center; width:100%;">Cargando detalles...</p>';
         gallery.style.display = 'block';
         notas.style.display = 'none';
+        videoBtnContainer.style.display = 'none';
         document.getElementById('modalVerEjercicio').style.display = 'flex';
 
         let images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
         let localNote = ex.notes || ex.nota || ex.nota_alumno || '';
         let globalObs = ex.observaciones || ex.detalles_tecnicos || '';
+        let videoUrl = ex.video_url || '';
 
         try {
             const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -738,6 +742,9 @@
                 }
                 if(!globalObs) {
                     globalObs = globalEx.observaciones || globalEx.detalles_tecnicos || '';
+                }
+                if(!videoUrl) {
+                    videoUrl = globalEx.video_url || '';
                 }
             }
         } catch(e) {
@@ -756,6 +763,14 @@
             }
         } else {
             gallery.innerHTML = '<p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 10px;">No hay imágenes ilustrativas cargadas.</p>';
+        }
+
+        if (videoUrl && videoUrl.trim() !== '') {
+            videoBtnContainer.innerHTML = `<a href="${videoUrl}" target="_blank" style="display: block; background: #ff0000; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; width: 100%; text-align: center; box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);">▶ Ver video</a>`;
+            videoBtnContainer.style.display = 'block';
+        } else {
+            videoBtnContainer.style.display = 'none';
+            videoBtnContainer.innerHTML = '';
         }
 
         let combinedNotes = '';
@@ -1300,6 +1315,7 @@
       <button class="close-modal" onclick="document.getElementById('modalVerEjercicio').style.display='none'">&times;</button>
       <h2 id="verExTitulo" style="margin-bottom: 16px; font-size: 1.4rem; color: var(--accent);"></h2>
       <div id="verExGaleria" class="image-gallery"></div>
+      <div id="verExVideoBtnContainer" style="display: none; text-align: center; margin-bottom: 16px;"></div>
       <div id="verExNotas" style="display: none;"></div>
     </div>
   </div>
