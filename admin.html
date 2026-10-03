@@ -1185,8 +1185,8 @@
       const rut = window.currentStudentData.rutina;
       if (!rut || Object.keys(rut).length === 0) {
         container.innerHTML = `
-          <p style="color:var(--muted); margin-bottom: 12px;">No hay rutina configurada aún.</p>
-          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openRoutineEditorModal()">⚙️ Configurar rutina</button>
+          <p style="color:var(--muted); margin-bottom: 12px;">Sin Rutina</p>
+          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openRoutineEditorModal()">⚙️ Configurar</button>
         `;
         return;
       }
@@ -2252,11 +2252,11 @@
           <!-- Nuevos cuadritos de Pago y Estado -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
             <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center;">
-              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">💰 Último Pago</div>
+              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">Último Pago</div>
               <strong id="lblPago" style="color: var(--text); font-size: 1.1rem;">...</strong>
             </div>
             <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center;">
-              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">📊 Estado</div>
+              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">Estado</div>
               <strong id="lblEstado" style="font-size: 1.1rem;">Calculando...</strong>
             </div>
           </div>
@@ -2331,8 +2331,8 @@
       <div id="subtab-content-historial-avance" class="sub-tab-content" style="display: none;">
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap:10px; margin-bottom: 15px;">
-            <h3 style="margin:0;">📈 Historial de Entrenamientos</h3>
-            <button class="btn-main" onclick="generateConsolidatedPDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">📄 Exportar Ficha PDF</button>
+            <h3 style="margin:0;">📈 Historial</h3>
+            <button class="btn-main" onclick="generateConsolidatedPDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">📄 Exportar PDF</button>
           </div>
 
           <!-- Sección de Entrenamiento Seleccionado (Calendario y Rutina del Día) -->
