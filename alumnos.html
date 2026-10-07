@@ -158,6 +158,13 @@
 
     window.db = db;
 
+    // Función para obtener las llaves en orden natural respetando números
+    window.getOrderedKeys = function(obj) {
+        if (!obj) return [];
+        if (Array.isArray(obj)) return Object.keys(obj);
+        return Object.keys(obj).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    };
+
     window.onclick = function(event) {
       if (event.target.classList.contains('modal-overlay')) {
         event.target.style.display = 'none';
@@ -194,7 +201,13 @@
               window.studentDocRef = doc(db, "alumnos", docSnap.id);
             });
             
-            window.workoutData = data.rutina || {};
+            // Manejar si el entrenador guardó la rutina como string JSON para preservar orden
+            let rutinaObj = data.rutina || {};
+            if (typeof rutinaObj === 'string') {
+                try { rutinaObj = JSON.parse(rutinaObj); } catch(e) { rutinaObj = {}; }
+            }
+            window.workoutData = rutinaObj;
+            
             window.spreadsheetId = data.spreadsheet_id || data.google_sheet_url || "";
             window.trainerNotes = data.nota_para_alumno || "";
 
@@ -631,7 +644,7 @@
     window.renderDaysNav = function() {
       const daysContainer = document.getElementById('daysNav');
       daysContainer.innerHTML = '';
-      const days = Object.keys(window.workoutData);
+      const days = window.getOrderedKeys(window.workoutData);
 
       if (days.length === 0) {
         document.getElementById('rutinaContent').innerHTML = '<p style="color:var(--muted);">No hay rutina cargada.</p>';
@@ -658,12 +671,14 @@
       content.innerHTML = '';
 
       const zones = window.workoutData[dayName];
-      if (!zones || Object.keys(zones).length === 0) {
+      const zoneKeys = window.getOrderedKeys(zones);
+      
+      if (!zones || zoneKeys.length === 0) {
         content.innerHTML = '<p style="color:var(--muted);">No hay ejercicios asignados.</p>';
         return;
       }
 
-      Object.keys(zones).forEach(zone => {
+      zoneKeys.forEach(zone => {
         const zoneBlock = document.createElement('div');
         zoneBlock.className = 'zone-block';
         zoneBlock.innerHTML = `<h3 class="zone-title">${zone}</h3>`;
@@ -826,7 +841,7 @@
       const daySelect = document.getElementById('daySelect');
       daySelect.innerHTML = '';
       
-      const days = Object.keys(window.workoutData);
+      const days = window.getOrderedKeys(window.workoutData);
       days.forEach(day => {
         const opt = document.createElement('option');
         opt.value = day; opt.textContent = day;
@@ -841,7 +856,8 @@
       zoneSelect.innerHTML = '';
 
       if (day && window.workoutData[day]) {
-        Object.keys(window.workoutData[day]).forEach(zone => {
+        const zones = window.getOrderedKeys(window.workoutData[day]);
+        zones.forEach(zone => {
           const opt = document.createElement('option');
           opt.value = zone; opt.textContent = zone;
           zoneSelect.appendChild(opt);
@@ -1605,5 +1621,7 @@
     </div>
   </div>
 
+</body>
+</html>
 </body>
 </html>
