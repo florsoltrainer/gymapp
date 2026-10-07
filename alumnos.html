@@ -124,7 +124,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, query, where, getDocs, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs, doc, updateDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -181,6 +181,12 @@
           const querySnapshot = await getDocs(q);
 
           if (!querySnapshot.empty) {
+            
+            // Solicitar permisos de notificación si no existen
+            if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
+
             let data = null;
             querySnapshot.forEach((docSnap) => { 
               data = docSnap.data();
@@ -204,6 +210,12 @@
             const cachedRoutine = localStorage.getItem('fst_cached_routine');
             if (cachedRoutine && cachedRoutine !== routineStr) {
                 localStorage.setItem('hide_routine_update', 'false');
+                if ("Notification" in window && Notification.permission === "granted") {
+                  new Notification("¡Tu entrenador actualizó tu rutina!", {
+                    icon: "favico.png",
+                    body: "Revisá las novedades en tu panel de entrenamiento."
+                  });
+                }
             }
             localStorage.setItem('fst_cached_routine', routineStr);
 
@@ -1133,7 +1145,7 @@
         if ("Notification" in window && Notification.permission === "granted") {
           new Notification('⏱ ¡Tiempo de descanso terminado!', {
             body: 'Toca aquí para volver a tu rutina y empezar la siguiente serie.',
-            icon: 'logo chico.png'
+            icon: 'favico.png'
           });
         }
       } else {
@@ -1144,12 +1156,93 @@
       }
     }
 
+    // ABRIR FORMULARIO DE FEEDBACK
     window.finishDay = function() {
       if(window.sessionLogs.length === 0) {
         alert("¡Aún no registraste ninguna serie hoy!");
         return;
       }
-      
+      document.getElementById('feedbackOverlay').style.display = 'flex';
+    };
+
+    // LOGICA FEEDBACK Y ENVIO A FIREBASE
+    window.selectEmoji = function(btn) {
+      document.querySelectorAll('.feedback-emoji').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.borderColor = 'var(--border)';
+      });
+      btn.style.background = 'var(--border)';
+      btn.style.borderColor = 'var(--accent)';
+      document.getElementById('fbSensacion').value = btn.getAttribute('data-val');
+    };
+
+    window.selectPain = function(btn, hasPain) {
+      document.querySelectorAll('.feedback-pain').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color = 'var(--text)';
+        b.style.borderColor = 'var(--border)';
+      });
+      btn.style.background = 'var(--accent)';
+      btn.style.color = '#000';
+      btn.style.borderColor = 'var(--accent)';
+      document.getElementById('fbDolor').value = hasPain ? 'Sí' : 'No';
+      document.getElementById('fbDolorDetalle').style.display = hasPain ? 'block' : 'none';
+    };
+
+    window.submitFeedback = async function() {
+      const sensacion = document.getElementById('fbSensacion').value;
+      if (!sensacion) {
+        alert("Por favor indicá cómo te sentís seleccionando un emoji.");
+        return;
+      }
+      const rpe = document.getElementById('fbRPE').value;
+      const dolor = document.getElementById('fbDolor').value;
+      const dolorDetalle = document.getElementById('fbDolorDetalle').value;
+      const comentarios = document.getElementById('fbComentarios').value;
+
+      const feedbackData = {
+        fecha: new Date().toLocaleDateString('es-AR'),
+        hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        sensacion,
+        rpe,
+        dolor: dolor === 'Sí' ? dolorDetalle : 'No',
+        comentarios
+      };
+
+      if (window.studentDocRef) {
+        try {
+          const { setDoc, doc, collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+          
+          // Guarda el feedback en el historial de la sesión del alumno
+          const dateId = feedbackData.fecha.replaceAll('/', '-'); 
+          const histDocRef = doc(window.db, `alumnos/${window.alumnoId}/historial`, dateId);
+          await setDoc(histDocRef, { feedback: feedbackData }, { merge: true });
+
+          // Envía una notificación Push a la campana del Entrenador
+          const notifAdminRef = collection(window.db, "notificaciones_admin");
+          const alumnoName = document.getElementById('profileName').textContent;
+          await addDoc(notifAdminRef, {
+            alumnoId: window.alumnoId,
+            alumnoNombre: alumnoName,
+            tipo: 'entrenamiento_finalizado',
+            mensaje: `${alumnoName} completó su rutina del día.`,
+            fecha: feedbackData.fecha,
+            hora: feedbackData.hora,
+            timestamp: Date.now(),
+            leida: false,
+            feedback: feedbackData
+          });
+        } catch(e) {
+          console.error("Error guardando feedback:", e);
+        }
+      }
+
+      document.getElementById('feedbackOverlay').style.display = 'none';
+      window.showShareOverlay();
+    };
+
+    // MOSTRAR TARJETA RESUMEN DEL DÍA
+    window.showShareOverlay = function() {
       let totalVolume = 0;
       let uniqueEx = new Set();
       
@@ -1163,6 +1256,50 @@
       document.getElementById('shareTotalVolume').textContent = totalVolume.toLocaleString();
       
       document.getElementById('shareOverlay').style.display = 'flex';
+    };
+
+    // LOGICA COMPARATIVO DE VOLUMEN (ELEFANTES)
+    window.showComparativeVolume = function() {
+      let totalVolume = 0;
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      let allLogs = [...window.sessionLogs];
+      window.historialCompleto.forEach(h => { if(h.logs) allLogs = allLogs.concat(h.logs); });
+
+      allLogs.forEach(log => {
+        if(!log.Fecha) return;
+        const parts = log.Fecha.split('/');
+        const logDate = new Date(parts[2], parts[1]-1, parts[0]);
+        if(logDate >= thirtyDaysAgo) {
+          totalVolume += (Number(log['Peso (kg)']) * Number(log.Repeticiones)) || 0;
+        }
+      });
+
+      let equivalency = "";
+      if (totalVolume >= 4000) {
+        const elephants = (totalVolume / 4000).toFixed(1);
+        equivalency = `¡el equivalente a <strong>${elephants} elefantes</strong>! 🐘`;
+      } else if (totalVolume >= 1200) {
+        const cars = (totalVolume / 1200).toFixed(1);
+        equivalency = `¡el equivalente a <strong>${cars} autos medianos</strong>! 🚗`;
+      } else if (totalVolume >= 500) {
+        const anchors = (totalVolume / 500).toFixed(1);
+        equivalency = `¡el equivalente a <strong>${anchors} anclas de barco</strong>! ⚓`;
+      } else if (totalVolume > 0) {
+        equivalency = `¡gran esfuerzo este mes! 💪`;
+      } else {
+        equivalency = `Aún no hay cargas registradas este mes. ¡A entrenar!`;
+      }
+
+      const content = document.getElementById('comparativeVolumeContent');
+      if (totalVolume > 0) {
+        content.innerHTML = `<p>En los últimos 30 días levantaste un total de <strong style="color:var(--accent); font-size:1.4rem;">${totalVolume.toLocaleString()} kg</strong>,</p><p style="margin-top: 10px; font-size: 1.2rem;">${equivalency}</p>`;
+      } else {
+        content.innerHTML = equivalency;
+      }
+
+      document.getElementById('comparativeVolumeOverlay').style.display = 'flex';
     };
 
     window.descargarShareCard = function() {
@@ -1351,6 +1488,12 @@
         </div>
       </div>
 
+      <div style="margin-bottom: 24px; text-align: center;">
+        <button class="btn-main" onclick="showComparativeVolume()" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+          📊 Ver Resumen de Cargas del Mes
+        </button>
+      </div>
+
       <div style="margin-bottom: 24px;">
         <h4 style="font-size: 1rem; margin-bottom: 12px; color: var(--text);">Historial de Evolución</h4>
         <div style="background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
@@ -1381,6 +1524,48 @@
     </div>
   </div>
 
+  <!-- MODAL: FEEDBACK POST ENTRENAMIENTO -->
+  <div id="feedbackOverlay" class="modal-overlay" style="flex-direction: column;">
+    <div class="modal-content" style="background: var(--card); border: 1px solid var(--border); text-align: center; padding: 24px; margin-bottom: 16px;">
+      <h2 style="color: var(--accent); margin-bottom: 16px; font-size: 1.4rem;">¡Entrenamiento Completado!</h2>
+      <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 20px;">Antes de ver tu resumen, contanos cómo te fue hoy:</p>
+      
+      <div style="text-align: left; margin-bottom: 16px;">
+        <label>¿Cómo te sentís?</label>
+        <div style="display: flex; gap: 10px; margin-top: 8px;">
+          <button type="button" class="btn-sec feedback-emoji" data-val="Bien" style="flex:1; font-size: 1.5rem;" onclick="selectEmoji(this)">😄</button>
+          <button type="button" class="btn-sec feedback-emoji" data-val="Neutral" style="flex:1; font-size: 1.5rem;" onclick="selectEmoji(this)">😐</button>
+          <button type="button" class="btn-sec feedback-emoji" data-val="Mal" style="flex:1; font-size: 1.5rem;" onclick="selectEmoji(this)">🙁</button>
+        </div>
+        <input type="hidden" id="fbSensacion" value="">
+      </div>
+
+      <div style="text-align: left; margin-bottom: 16px;">
+        <label>Percepción del Esfuerzo (1 a 10)</label>
+        <input type="range" id="fbRPE" min="1" max="10" value="5" oninput="document.getElementById('rpeVal').textContent = this.value" style="width: 100%; margin-top: 8px;">
+        <div style="text-align: center; font-weight: bold; color: var(--accent); font-size: 1.2rem;" id="rpeVal">5</div>
+      </div>
+
+      <div style="text-align: left; margin-bottom: 16px;">
+        <label>¿Sentiste dolores?</label>
+        <div style="display: flex; gap: 10px; margin-top: 8px;">
+          <button type="button" class="btn-sec feedback-pain" data-val="No" style="flex:1;" onclick="selectPain(this, false)">No</button>
+          <button type="button" class="btn-sec feedback-pain" data-val="Si" style="flex:1;" onclick="selectPain(this, true)">Sí</button>
+        </div>
+        <input type="hidden" id="fbDolor" value="No">
+        <input type="text" id="fbDolorDetalle" placeholder="¿En qué zona? Ej: hombro derecho" style="display:none; margin-top: 8px;">
+      </div>
+
+      <div style="text-align: left; margin-bottom: 16px;">
+        <label>Comentarios Generales</label>
+        <textarea id="fbComentarios" placeholder="Observaciones sobre la sesión..."></textarea>
+      </div>
+
+      <button class="btn-main" onclick="submitFeedback()">Enviar y ver resumen</button>
+    </div>
+  </div>
+
+  <!-- MODAL: TARJETA COMPARTIR (SHARE) -->
   <div id="shareOverlay" class="modal-overlay" style="flex-direction: column;">
     <div class="modal-content" id="shareCardCapture" style="background: var(--card); border: 1px solid var(--border); text-align: center; padding: 30px 20px; margin-bottom: 16px;">
       <img src="logo chico.png" alt="Logo Flor Sol Trainer" style="height: 45px; margin-bottom: 16px; object-fit: contain;">
@@ -1406,6 +1591,17 @@
     <div style="width: 100%; max-width: 400px; display: flex; gap: 10px;">
         <button class="btn-sec" style="flex: 1; background: var(--card);" onclick="descargarShareCard()">Descargar</button>
         <button class="btn-main" style="flex: 1;" onclick="document.getElementById('shareOverlay').style.display='none'">Volver</button>
+    </div>
+  </div>
+
+  <!-- MODAL: COMPARATIVO VOLUMEN MENSUAL -->
+  <div id="comparativeVolumeOverlay" class="modal-overlay" style="flex-direction: column;">
+    <div class="modal-content" style="background: var(--card); border: 1px solid var(--border); text-align: center; padding: 30px 20px;">
+      <button class="close-modal" onclick="document.getElementById('comparativeVolumeOverlay').style.display='none'">&times;</button>
+      <h2 style="color: var(--accent); margin-bottom: 16px; font-size: 1.5rem;">📊 Cargas del Mes</h2>
+      <div id="comparativeVolumeContent" style="font-size: 1.1rem; line-height: 1.5; color: var(--text);">
+        Calculando...
+      </div>
     </div>
   </div>
 
