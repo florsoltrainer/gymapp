@@ -387,7 +387,7 @@
       container.innerHTML = html;
     }
 
-    // --- SISTEMA DE NOTIFICACIONES ---
+    // --- SISTEMA DE NOTIFICACIONES CORREGIDO ---
     window.scanNotifications = async function() {
       const notifBadge = document.getElementById('notifBadge');
       const notifList = document.getElementById('notifListContainer');
@@ -399,11 +399,23 @@
           let rawFecha = d.fecha || d.Fecha || d.date || d.timestamp;
           let isoDate = parseToISODate(rawFecha);
           let fechaStr = formatDisplayDate(isoDate);
+          
+          let msgParts = [];
 
-          // Comentarios a nivel de sesión completa
-          let globalComment = d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas;
-          if (globalComment && typeof globalComment === 'string' && globalComment.trim() !== '') {
-              notifs.push({ nombre: studentName, mensaje: globalComment, fecha: fechaStr, isoDate: isoDate });
+          // Extraer percepciones generales / resumen de sesión
+          if (d.como_se_siente) msgParts.push(`Sensación: ${d.como_se_siente}`);
+          if (d.percepcion_esfuerzo) msgParts.push(`Esfuerzo: ${d.percepcion_esfuerzo}/10`);
+          
+          let rawComment = d.mensaje || d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas;
+          if (rawComment && typeof rawComment === 'string' && rawComment.trim() !== '') {
+              msgParts.push(rawComment);
+          }
+
+          if (d.tipo === 'rutina_completada' || d.accion === 'termino_entrenamiento') {
+              let compMsg = "✅ ¡Rutina completada! " + msgParts.join(" | ");
+              notifs.push({ nombre: studentName, mensaje: compMsg, fecha: fechaStr, isoDate: isoDate });
+          } else if (msgParts.length > 0) {
+              notifs.push({ nombre: studentName, mensaje: msgParts.join(" | "), fecha: fechaStr, isoDate: isoDate });
           }
 
           // Comentarios a nivel de ejercicio
@@ -421,7 +433,7 @@
          const notifSnap = await getDocs(collection(db, "notificaciones"));
          notifSnap.forEach(doc => {
              let d = doc.data();
-             extractComments(d, d.alumno || d.nombreAlumno || 'Alumno');
+             extractComments(d, d.alumno || d.nombreAlumno || d.nombre || 'Alumno');
          });
       } catch(e) {}
 
@@ -548,6 +560,7 @@
       if (docSnap.exists()) {
         window.currentStudentData = { id, ...docSnap.data() };
         if (!window.currentStudentData.rutina) window.currentStudentData.rutina = {};
+        if (!window.currentStudentData.sessionSummaries) window.currentStudentData.sessionSummaries = {};
 
         document.getElementById('lblNombre').textContent = window.currentStudentData.nombre || "-";
         document.getElementById('lblEdad').textContent = window.currentStudentData.edad || "-";
@@ -694,13 +707,14 @@
       }
     };
 
-    // --- CARGA DE HISTORIAL ESTRUCTURADO ---
+    // --- CARGA DE HISTORIAL ESTRUCTURADO CORREGIDO ---
     async function loadLogs30Days() {
       const container = document.getElementById('historialSelectedWorkoutDetails');
       container.innerHTML = "<p style='color:var(--muted); font-size: 0.9rem;'>⏳ Consultando registros recientes...</p>";
       
       let allLogs = [];
       window.currentStudentData.logs = [];
+      window.currentStudentData.sessionSummaries = {};
 
       try {
         const colsToTry = ["historial", "registros", "entrenamientos"];
@@ -712,6 +726,16 @@
               let isoDate = parseToISODate(rawFecha);
               let displayDate = formatDisplayDate(isoDate);
 
+              let isSummaryOnly = (d.tipo === 'resumen_sesion') || (!d.ejercicios && !d.ejercicio && !d.nombre && !d.Ejercicio && (d.como_se_siente || d.percepcion_esfuerzo || d.comentario));
+              
+              if (d.como_se_siente || d.percepcion_esfuerzo || d.comentario || d.notas) {
+                  window.currentStudentData.sessionSummaries[isoDate] = {
+                      como_se_siente: d.como_se_siente || '',
+                      percepcion_esfuerzo: d.percepcion_esfuerzo || '',
+                      comentario: d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas || ''
+                  };
+              }
+
               if (d.ejercicios && Array.isArray(d.ejercicios)) {
                   d.ejercicios.forEach(ej => {
                       allLogs.push({
@@ -721,10 +745,10 @@
                           Serie: ej.serie || ej.sets || ej.Serie || 1,
                           "Peso (kg)": ej.peso || ej["Peso (kg)"] || ej.peso_kg || ej.weight || 0,
                           Repeticiones: ej.reps || ej.Repeticiones || ej.repeticiones || 0,
-                          Comentarios: ej.comentario || ej.Comentarios || ej.comentarios || ej.nota || d.comentario || d.Comentarios || ""
+                          Comentarios: ej.comentario || ej.Comentarios || ej.comentarios || ej.nota || ""
                       });
                   });
-              } else {
+              } else if (!isSummaryOnly) {
                   allLogs.push({
                     isoDate: isoDate,
                     Fecha: displayDate,
@@ -747,6 +771,16 @@
                   let rawFecha = d.fecha || d.Fecha || d.date || d.timestamp;
                   let isoDate = parseToISODate(rawFecha);
                   let displayDate = formatDisplayDate(isoDate);
+                  
+                  let isSummaryOnly = (d.tipo === 'resumen_sesion') || (!d.ejercicios && !d.ejercicio && !d.nombre && !d.Ejercicio && (d.como_se_siente || d.percepcion_esfuerzo || d.comentario));
+
+                  if (d.como_se_siente || d.percepcion_esfuerzo || d.comentario || d.notas) {
+                      window.currentStudentData.sessionSummaries[isoDate] = {
+                          como_se_siente: d.como_se_siente || '',
+                          percepcion_esfuerzo: d.percepcion_esfuerzo || '',
+                          comentario: d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas || ''
+                      };
+                  }
 
                   if (d.ejercicios && Array.isArray(d.ejercicios)) {
                       d.ejercicios.forEach(ej => {
@@ -757,10 +791,10 @@
                               Serie: ej.serie || ej.sets || 1,
                               "Peso (kg)": ej.peso || ej.weight || 0,
                               Repeticiones: ej.reps || ej.repeticiones || 0,
-                              Comentarios: ej.comentario || ej.nota || d.comentario || ""
+                              Comentarios: ej.comentario || ej.nota || ""
                           });
                       });
-                  } else {
+                  } else if (!isSummaryOnly) {
                       allLogs.push({
                           isoDate: isoDate,
                           Fecha: displayDate,
@@ -790,12 +824,13 @@
         } catch (e) {}
       }
 
-      if (allLogs.length > 0) {
+      if (allLogs.length > 0 || Object.keys(window.currentStudentData.sessionSummaries).length > 0) {
         allLogs.sort((a, b) => b.isoDate.localeCompare(a.isoDate));
         window.currentStudentData.logs = allLogs;
         
         // --- LOGICA DE CÁLCULO DE ESTADO ---
-        const uniqueDates = [...new Set(allLogs.map(l => l.isoDate))];
+        let allDates = allLogs.map(l => l.isoDate).concat(Object.keys(window.currentStudentData.sessionSummaries));
+        const uniqueDates = [...new Set(allDates)].sort((a, b) => b.localeCompare(a));
         const today = new Date();
         let estado = "Inactivo 😴";
         let colorEstado = "var(--muted)";
@@ -805,7 +840,6 @@
             const diffDays = Math.floor((today - lastWorkoutDate) / (1000 * 60 * 60 * 24));
 
             if (diffDays <= 7) {
-                // Evaluamos si entrenó también la semana anterior a la actual (entre 8 y 15 días atrás)
                 const hasPreviousWeek = uniqueDates.some(d => {
                     const dDate = new Date(d + "T00:00:00");
                     const diff = Math.floor((today - dDate) / (1000 * 60 * 60 * 24));
@@ -829,7 +863,7 @@
         }
         // ------------------------------------
         
-        renderHistorialTab();
+        renderHistorialTab(uniqueDates);
       } else {
         window.currentStudentData.logs = [];
         container.innerHTML = "<p style='color:var(--muted); font-size:0.9rem;'>Sin registros encontrados.</p>";
@@ -846,14 +880,13 @@
       }
     }
 
-    window.renderHistorialTab = function() {
+    window.renderHistorialTab = function(uniqueDates) {
         const logs = window.currentStudentData.logs || [];
-        const uniqueDates = [...new Set(logs.map(l => l.isoDate))];
-
         const datePicker = document.getElementById('historialDatePicker');
-        if(uniqueDates.length > 0) {
+        
+        if(uniqueDates && uniqueDates.length > 0) {
             if(!datePicker.value || !uniqueDates.includes(datePicker.value)) {
-                datePicker.value = uniqueDates[0]; // Mostrar el último entrenamiento automáticamente
+                datePicker.value = uniqueDates[0]; 
             }
         } else {
             datePicker.value = '';
@@ -880,8 +913,26 @@
         displayTitle.textContent = `📅 ${parts[2]}/${parts[1]}/${parts[0]}`;
 
         const dayLogs = (window.currentStudentData.logs || []).filter(l => l.isoDate === selectedIsoDate);
+        container.innerHTML = '';
 
-        if(dayLogs.length === 0) {
+        // Añadir Resumen de sesión si existe
+        if (window.currentStudentData.sessionSummaries && window.currentStudentData.sessionSummaries[selectedIsoDate]) {
+            let summ = window.currentStudentData.sessionSummaries[selectedIsoDate];
+            if(summ.como_se_siente || summ.percepcion_esfuerzo || summ.comentario) {
+                let summaryHtml = `
+                   <div style="background: var(--input-bg); border-left: 4px solid var(--accent); padding: 12px; margin-bottom: 20px; border-radius: 8px;">
+                     <h5 style="margin:0 0 8px 0; color:var(--text); font-size:1rem;">📋 Resumen de la sesión</h5>
+                     <div style="font-size:0.9rem; color:var(--muted); line-height:1.5;">
+                       ${summ.como_se_siente ? `<strong>Sensación:</strong> ${summ.como_se_siente} <br>` : ''}
+                       ${summ.percepcion_esfuerzo ? `<strong>Esfuerzo:</strong> ${summ.percepcion_esfuerzo}/10 <br>` : ''}
+                       ${summ.comentario ? `<strong>Comentarios:</strong> ${summ.comentario}` : ''}
+                     </div>
+                   </div>`;
+                container.innerHTML += summaryHtml;
+            }
+        }
+
+        if(dayLogs.length === 0 && container.innerHTML === '') {
             container.innerHTML = "<p style='color:var(--muted);'>No hay registros para esta fecha.</p>";
             renderProgressChart();
             return;
@@ -897,7 +948,6 @@
             grouped[zona][l.Ejercicio].push(l);
         });
 
-        container.innerHTML = '';
         for(let zona in grouped) {
             let zonaDiv = document.createElement('div');
             zonaDiv.style.marginBottom = '15px';
@@ -1867,6 +1917,7 @@
         rut[day][circName] = [];
         document.getElementById('newCircuitInput').value = '';
         updateCircuitDropdown();
+        document.getElementById('selectCircuitForEx').value = circName; // Auto selecciona el creado
         renderExercisesListEditor();
         if(window.editorContext.type === 'student') renderRoutineDetails();
       }
@@ -1984,12 +2035,31 @@
       const list = rut[day][circ];
       
       if (direction === -1 && idx > 0) {
-        // Subir
         [list[idx - 1], list[idx]] = [list[idx], list[idx - 1]];
       } else if (direction === 1 && idx < list.length - 1) {
-        // Bajar
         [list[idx + 1], list[idx]] = [list[idx], list[idx + 1]];
       }
+      
+      renderExercisesListEditor();
+      if(window.editorContext.type === 'student') renderRoutineDetails();
+    };
+
+    // Ordenamiento de Circuitos
+    window.moveCircuit = function(circ, direction) {
+      const day = window.currentEditorDay;
+      const rut = getActiveRoutine();
+      const circKeys = Object.keys(rut[day]);
+      const idx = circKeys.indexOf(circ);
+      
+      if (direction === -1 && idx > 0) {
+        [circKeys[idx - 1], circKeys[idx]] = [circKeys[idx], circKeys[idx - 1]];
+      } else if (direction === 1 && idx < circKeys.length - 1) {
+        [circKeys[idx + 1], circKeys[idx]] = [circKeys[idx], circKeys[idx + 1]];
+      } else { return; }
+      
+      const newDayData = {};
+      circKeys.forEach(k => newDayData[k] = rut[day][k]);
+      rut[day] = newDayData;
       
       renderExercisesListEditor();
       if(window.editorContext.type === 'student') renderRoutineDetails();
@@ -2076,7 +2146,17 @@
 
       Object.keys(rut[day]).forEach(circ => {
         const circTitle = document.createElement('div');
-        circTitle.innerHTML = `<strong style="color:var(--muted); display:block; margin: 15px 0 5px 0;">🔄 ${circ}</strong>`;
+        circTitle.style.display = 'flex';
+        circTitle.style.justifyContent = 'space-between';
+        circTitle.style.alignItems = 'center';
+        circTitle.style.margin = '15px 0 5px 0';
+        circTitle.innerHTML = `
+          <strong style="color:var(--muted);">🔄 ${circ}</strong>
+          <div style="display:flex; gap:5px;">
+            <button class="btn-sec" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1.1rem; margin:0;" onclick="moveCircuit('${circ}', -1)" title="Subir Circuito">↑</button>
+            <button class="btn-sec" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1.1rem; margin:0;" onclick="moveCircuit('${circ}', 1)" title="Bajar Circuito">↓</button>
+          </div>
+        `;
         container.appendChild(circTitle);
 
         rut[day][circ].forEach((ex, idx) => {
@@ -2093,10 +2173,10 @@
               ${ex.notes ? `<div style="font-size:0.8rem; color:var(--accent); margin-top:2px;">📌 <em>${ex.notes}</em></div>` : ''}
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
-              <button class="btn-sec" style="padding: 4px 8px; font-size: 1rem;" onclick="moveExercise('${circ}', ${idx}, -1)" title="Subir">↑</button>
-              <button class="btn-sec" style="padding: 4px 8px; font-size: 1rem;" onclick="moveExercise('${circ}', ${idx}, 1)" title="Bajar">↓</button>
-              <button class="btn-sec" style="width: auto; padding: 6px 12px;" onclick="openEditSingleExercise('${circ}', ${idx})">Editar</button>
-              <button class="btn-danger" style="width: auto; padding: 6px 12px;" onclick="deleteExercise('${circ}', ${idx})">Eliminar</button>
+              <button class="btn-sec" style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1.1rem; margin:0;" onclick="moveExercise('${circ}', ${idx}, -1)" title="Subir">↑</button>
+              <button class="btn-sec" style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1.1rem; margin:0;" onclick="moveExercise('${circ}', ${idx}, 1)" title="Bajar">↓</button>
+              <button class="btn-sec" style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1rem; margin:0; border:none;" onclick="openEditSingleExercise('${circ}', ${idx})" title="Editar">✏️</button>
+              <button class="btn-danger" style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1rem; margin:0; border:none;" onclick="deleteExercise('${circ}', ${idx})" title="Eliminar">❌</button>
             </div>
           `;
           container.appendChild(div);
@@ -2504,9 +2584,9 @@
         <div style="background: var(--bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border);">
           <label style="color: var(--accent); font-weight: bold; margin-bottom: 8px;">1. Circuito de destino:</label>
           <select id="selectCircuitForEx"></select>
-          <div style="display:flex; gap:5px; margin-top:8px;">
-            <input type="text" id="newCircuitInput" placeholder="Ej: Circuito 1">
-            <button class="btn-sec" onclick="addCircuitToDay()" style="padding: 5px 10px; margin-bottom:0;">+ Crear</button>
+          <div style="display:flex; gap:5px; margin-top:8px; align-items:center;">
+            <input type="text" id="newCircuitInput" placeholder="Ej: Circuito 1" style="margin-bottom:0; flex-grow:1;">
+            <button class="btn-sec" onclick="addCircuitToDay()" style="padding: 10px 15px; margin-bottom:0; width:auto; flex-shrink:0;">+ Crear</button>
           </div>
         </div>
         
