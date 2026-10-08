@@ -396,13 +396,12 @@
       let notifs = [];
 
       const extractComments = (d, studentName) => {
-          let rawFecha = d.fecha || d.Fecha || d.date || d.timestamp;
+          let rawFecha = d.fecha || d.Fecha || d.date || d.timestamp || d.createdAt;
           let isoDate = parseToISODate(rawFecha);
           let fechaStr = formatDisplayDate(isoDate);
           
           let msgParts = [];
 
-          // Extraer percepciones generales / resumen de sesión
           if (d.como_se_siente) msgParts.push(`Sensación: ${d.como_se_siente}`);
           if (d.percepcion_esfuerzo) msgParts.push(`Esfuerzo: ${d.percepcion_esfuerzo}/10`);
           
@@ -412,13 +411,12 @@
           }
 
           if (d.tipo === 'rutina_completada' || d.accion === 'termino_entrenamiento') {
-              let compMsg = "✅ ¡Rutina completada! " + msgParts.join(" | ");
+              let compMsg = "Rutina completada. " + msgParts.join(" | ");
               notifs.push({ nombre: studentName, mensaje: compMsg, fecha: fechaStr, isoDate: isoDate });
           } else if (msgParts.length > 0) {
               notifs.push({ nombre: studentName, mensaje: msgParts.join(" | "), fecha: fechaStr, isoDate: isoDate });
           }
 
-          // Comentarios a nivel de ejercicio
           if (d.ejercicios && Array.isArray(d.ejercicios)) {
               d.ejercicios.forEach(ej => {
                   let ejComment = ej.comentario || ej.Comentarios || ej.comentarios || ej.nota || ej.notas;
@@ -426,6 +424,11 @@
                       notifs.push({ nombre: studentName, mensaje: `(${ej.ejercicio || ej.nombre || 'Ejercicio'}) ${ejComment}`, fecha: fechaStr, isoDate: isoDate });
                   }
               });
+          } else if (d.ejercicio || d.Ejercicio || d.nombre) {
+              let ejComment = d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas;
+              if (ejComment && typeof ejComment === 'string' && ejComment.trim() !== '' && !msgParts.includes(ejComment)) {
+                  notifs.push({ nombre: studentName, mensaje: `(${d.ejercicio || d.Ejercicio || d.nombre}) ${ejComment}`, fecha: fechaStr, isoDate: isoDate });
+              }
           }
       };
 
@@ -479,8 +482,8 @@
          uniqueNotifs.forEach(n => {
             notifList.innerHTML += `
               <div class="log-card">
-                <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px;">📅 ${n.fecha} - 👤 ${n.nombre}</div>
-                💬 <em>"${n.mensaje}"</em>
+                <strong>${n.fecha} - ${n.nombre}</strong><br>
+                <span style="color: var(--muted); font-size: 0.9rem;">${n.mensaje}</span>
               </div>
             `;
          });
@@ -598,7 +601,6 @@
         document.body.classList.add('modal-open'); 
         switchSubTab('datos');
 
-        // Cargar logs
         if (window.currentStudentData) {
            loadLogs30Days();
         }
@@ -726,14 +728,19 @@
               let isoDate = parseToISODate(rawFecha);
               let displayDate = formatDisplayDate(isoDate);
 
-              let isSummaryOnly = (d.tipo === 'resumen_sesion') || (!d.ejercicios && !d.ejercicio && !d.nombre && !d.Ejercicio && (d.como_se_siente || d.percepcion_esfuerzo || d.comentario));
+              let isSummaryOnly = (d.tipo === 'resumen_sesion') || (!d.ejercicios && !d.ejercicio && !d.nombre && !d.Ejercicio && (d.como_se_siente || d.percepcion_esfuerzo || d.comentario || d.mensaje));
               
-              if (d.como_se_siente || d.percepcion_esfuerzo || d.comentario || d.notas) {
-                  window.currentStudentData.sessionSummaries[isoDate] = {
-                      como_se_siente: d.como_se_siente || '',
-                      percepcion_esfuerzo: d.percepcion_esfuerzo || '',
-                      comentario: d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas || ''
-                  };
+              if (d.como_se_siente || d.percepcion_esfuerzo || d.comentario || d.notas || d.mensaje) {
+                  if (!window.currentStudentData.sessionSummaries[isoDate]) {
+                      window.currentStudentData.sessionSummaries[isoDate] = {};
+                  }
+                  let summ = window.currentStudentData.sessionSummaries[isoDate];
+                  if (d.como_se_siente) summ.como_se_siente = d.como_se_siente;
+                  if (d.percepcion_esfuerzo) summ.percepcion_esfuerzo = d.percepcion_esfuerzo;
+                  let currentComment = d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas || d.mensaje;
+                  if (currentComment && typeof currentComment === 'string' && currentComment.trim() !== '') {
+                      summ.comentario = summ.comentario ? summ.comentario + " | " + currentComment : currentComment;
+                  }
               }
 
               if (d.ejercicios && Array.isArray(d.ejercicios)) {
@@ -741,6 +748,7 @@
                       allLogs.push({
                           isoDate: isoDate,
                           Fecha: displayDate,
+                          Circuito: ej.circuito || ej.Circuito || d.circuito || d.Circuito || "Circuito",
                           Ejercicio: ej.ejercicio || ej.nombre || ej.name || "Desconocido",
                           Serie: ej.serie || ej.sets || ej.Serie || 1,
                           "Peso (kg)": ej.peso || ej["Peso (kg)"] || ej.peso_kg || ej.weight || 0,
@@ -752,6 +760,7 @@
                   allLogs.push({
                     isoDate: isoDate,
                     Fecha: displayDate,
+                    Circuito: d.circuito || d.Circuito || "Circuito",
                     Ejercicio: d.ejercicio || d.Ejercicio || d.nombre || "Desconocido",
                     Serie: d.serie || d.Serie || d.sets || 1,
                     "Peso (kg)": d.peso || d["Peso (kg)"] || d.peso_kg || d.weight || 0,
@@ -772,14 +781,19 @@
                   let isoDate = parseToISODate(rawFecha);
                   let displayDate = formatDisplayDate(isoDate);
                   
-                  let isSummaryOnly = (d.tipo === 'resumen_sesion') || (!d.ejercicios && !d.ejercicio && !d.nombre && !d.Ejercicio && (d.como_se_siente || d.percepcion_esfuerzo || d.comentario));
+                  let isSummaryOnly = (d.tipo === 'resumen_sesion') || (!d.ejercicios && !d.ejercicio && !d.nombre && !d.Ejercicio && (d.como_se_siente || d.percepcion_esfuerzo || d.comentario || d.mensaje));
 
-                  if (d.como_se_siente || d.percepcion_esfuerzo || d.comentario || d.notas) {
-                      window.currentStudentData.sessionSummaries[isoDate] = {
-                          como_se_siente: d.como_se_siente || '',
-                          percepcion_esfuerzo: d.percepcion_esfuerzo || '',
-                          comentario: d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas || ''
-                      };
+                  if (d.como_se_siente || d.percepcion_esfuerzo || d.comentario || d.notas || d.mensaje) {
+                      if (!window.currentStudentData.sessionSummaries[isoDate]) {
+                          window.currentStudentData.sessionSummaries[isoDate] = {};
+                      }
+                      let summ = window.currentStudentData.sessionSummaries[isoDate];
+                      if (d.como_se_siente) summ.como_se_siente = d.como_se_siente;
+                      if (d.percepcion_esfuerzo) summ.percepcion_esfuerzo = d.percepcion_esfuerzo;
+                      let currentComment = d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas || d.mensaje;
+                      if (currentComment && typeof currentComment === 'string' && currentComment.trim() !== '') {
+                          summ.comentario = summ.comentario ? summ.comentario + " | " + currentComment : currentComment;
+                      }
                   }
 
                   if (d.ejercicios && Array.isArray(d.ejercicios)) {
@@ -787,6 +801,7 @@
                           allLogs.push({
                               isoDate: isoDate,
                               Fecha: displayDate,
+                              Circuito: ej.circuito || ej.Circuito || d.circuito || d.Circuito || "Circuito",
                               Ejercicio: ej.ejercicio || ej.nombre || ej.name || "Desconocido",
                               Serie: ej.serie || ej.sets || 1,
                               "Peso (kg)": ej.peso || ej.weight || 0,
@@ -798,6 +813,7 @@
                       allLogs.push({
                           isoDate: isoDate,
                           Fecha: displayDate,
+                          Circuito: d.circuito || d.Circuito || "Circuito",
                           Ejercicio: d.ejercicio || d.Ejercicio || d.nombre || "Desconocido",
                           Serie: d.serie || d.Serie || d.sets || 1,
                           "Peso (kg)": d.peso || d["Peso (kg)"] || d.peso_kg || d.weight || 0,
@@ -818,6 +834,7 @@
                 let isoDate = parseToISODate(l.Fecha);
                 l.isoDate = isoDate;
                 l.Fecha = formatDisplayDate(isoDate);
+                l.Circuito = l.Circuito || "Circuito";
                 allLogs.push(l);
             });
           }
@@ -828,7 +845,6 @@
         allLogs.sort((a, b) => b.isoDate.localeCompare(a.isoDate));
         window.currentStudentData.logs = allLogs;
         
-        // --- LOGICA DE CÁLCULO DE ESTADO ---
         let allDates = allLogs.map(l => l.isoDate).concat(Object.keys(window.currentStudentData.sessionSummaries));
         const uniqueDates = [...new Set(allDates)].sort((a, b) => b.localeCompare(a));
         const today = new Date();
@@ -861,7 +877,6 @@
             lblEstado.textContent = estado;
             lblEstado.style.color = colorEstado;
         }
-        // ------------------------------------
         
         renderHistorialTab(uniqueDates);
       } else {
@@ -915,14 +930,13 @@
         const dayLogs = (window.currentStudentData.logs || []).filter(l => l.isoDate === selectedIsoDate);
         container.innerHTML = '';
 
-        // Añadir Resumen de sesión si existe
         if (window.currentStudentData.sessionSummaries && window.currentStudentData.sessionSummaries[selectedIsoDate]) {
             let summ = window.currentStudentData.sessionSummaries[selectedIsoDate];
             if(summ.como_se_siente || summ.percepcion_esfuerzo || summ.comentario) {
                 let summaryHtml = `
                    <div style="background: var(--input-bg); border-left: 4px solid var(--accent); padding: 12px; margin-bottom: 20px; border-radius: 8px;">
-                     <h5 style="margin:0 0 8px 0; color:var(--text); font-size:1rem;">📋 Resumen de la sesión</h5>
-                     <div style="font-size:0.9rem; color:var(--muted); line-height:1.5;">
+                     <h5 style="margin:0 0 8px 0; color:var(--text); font-size:1rem;">📋 Resumen y Sensaciones de la sesión</h5>
+                     <div style="font-size:0.9rem; color:var(--text); line-height:1.5;">
                        ${summ.como_se_siente ? `<strong>Sensación:</strong> ${summ.como_se_siente} <br>` : ''}
                        ${summ.percepcion_esfuerzo ? `<strong>Esfuerzo:</strong> ${summ.percepcion_esfuerzo}/10 <br>` : ''}
                        ${summ.comentario ? `<strong>Comentarios:</strong> ${summ.comentario}` : ''}
@@ -938,22 +952,23 @@
             return;
         }
 
-        // Agrupar por Zona -> Ejercicio
+        // Agrupar por Circuito -> Ejercicio
         let grouped = {};
         dayLogs.forEach(l => {
-            let exData = window.globalExercises.find(e => e.nombre === l.Ejercicio);
-            let zona = exData && exData.zona ? exData.zona : "General";
-            if(!grouped[zona]) grouped[zona] = {};
-            if(!grouped[zona][l.Ejercicio]) grouped[zona][l.Ejercicio] = [];
-            grouped[zona][l.Ejercicio].push(l);
+            let circ = l.Circuito || "Circuito";
+            if(!grouped[circ]) grouped[circ] = {};
+            if(!grouped[circ][l.Ejercicio]) grouped[circ][l.Ejercicio] = [];
+            grouped[circ][l.Ejercicio].push(l);
         });
 
-        for(let zona in grouped) {
-            let zonaDiv = document.createElement('div');
-            zonaDiv.style.marginBottom = '15px';
-            zonaDiv.innerHTML = `<h5 style="color:var(--muted); margin-bottom:8px; font-size:1rem; text-transform: uppercase;">💪 ${zona}</h5>`;
+        const circKeys = Object.keys(grouped).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
 
-            for(let exName in grouped[zona]) {
+        for(let circ of circKeys) {
+            let circDiv = document.createElement('div');
+            circDiv.style.marginBottom = '15px';
+            circDiv.innerHTML = `<h5 style="color:var(--muted); margin-bottom:8px; font-size:1rem; text-transform: uppercase;">🔄 ${circ}</h5>`;
+
+            for(let exName in grouped[circ]) {
                 let exDiv = document.createElement('div');
                 exDiv.style.background = 'var(--bg)';
                 exDiv.style.padding = '10px';
@@ -969,7 +984,7 @@
                 exDiv.appendChild(header);
 
                 let notesSet = new Set();
-                grouped[zona][exName].forEach(log => {
+                grouped[circ][exName].forEach(log => {
                     let seriesDiv = document.createElement('div');
                     seriesDiv.style.fontSize = '0.9rem';
                     seriesDiv.style.marginLeft = '10px';
@@ -992,9 +1007,9 @@
                     });
                     exDiv.appendChild(notesDiv);
                 }
-                zonaDiv.appendChild(exDiv);
+                circDiv.appendChild(exDiv);
             }
-            container.appendChild(zonaDiv);
+            container.appendChild(circDiv);
         }
         renderProgressChart();
     };
@@ -1057,7 +1072,6 @@
           filteredLogs = filteredLogs.filter(l => l.isoDate >= iso30);
       }
 
-      // Revertir para mostrar progreso cronológico real de izquierda a derecha
       filteredLogs.reverse();
 
       const labels = filteredLogs.map(l => `${l.Fecha} (S${l.Serie})`);
@@ -1100,7 +1114,8 @@
       const tableData = [];
       if(rut) {
         for (const day in rut) {
-          for (const circ in rut[day]) {
+          const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+          for (const circ of circKeys) {
             rut[day][circ].forEach(ex => {
               const displayWeights = ex.weights ? ex.weights.join(", ") : ex.weight;
               const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
@@ -1250,7 +1265,8 @@
           <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem;" onclick="openRoutineEditorModal('${day}')">✏️</button>
         </div>`;
         
-        for (const circ in rut[day]) {
+        const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        for (const circ of circKeys) {
           const circDiv = document.createElement('div');
           circDiv.style.marginBottom = '8px';
           circDiv.innerHTML = `<strong>🔄 ${circ}</strong>`;
@@ -1656,7 +1672,8 @@
         dayDiv.className = 'tree-node';
         dayDiv.innerHTML = `<h4 style="color:var(--accent); margin-bottom:8px; margin-top:0;">📅 ${day}</h4>`;
         
-        for (const circ in rut[day]) {
+        const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        for (const circ of circKeys) {
           const circDiv = document.createElement('div');
           circDiv.style.marginBottom = '8px';
           circDiv.innerHTML = `<strong>🔄 ${circ}</strong>`;
@@ -1701,7 +1718,8 @@
           currentY += 6;
           
           const tableData = [];
-          for (const circ in rut[day]) {
+          const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+          for (const circ of circKeys) {
             rut[day][circ].forEach(ex => {
               const displayWeights = ex.weights ? ex.weights.join(", ") : ex.weight;
               const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
@@ -1759,7 +1777,8 @@
           currentY += 6;
           
           const tableData = [];
-          for (const circ in rut[day]) {
+          const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+          for (const circ of circKeys) {
             rut[day][circ].forEach(ex => {
               const displayWeights = ex.weights ? ex.weights.join(", ") : ex.weight;
               const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
@@ -1845,7 +1864,8 @@
          return;
       }
 
-      for (const circ in dayData) {
+      const circKeys = Object.keys(dayData).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+      for (const circ of circKeys) {
         const circDiv = document.createElement('div');
         circDiv.style.marginTop = '15px';
         circDiv.innerHTML = `<strong style="color:var(--muted); display:block; margin-bottom: 8px;">🔄 ${circ}</strong>`;
@@ -1929,7 +1949,8 @@
       select.innerHTML = '';
       if (!day) return;
       const rut = getActiveRoutine();
-      Object.keys(rut[day] || {}).forEach(c => {
+      const circKeys = Object.keys(rut[day] || {}).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+      circKeys.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c; opt.textContent = c;
         select.appendChild(opt);
@@ -2048,7 +2069,7 @@
     window.moveCircuit = function(circ, direction) {
       const day = window.currentEditorDay;
       const rut = getActiveRoutine();
-      const circKeys = Object.keys(rut[day]);
+      const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
       const idx = circKeys.indexOf(circ);
       
       if (direction === -1 && idx > 0) {
@@ -2144,7 +2165,8 @@
       const rut = getActiveRoutine();
       if (!day || !rut[day]) return;
 
-      Object.keys(rut[day]).forEach(circ => {
+      const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+      circKeys.forEach(circ => {
         const circTitle = document.createElement('div');
         circTitle.style.display = 'flex';
         circTitle.style.justifyContent = 'space-between';
