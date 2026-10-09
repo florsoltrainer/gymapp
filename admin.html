@@ -97,7 +97,7 @@
     .student-info-block { display: flex; flex-direction: column; flex-grow: 1; word-break: break-all; overflow-wrap: anywhere; } 
     .profile-img-circular { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); flex-shrink: 0; }
 
-    .log-card { background: var(--input-bg); border-left: 4px solid var(--accent); padding: 10px 14px; margin-top: 8px; border-radius: 6px; font-size: 0.88rem; transition: background 0.2s; }
+    .log-card { background: var(--input-bg); border-left: 4px solid var(--accent); margin-top: 8px; border-radius: 6px; font-size: 0.88rem; transition: background 0.2s; }
     .log-card:hover { background: var(--border); }
     
     .sub-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; overflow-x: auto; }
@@ -403,12 +403,26 @@
          // Ordenar por fecha (las más recientes arriba)
          notifs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-         if (notifs.length > 0) {
+         // DEDUPLICACIÓN DE NOTIFICACIONES (1 por alumno por fecha)
+         let uniqueNotifs = [];
+         let seen = new Set();
+         notifs.forEach(n => {
+             let key = `${n.alumnoId}_${n.fecha}`;
+             if(!seen.has(key)) {
+                 seen.add(key);
+                 uniqueNotifs.push(n);
+             } else {
+                 // Si está duplicada en base de datos, la marcamos como leída para limpiar
+                 markNotifAsRead(n.id);
+             }
+         });
+
+         if (uniqueNotifs.length > 0) {
              notifBadge.style.display = 'block';
-             notifBadge.textContent = notifs.length;
+             notifBadge.textContent = uniqueNotifs.length;
              notifList.innerHTML = '';
              
-             notifs.forEach(n => {
+             uniqueNotifs.forEach(n => {
                 let msg = n.mensaje || "Entrenamiento finalizado.";
                 if(n.feedback) {
                     msg += `<br><span style="color:var(--accent); font-size:0.8rem;">Sensación: ${n.feedback.sensacion || '-'} | RPE: ${n.feedback.rpe || '-'}/10 | Dolor: ${n.feedback.dolor || 'No'}</span>`;
@@ -423,10 +437,10 @@
                 }
 
                 notifList.innerHTML += `
-                  <div class="log-card" style="cursor: pointer;" onclick="openStudentFromNotif('${n.alumnoId || ''}', '${isoDate}')">
+                  <div class="log-card" style="cursor: pointer; padding: 12px;" onclick="openStudentFromNotif('${n.alumnoId || ''}', '${isoDate}')">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
-                        <strong style="color: var(--text);">${n.fecha || ''} ${n.hora || ''} - ${n.alumnoNombre || 'Alumno'}</strong>
-                        <button onclick="event.stopPropagation(); markNotifAsRead('${n.id}')" style="background:transparent; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer; line-height: 0.8; margin: 0; padding: 0 0 0 10px;" title="Marcar como leída y descartar">×</button>
+                        <strong style="color: var(--text); font-size: 0.95rem; margin-top: 2px;">${n.fecha || ''} ${n.hora || ''} - ${n.alumnoNombre || 'Alumno'}</strong>
+                        <button onclick="event.stopPropagation(); markNotifAsRead('${n.id}')" style="background:transparent; border:none; color:var(--muted); font-size:1.5rem; cursor:pointer; line-height: 1; padding: 0 0 0 10px; margin: 0; display: flex; align-items: center;" title="Marcar como leída y descartar">×</button>
                     </div>
                     <div style="color: var(--muted); font-size: 0.9rem;">${msg}</div>
                   </div>
@@ -969,7 +983,7 @@
         }
 
         if(dayLogs.length === 0 && container.innerHTML === '') {
-            container.innerHTML = "<p style='color:var(--muted);'>No hay registros para esta fecha.</p>";
+            container.innerHTML = "<p style='color:var(--muted);'>No hay registros de ejercicios para esta fecha.</p>";
             renderProgressChart();
             return;
         }
@@ -977,7 +991,7 @@
         // Agrupar por Circuito -> Ejercicio
         let grouped = {};
         dayLogs.forEach(l => {
-            let circ = l.Circuito || "Circuito";
+            let circ = l.Circuito || "General";
             if(!grouped[circ]) grouped[circ] = {};
             if(!grouped[circ][l.Ejercicio]) grouped[circ][l.Ejercicio] = [];
             grouped[circ][l.Ejercicio].push(l);
@@ -1034,6 +1048,37 @@
             container.appendChild(circDiv);
         }
         renderProgressChart();
+    };
+    
+    // --- MODAL FEEDBACK ---
+    window.openFeedbackModal = function() {
+        const selectedIsoDate = document.getElementById('historialDatePicker').value;
+        if(!selectedIsoDate || !window.currentStudentData.sessionSummaries || !window.currentStudentData.sessionSummaries[selectedIsoDate]) {
+            alert("No hay encuesta registrada para esta fecha.");
+            return;
+        }
+        
+        const summ = window.currentStudentData.sessionSummaries[selectedIsoDate];
+        
+        const getEmoji = (sensacion) => {
+            if(!sensacion) return '❓';
+            if(sensacion.toLowerCase() === 'bien') return '😄';
+            if(sensacion.toLowerCase() === 'neutral') return '😐';
+            if(sensacion.toLowerCase() === 'mal') return '🙁';
+            return '❓';
+        };
+
+        document.getElementById('fbModalDate').textContent = formatDisplayDate(selectedIsoDate);
+        document.getElementById('fbModalSensacion').innerHTML = `${getEmoji(summ.como_se_siente)} <span style="font-size: 1rem; color: var(--text);">${summ.como_se_siente || 'No indicó'}</span>`;
+        document.getElementById('fbModalRPE').textContent = summ.percepcion_esfuerzo ? `${summ.percepcion_esfuerzo}/10` : 'No indicó';
+        document.getElementById('fbModalDolor').textContent = summ.dolor && summ.dolor !== 'No' ? `⚠️ Sí: ${summ.dolor}` : '✅ Ninguno';
+        document.getElementById('fbModalComentarios').textContent = summ.comentario || 'Sin comentarios adicionales.';
+        
+        document.getElementById('feedbackModal').classList.add('show');
+    };
+    
+    window.closeFeedbackModal = function() {
+        document.getElementById('feedbackModal').classList.remove('show');
     };
 
     window.renderPRs = function(logs) {
@@ -2418,11 +2463,8 @@
         
         <div class="user-menu-dropdown" id="userMenuDropdown">
           <span id="adminEmailDisplay" class="menu-email">Cargando...</span>
-          <hr style="border:1px solid var(--border); margin: 8px 0;">
           <button id="exportBackupBtn" class="btn-sec" onclick="exportBackup()" style="width: 100%; margin: 0; font-size:0.85rem;">💾 Exportar Backup (JSON)</button>
           <button class="btn-sec" onclick="triggerImportBackup()" style="width: 100%; margin: 0; font-size:0.85rem;">📂 Importar Backup (JSON)</button>
-          <input type="file" id="importBackupFile" accept=".json" style="display:none;" onchange="importBackup(event)">
-          <hr style="border:1px solid var(--border); margin: 8px 0;">
           <button class="btn-danger" onclick="logout()" style="width: 100%; margin: 0;">Salir de la cuenta</button>
         </div>
       </div>
