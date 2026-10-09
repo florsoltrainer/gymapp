@@ -97,7 +97,7 @@
     .student-info-block { display: flex; flex-direction: column; flex-grow: 1; word-break: break-all; overflow-wrap: anywhere; } 
     .profile-img-circular { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); flex-shrink: 0; }
 
-    .log-card { background: var(--input-bg); border-left: 4px solid var(--accent); margin-top: 8px; border-radius: 6px; font-size: 0.88rem; transition: background 0.2s; }
+    .log-card { background: var(--input-bg); border-left: 4px solid var(--accent); padding: 10px 14px; margin-top: 8px; border-radius: 6px; font-size: 0.88rem; transition: background 0.2s; }
     .log-card:hover { background: var(--border); }
     
     .sub-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; overflow-x: auto; }
@@ -403,46 +403,22 @@
          // Ordenar por fecha (las más recientes arriba)
          notifs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-         // DEDUPLICACIÓN DE NOTIFICACIONES (1 por alumno por fecha)
-         let uniqueNotifs = [];
-         let seen = new Set();
-         notifs.forEach(n => {
-             let key = `${n.alumnoId}_${n.fecha}`;
-             if(!seen.has(key)) {
-                 seen.add(key);
-                 uniqueNotifs.push(n);
-             } else {
-                 // Si está duplicada en base de datos, la marcamos como leída para limpiar
-                 markNotifAsRead(n.id);
-             }
-         });
-
-         if (uniqueNotifs.length > 0) {
+         if (notifs.length > 0) {
              notifBadge.style.display = 'block';
-             notifBadge.textContent = uniqueNotifs.length;
+             notifBadge.textContent = notifs.length;
              notifList.innerHTML = '';
              
-             uniqueNotifs.forEach(n => {
+             notifs.forEach(n => {
                 let msg = n.mensaje || "Entrenamiento finalizado.";
                 if(n.feedback) {
                     msg += `<br><span style="color:var(--accent); font-size:0.8rem;">Sensación: ${n.feedback.sensacion || '-'} | RPE: ${n.feedback.rpe || '-'}/10 | Dolor: ${n.feedback.dolor || 'No'}</span>`;
                     if(n.feedback.comentarios) msg += `<br><em>"💬 ${n.feedback.comentarios}"</em>`;
                 }
-
-                // Formateo de fecha para el calendario
-                let isoDate = "";
-                if(n.fecha && n.fecha.includes('/')) {
-                   let p = n.fecha.split('/');
-                   if(p.length === 3) isoDate = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
-                }
-
                 notifList.innerHTML += `
-                  <div class="log-card" style="cursor: pointer; padding: 12px;" onclick="openStudentFromNotif('${n.alumnoId || ''}', '${isoDate}')">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
-                        <strong style="color: var(--text); font-size: 0.95rem; margin-top: 2px;">${n.fecha || ''} ${n.hora || ''} - ${n.alumnoNombre || 'Alumno'}</strong>
-                        <button onclick="event.stopPropagation(); markNotifAsRead('${n.id}')" style="background:transparent; border:none; color:var(--muted); font-size:1.5rem; cursor:pointer; line-height: 1; padding: 0 0 0 10px; margin: 0; display: flex; align-items: center;" title="Marcar como leída y descartar">×</button>
-                    </div>
-                    <div style="color: var(--muted); font-size: 0.9rem;">${msg}</div>
+                  <div class="log-card" style="position:relative; padding-right: 30px;">
+                    <strong style="color: var(--text);">${n.fecha || ''} ${n.hora || ''} - ${n.alumnoNombre || 'Alumno'}</strong><br>
+                    <div style="color: var(--muted); font-size: 0.9rem; margin-top: 4px;">${msg}</div>
+                    <button onclick="markNotifAsRead('${n.id}')" style="position:absolute; right:10px; top:12px; background:transparent; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer;" title="Marcar como leída y descartar">×</button>
                   </div>
                 `;
              });
@@ -466,30 +442,6 @@
 
     window.openNotifModal = function() { document.getElementById('notifModal').classList.add('show'); };
     window.closeNotifModal = function() { document.getElementById('notifModal').classList.remove('show'); };
-
-    window.openStudentFromNotif = async function(alumnoId, isoDate) {
-        if (!alumnoId) {
-            alert("⚠️ Esta notificación no tiene un ID de alumno asociado.");
-            return;
-        }
-        
-        closeNotifModal();
-        
-        // Seleccionar alumno y esperar a que terminen de cargar todos los logs
-        await window.selectStudentToEdit(alumnoId);
-        
-        // Cambiar a la pestaña de historial
-        window.switchSubTab('historial-avance');
-        
-        // Seleccionar la fecha de la notificación si está disponible
-        if (isoDate) {
-            const datePicker = document.getElementById('historialDatePicker');
-            if (datePicker) {
-                datePicker.value = isoDate;
-                window.changeHistorialDate();
-            }
-        }
-    };
 
     window.exportBackup = async function() {
       const backupBtn = document.getElementById('exportBackupBtn');
@@ -597,7 +549,7 @@
         switchSubTab('datos');
 
         if (window.currentStudentData) {
-           await loadLogs30Days(); // Ahora espera a que termine
+           loadLogs30Days();
         }
       }
     };
@@ -966,22 +918,6 @@
         const dayLogs = (window.currentStudentData.logs || []).filter(l => l.isoDate === selectedIsoDate);
         container.innerHTML = '';
 
-        if (window.currentStudentData.sessionSummaries && window.currentStudentData.sessionSummaries[selectedIsoDate]) {
-            let summ = window.currentStudentData.sessionSummaries[selectedIsoDate];
-            if(summ.como_se_siente || summ.percepcion_esfuerzo || summ.comentario) {
-                let summaryHtml = `
-                   <div style="background: var(--input-bg); border-left: 4px solid var(--accent); padding: 12px; margin-bottom: 20px; border-radius: 8px;">
-                     <h5 style="margin:0 0 8px 0; color:var(--text); font-size:1rem;">📋 Resumen y Sensaciones de la sesión</h5>
-                     <div style="font-size:0.9rem; color:var(--text); line-height:1.5;">
-                       ${summ.como_se_siente ? `<strong>Sensación:</strong> ${summ.como_se_siente} <br>` : ''}
-                       ${summ.percepcion_esfuerzo ? `<strong>Esfuerzo:</strong> ${summ.percepcion_esfuerzo}/10 <br>` : ''}
-                       ${summ.comentario ? `<strong>Comentarios:</strong> ${summ.comentario}` : ''}
-                     </div>
-                   </div>`;
-                container.innerHTML += summaryHtml;
-            }
-        }
-
         if(dayLogs.length === 0 && container.innerHTML === '') {
             container.innerHTML = "<p style='color:var(--muted);'>No hay registros de ejercicios para esta fecha.</p>";
             renderProgressChart();
@@ -1162,60 +1098,6 @@
         },
         options: { responsive: true, maintainAspectRatio: false }
       });
-    };
-
-    window.generateConsolidatedPDF = function() {
-      if (!window.currentStudentData) return;
-      const { jsPDF } = window.jspdf;
-      const docPDF = new jsPDF();
-      
-      docPDF.setFontSize(18);
-      docPDF.text(`Ficha Consolidada - ${window.currentStudentData.nombre || 'Alumno'}`, 14, 20);
-      docPDF.setFontSize(10);
-      docPDF.text(`Peso: ${window.currentStudentData.peso || '-'} kg | Altura: ${window.currentStudentData.altura || '-'} cm | Edad: ${window.currentStudentData.edad || '-'}`, 14, 28);
-      if(window.currentStudentData.nota_para_alumno) {
-        docPDF.text(`Nota del Entrenador: ${window.currentStudentData.nota_para_alumno}`, 14, 34);
-      }
-
-      const rut = window.currentStudentData.rutina;
-      const tableData = [];
-      if(rut) {
-        for (const day in rut) {
-          const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-          for (const circ of circKeys) {
-            rut[day][circ].forEach(ex => {
-              const displayWeights = ex.weights ? ex.weights.join(", ") : ex.weight;
-              const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
-              tableData.push([day, circ, ex.name, `${ex.sets}x [${displayReps}]`, `${displayWeights} kg`, ex.notes || '-']);
-            });
-          }
-        }
-      }
-
-      docPDF.autoTable({
-        startY: 42,
-        head: [['Día', 'Circuito', 'Ejercicio', 'Series x Reps', 'Peso Obj.', 'Notas']],
-        body: tableData,
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [0, 230, 118], textColor: [0,0,0] }
-      });
-
-      if (window.currentStudentData.logs && window.currentStudentData.logs.length > 0) {
-        let finalY = docPDF.lastAutoTable.finalY || 42;
-        docPDF.text("Últimos Registros (Historial)", 14, finalY + 10);
-        
-        const logData = window.currentStudentData.logs.slice(0, 20).map(l => [
-          l.Fecha, l.Ejercicio, `Serie ${l.Serie}`, `${l["Peso (kg)"]} kg`, `${l.Repeticiones} reps`, l.Comentarios || '-'
-        ]);
-
-        docPDF.autoTable({
-          startY: finalY + 15,
-          head: [['Fecha', 'Ejercicio', 'Serie', 'Peso', 'Reps', 'Comentarios']],
-          body: logData,
-          styles: { fontSize: 8 }
-        });
-      }
-      docPDF.save(`Ficha_${window.currentStudentData.nombre || 'Alumno'}.pdf`);
     };
 
     window.saveToFirebase = async function() {
@@ -2463,8 +2345,11 @@
         
         <div class="user-menu-dropdown" id="userMenuDropdown">
           <span id="adminEmailDisplay" class="menu-email">Cargando...</span>
+          <hr style="border:1px solid var(--border); margin: 8px 0;">
           <button id="exportBackupBtn" class="btn-sec" onclick="exportBackup()" style="width: 100%; margin: 0; font-size:0.85rem;">💾 Exportar Backup (JSON)</button>
           <button class="btn-sec" onclick="triggerImportBackup()" style="width: 100%; margin: 0; font-size:0.85rem;">📂 Importar Backup (JSON)</button>
+          <input type="file" id="importBackupFile" accept=".json" style="display:none;" onchange="importBackup(event)">
+          <hr style="border:1px solid var(--border); margin: 8px 0;">
           <button class="btn-danger" onclick="logout()" style="width: 100%; margin: 0;">Salir de la cuenta</button>
         </div>
       </div>
@@ -2478,14 +2363,12 @@
     <!-- MÓDULO 1: MIS ALUMNOS -->
     <div id="module-alumnos" class="module-section active">
       
-      <div class="card" id="studentsListCard">
+      <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-          <h2 style="margin: 0;">👥 Listado de Alumnos</h2>
-          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="toggleNewStudentForm()">➕ Nuevo Alumno</button>
+          <h2 style="margin: 0;">👥 Alumnos</h2>
+          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="toggleNewStudentForm()">➕</button>
         </div>
-        
         <input type="text" id="searchStudentInput" placeholder="🔍 Buscar por nombre, mail o ID..." oninput="filterStudents()">
-        
         <div id="studentsListContainer" style="margin-top: 10px;"></div>
         
         <div style="margin-top: 25px; border-top: 1px solid var(--border); padding-top: 15px;">
@@ -2494,168 +2377,12 @@
           <div id="rankingContainer"></div>
         </div>
       </div>
-
-      <!-- Ficha de Configuración y Rutinas del Alumno Seleccionado (Oculta por defecto) -->
-      <div id="editorContainer" style="display: none;">
-        
-        <button class="btn-sec" onclick="backToStudentsList()" style="margin-bottom: 16px; width: auto; font-size: 0.9rem;">← Volver al Listado</button>
-
-        <div class="sub-tabs">
-          <button id="subtab-btn-datos" class="sub-tab-btn active" onclick="switchSubTab('datos')">👤 Datos y resumen</button>
-          <button id="subtab-btn-historial-avance" class="sub-tab-btn" onclick="switchSubTab('historial-avance')">📈 Historial y avance</button>
-        </div>
-
-        <!-- Pestaña Datos -->
-        <div id="subtab-content-datos" class="sub-tab-content" style="display: block;">
-          
-          <div class="card" id="studentDataView">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
-              <div style="display:flex; align-items:center; gap: 15px; min-width: 0;">
-                <img id="viewStudentPhoto" src="" class="profile-img-circular" style="width: 70px; height: 70px;" alt="Foto">
-                <div>
-                  <h3 id="lblNombre" style="margin: 0; font-size: 1.6rem;">...</h3>
-                  <div style="color: var(--muted); font-size: 0.95rem; margin-top: 4px;">
-                    <span id="lblEdad">...</span> años | <span id="lblPeso">...</span> kg | <span id="lblAltura">...</span> cm
-                  </div>
-                </div>
-              </div>
-              <div style="display: flex; gap: 10px;">
-                <button class="btn-main" style="width: auto; padding: 6px 12px;" onclick="copyPersonalLink()">🔗 Link Personal</button>
-                <button class="btn-sec" onclick="toggleEditData(true)" style="width: auto; padding: 6px 12px;">✏️ Editar</button>
-              </div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-              <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center;">
-                <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">Último Pago</div>
-                <strong id="lblPago" style="color: var(--text); font-size: 1.1rem;">...</strong>
-              </div>
-              <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center;">
-                <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">Estado</div>
-                <strong id="lblEstado" style="font-size: 1.1rem;">Calculando...</strong>
-              </div>
-            </div>
-            
-            <div style="font-size: 0.95rem; display: flex; flex-direction: column; gap: 8px;">
-              <div><strong>⚠️ Patologías:</strong> <span id="lblPatologias" style="color:var(--danger);">...</span></div>
-              
-              <div style="margin-top: 8px;">
-                <strong>📝 Notas del Entrenador:</strong>
-                <div id="lblNotasAdmin" style="color:var(--muted); font-style: italic; margin-top: 4px;">...</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card" id="studentDataEdit" style="display: none; border-left: 4px solid var(--accent);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-              <h3 style="margin: 0;">✏️ Editando datos</h3>
-              <button class="btn-danger" onclick="deleteCurrentStudent()" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">🗑️ Eliminar Alumno</button>
-            </div>
-            <div style="display:flex; align-items:center; gap: 15px; margin-bottom:15px;">
-              <img id="previewStudentPhoto" src="" class="profile-img-circular" alt="Foto">
-              <div>
-                <label>Subir nueva foto (opcional)</label>
-                <div style="display:flex; gap:8px;">
-                  <input type="file" id="editStudentPhoto" accept="image/*" style="margin:0;">
-                  <button class="btn-sec" onclick="uploadStudentPhoto()" style="width:auto; margin:0;">Subir</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid-2">
-              <div><label>Nombre</label><input type="text" id="editStudentName"></div>
-              <div><label>Email de Google</label><input type="email" id="editStudentEmail"></div>
-            </div>
-            <div class="grid-3">
-              <div><label>Edad</label><input type="number" id="editStudentAge"></div>
-              <div><label>Peso (kg)</label><input type="number" id="editStudentWeight"></div>
-              <div><label>Altura (cm)</label><input type="number" id="editStudentHeight"></div>
-            </div>
-            <label>Patologías / Lesiones</label>
-            <input type="text" id="editStudentPathologies" placeholder="Ej: Hernia discal L4-L5, Dolor de rodilla derecha">
-            
-            <label>Pago última cuota</label>
-            <input type="date" id="editStudentPayDate">
-            <label>Notas del Entrenador (Privado)</label>
-            <textarea id="editStudentNotes"></textarea>
-            
-            <div style="margin-top: 16px; display: flex; gap: 10px;">
-              <button class="btn-main" onclick="saveToFirebase()">💾 Guardar cambios</button>
-              <button class="btn-sec" onclick="toggleEditData(false)">Cancelar</button>
-            </div>
-            <div id="saveDataStatus" class="status-msg"></div>
-          </div>
-
-          <!-- Rutina Integrada -->
-          <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <h3 style="margin:0;">📋 Resumen de la Rutina Asignada</h3>
-              <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">⬇️ Descargar Rutina (PDF)</button>
-            </div>
-            <div id="routineDetailsDisplay" style="padding: 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border);">
-            </div>
-            <div style="margin-top:15px; padding-top: 15px; border-top: 1px solid var(--border);">
-              <label style="color:var(--accent);">💬 Mensaje Adicional (Visible para el alumno en su app)</label>
-              <textarea id="editStudentAppNote" placeholder="Escribe aquí un mensaje general, aviso o recomendación que el alumno verá al abrir su rutina..."></textarea>
-              <button class="btn-sec" onclick="saveToFirebase()">Guardar Mensaje</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pestaña Historial -->
-        <div id="subtab-content-historial-avance" class="sub-tab-content" style="display: none;">
-          <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap:10px; margin-bottom: 15px;">
-              <h3 style="margin:0;">📈 Historial</h3>
-              <button class="btn-main" onclick="openFeedbackModal()" style="width:auto; padding:6px 12px; background:var(--accent); color:#000;">📋 Ver Encuesta</button>
-            </div>
-
-            <!-- Sección de Entrenamiento Seleccionado (Calendario y Rutina del Día) -->
-            <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;">
-                   <h4 style="margin:0; color:var(--accent);" id="historialSelectedDateDisplay">📅 Seleccionar Fecha</h4>
-                   <div style="display: flex; gap: 8px; align-items: center;">
-                       <label style="margin:0; font-size:0.85rem;">Ver otra fecha:</label>
-                       <input type="date" id="historialDatePicker" onchange="changeHistorialDate()" style="margin:0; width:auto; padding: 6px; background: var(--card);">
-                   </div>
-                </div>
-                <div id="historialSelectedWorkoutDetails">
-                   <p style='color:var(--muted); font-size: 0.9rem;'>⏳ Consultando registros...</p>
-                </div>
-            </div>
-
-            <!-- Gráfico de Progreso -->
-            <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
-              <h4 style="margin-top:0;">📊 Evolución de Cargas</h4>
-              <div class="grid-2">
-                  <div>
-                      <label>Ejercicio:</label>
-                      <select id="chartExerciseSelect" onchange="renderProgressChart()"></select>
-                  </div>
-                  <div>
-                      <label>Rango de tiempo:</label>
-                      <select id="chartTimeRangeSelect" onchange="renderProgressChart()">
-                          <option value="selected">Día Seleccionado</option>
-                          <option value="7">Últimos 7 días</option>
-                          <option value="30" selected>Últimos 30 días</option>
-                      </select>
-                  </div>
-              </div>
-              <div style="position: relative; height:300px; width:100%; margin-top:15px;"><canvas id="progressChart"></canvas></div>
-            </div>
-
-            <!-- Récords Personales (Cargas Máximas) -->
-            <div id="historialPRContainer">
-               <!-- Récords inyectados dinámicamente aquí -->
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- MÓDULO 2: BANCO Y PLANTILLAS -->
     <div id="module-ejercicios" class="module-section">
       
+      <!-- Sub-pestañas para Ejercicios y Plantillas -->
       <div class="sub-tabs" style="margin-bottom: 20px;">
         <button id="bank-subtab-btn-ejercicios" class="sub-tab-btn active" onclick="switchBankSubTab('ejercicios')">🏋️ Ejercicios</button>
         <button id="bank-subtab-btn-plantillas" class="sub-tab-btn" onclick="switchBankSubTab('plantillas')">📋 Plantillas</button>
@@ -2666,7 +2393,7 @@
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
             <h2 style="margin: 0;">📚 Ejercicios</h2>
-            <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openNewGlobalExModal()">➕ Nuevo Ejercicio</button>
+            <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openNewGlobalExModal()">➕</button>
           </div>
 
           <div class="grid-2" style="margin-top: 16px;">
@@ -2689,7 +2416,7 @@
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
             <h2 style="margin: 0;">📋 Plantillas de rutinas</h2>
-            <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openTemplateEditor()">➕ Crear Plantilla</button>
+            <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openTemplateEditor()">➕</button>
           </div>
           
           <input type="text" id="searchTemplateInput" placeholder="🔍 Buscar plantilla por nombre..." oninput="filterGlobalTemplates()" style="margin-top: 10px;">
@@ -2700,6 +2427,169 @@
 
     </div>
 
+  </div>
+
+  <!-- MODAL A PANTALLA COMPLETA - PANEL DE EDICIÓN DEL ALUMNO SELECCIONADO -->
+  <div id="editorContainer">
+    <div style="max-width: 900px; margin: 0 auto;">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+        <h2 style="margin: 0;">⚙️ Panel del alumno</h2>
+        <button class="btn-sec" onclick="closeEditorModal()" style="width: auto; padding: 6px 16px;">Cerrar ✖</button>
+      </div>
+
+      <div class="sub-tabs">
+        <button id="subtab-btn-datos" class="sub-tab-btn active" onclick="switchSubTab('datos')">👤 Datos y resumen</button>
+        <button id="subtab-btn-historial-avance" class="sub-tab-btn" onclick="switchSubTab('historial-avance')">📈 Historial y avance</button>
+      </div>
+
+      <!-- Pestaña Datos -->
+      <div id="subtab-content-datos" class="sub-tab-content" style="display: block;">
+        
+        <div class="card" id="studentDataView">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+            <div style="display:flex; align-items:center; gap: 15px; min-width: 0;">
+              <img id="viewStudentPhoto" src="" class="profile-img-circular" style="width: 70px; height: 70px;" alt="Foto">
+              <div>
+                <h3 id="lblNombre" style="margin: 0; font-size: 1.6rem;">...</h3>
+                <div style="color: var(--muted); font-size: 0.95rem; margin-top: 4px;">
+                  <span id="lblEdad">...</span> años | <span id="lblPeso">...</span> kg | <span id="lblAltura">...</span> cm
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn-main" style="width: auto; padding: 6px 12px;" onclick="copyPersonalLink()">🔗</button>
+              <button class="btn-sec" onclick="toggleEditData(true)" style="width: auto; padding: 6px 12px;">✏️</button>
+            </div>
+          </div>
+          
+          <!-- Nuevos cuadritos de Pago y Estado -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+            <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center;">
+              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">Último Pago</div>
+              <strong id="lblPago" style="color: var(--text); font-size: 1.1rem;">...</strong>
+            </div>
+            <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center;">
+              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">Estado</div>
+              <strong id="lblEstado" style="font-size: 1.1rem;">Calculando...</strong>
+            </div>
+          </div>
+          
+          <div style="font-size: 0.95rem; display: flex; flex-direction: column; gap: 8px;">
+            <div><strong>⚠️ Patologías:</strong> <span id="lblPatologias" style="color:var(--danger);">...</span></div>
+            
+            <div style="margin-top: 8px;">
+              <strong>📝 Notas del Entrenador:</strong>
+              <div id="lblNotasAdmin" style="color:var(--muted); font-style: italic; margin-top: 4px;">...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="studentDataEdit" style="display: none; border-left: 4px solid var(--accent);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0;">✏️ Editar Datos</h3>
+            <button class="btn-danger" onclick="deleteCurrentStudent()" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">🗑️ Eliminar</button>
+          </div>
+          <div style="display:flex; align-items:center; gap: 15px; margin-bottom:15px;">
+            <img id="previewStudentPhoto" src="" class="profile-img-circular" alt="Foto">
+            <div>
+              <label>Subir nueva foto (opcional)</label>
+              <div style="display:flex; gap:8px;">
+                <input type="file" id="editStudentPhoto" accept="image/*" style="margin:0;">
+                <button class="btn-sec" onclick="uploadStudentPhoto()" style="width:auto; margin:0;">Subir</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div><label>Nombre</label><input type="text" id="editStudentName"></div>
+            <div><label>Email de Google</label><input type="email" id="editStudentEmail"></div>
+          </div>
+          <div class="grid-3">
+            <div><label>Edad</label><input type="number" id="editStudentAge"></div>
+            <div><label>Peso (kg)</label><input type="number" id="editStudentWeight"></div>
+            <div><label>Altura (cm)</label><input type="number" id="editStudentHeight"></div>
+          </div>
+          <label>Patologías / Lesiones</label>
+          <input type="text" id="editStudentPathologies" placeholder="Ej: Hernia discal L4-L5, Dolor de rodilla derecha">
+          
+          <label>Pago última cuota</label>
+          <input type="date" id="editStudentPayDate">
+          <label>Notas del Entrenador (Privado)</label>
+          <textarea id="editStudentNotes"></textarea>
+          
+          <div style="margin-top: 16px; display: flex; gap: 10px;">
+            <button class="btn-main" onclick="saveToFirebase()">💾 Guardar cambios</button>
+            <button class="btn-sec" onclick="toggleEditData(false)">Cancelar</button>
+          </div>
+          <div id="saveDataStatus" class="status-msg"></div>
+        </div>
+
+        <!-- Rutina Integrada -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="margin:0;">📋 Resumen de la Rutina</h3>
+            <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">Descargar</button>
+          </div>
+          <div id="routineDetailsDisplay" style="padding: 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border);">
+          </div>
+          <div style="margin-top:15px; padding-top: 15px; border-top: 1px solid var(--border);">
+            <label style="color:var(--accent);">💬 Mensaje Adicional (Visible para el alumno en su app)</label>
+            <textarea id="editStudentAppNote" placeholder="Escribe aquí un mensaje general, aviso o recomendación que el alumno verá al abrir su rutina..."></textarea>
+            <button class="btn-sec" onclick="saveToFirebase()">Guardar Mensaje</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pestaña Historial -->
+      <div id="subtab-content-historial-avance" class="sub-tab-content" style="display: none;">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap:10px; margin-bottom: 15px;">
+            <h3 style="margin:0;">📈 Historial</h3>
+            <button class="btn-main" onclick="openFeedbackModal()" style="width:auto; padding:6px 12px; background:var(--accent); color:#000;">📋 Ver Encuesta</button>
+          </div>
+
+          <!-- Sección de Entrenamiento Seleccionado (Calendario y Rutina del Día) -->
+          <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;">
+                 <h4 style="margin:0; color:var(--accent);" id="historialSelectedDateDisplay">📅 Seleccionar Fecha</h4>
+                 <div style="display: flex; gap: 8px; align-items: center;">
+                     <label style="margin:0; font-size:0.85rem;">Ver otra fecha:</label>
+                     <input type="date" id="historialDatePicker" onchange="changeHistorialDate()" style="margin:0; width:auto; padding: 6px; background: var(--card);">
+                 </div>
+              </div>
+              <div id="historialSelectedWorkoutDetails">
+                 <p style='color:var(--muted); font-size: 0.9rem;'>⏳ Consultando registros...</p>
+              </div>
+          </div>
+
+          <!-- Gráfico de Progreso -->
+          <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+            <h4 style="margin-top:0;">📊 Evolución de Cargas</h4>
+            <div class="grid-2">
+                <div>
+                    <label>Ejercicio:</label>
+                    <select id="chartExerciseSelect" onchange="renderProgressChart()"></select>
+                </div>
+                <div>
+                    <label>Rango de tiempo:</label>
+                    <select id="chartTimeRangeSelect" onchange="renderProgressChart()">
+                        <option value="selected">Día Seleccionado</option>
+                        <option value="7">Últimos 7 días</option>
+                        <option value="30" selected>Últimos 30 días</option>
+                    </select>
+                </div>
+            </div>
+            <div style="position: relative; height:300px; width:100%; margin-top:15px;"><canvas id="progressChart"></canvas></div>
+          </div>
+
+          <!-- Récords Personales (Cargas Máximas) -->
+          <div id="historialPRContainer">
+             <!-- Récords inyectados dinámicamente aquí -->
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- MODAL: Diseñar / Editar Rutina -->
