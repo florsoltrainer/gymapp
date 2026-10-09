@@ -1128,12 +1128,93 @@
       }
     }
 
+    // ABRIR FORMULARIO DE FEEDBACK
     window.finishDay = function() {
       if(window.sessionLogs.length === 0) {
         alert("¡Aún no registraste ninguna serie hoy!");
         return;
       }
-      
+      document.getElementById('feedbackOverlay').style.display = 'flex';
+    };
+
+    // LOGICA FEEDBACK Y ENVIO A FIREBASE
+    window.selectEmoji = function(btn) {
+      document.querySelectorAll('.feedback-emoji').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.borderColor = 'var(--border)';
+      });
+      btn.style.background = 'var(--border)';
+      btn.style.borderColor = 'var(--accent)';
+      document.getElementById('fbSensacion').value = btn.getAttribute('data-val');
+    };
+
+    window.selectPain = function(btn, hasPain) {
+      document.querySelectorAll('.feedback-pain').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color = 'var(--text)';
+        b.style.borderColor = 'var(--border)';
+      });
+      btn.style.background = 'var(--accent)';
+      btn.style.color = '#000';
+      btn.style.borderColor = 'var(--accent)';
+      document.getElementById('fbDolor').value = hasPain ? 'Sí' : 'No';
+      document.getElementById('fbDolorDetalle').style.display = hasPain ? 'block' : 'none';
+    };
+
+    window.submitFeedback = async function() {
+      const sensacion = document.getElementById('fbSensacion').value;
+      if (!sensacion) {
+        alert("Por favor indicá cómo te sentís seleccionando un emoji.");
+        return;
+      }
+      const rpe = document.getElementById('fbRPE').value;
+      const dolor = document.getElementById('fbDolor').value;
+      const dolorDetalle = document.getElementById('fbDolorDetalle').value;
+      const comentarios = document.getElementById('fbComentarios').value;
+
+      const feedbackData = {
+        fecha: new Date().toLocaleDateString('es-AR'),
+        hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        sensacion,
+        rpe,
+        dolor: dolor === 'Sí' ? dolorDetalle : 'No',
+        comentarios
+      };
+
+      if (window.studentDocRef) {
+        try {
+          const { setDoc, doc, collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+          
+          // Guarda el feedback en el historial de la sesión del alumno
+          const dateId = feedbackData.fecha.replaceAll('/', '-'); 
+          const histDocRef = doc(window.db, `alumnos/${window.alumnoId}/historial`, dateId);
+          await setDoc(histDocRef, { feedback: feedbackData }, { merge: true });
+
+          // Envía una notificación Push a la campana del Entrenador
+          const notifAdminRef = collection(window.db, "notificaciones_admin");
+          const alumnoName = document.getElementById('profileName').textContent;
+          await addDoc(notifAdminRef, {
+            alumnoId: window.alumnoId,
+            alumnoNombre: alumnoName,
+            tipo: 'entrenamiento_finalizado',
+            mensaje: `${alumnoName} completó su rutina del día.`,
+            fecha: feedbackData.fecha,
+            hora: feedbackData.hora,
+            timestamp: Date.now(),
+            leida: false,
+            feedback: feedbackData
+          });
+        } catch(e) {
+          console.error("Error guardando feedback:", e);
+        }
+      }
+
+      document.getElementById('feedbackOverlay').style.display = 'none';
+      window.showShareOverlay();
+    };
+
+    // MOSTRAR TARJETA RESUMEN DEL DÍA
+    window.showShareOverlay = function() {
       let totalVolume = 0;
       let uniqueEx = new Set();
       
@@ -1229,10 +1310,10 @@
             <div class="timer-display" id="timerDisplay">00:00</div>
             
             <div class="grid-timer">
-              <button class="btn-sec" onclick="setRestTime(60)">60s</button>
-              <button class="btn-sec" onclick="setRestTime(90)">90s</button>
-              <button class="btn-sec" onclick="setRestTime(120)">120s</button>
-              <button class="btn-sec" onclick="setRestTime(180)">180s</button>
+              <button class="btn-sec" onclick="setRestTime(60, this)">60s</button>
+              <button class="btn-sec" onclick="setRestTime(90, this)">90s</button>
+              <button class="btn-sec" onclick="setRestTime(120, this)">120s</button>
+              <button class="btn-sec" onclick="setRestTime(180, this)">180s</button>
             </div>
             
             <button class="btn-sec" style="width: 100%;" onclick="resetTimer()">Detener Cronómetro</button>
@@ -1241,7 +1322,7 @@
           <div class="grid-3">
             <div>
               <label id="setNumLabel">Serie Nº</label>
-              <input type="number" id="setNum" value="1" min="1" onchange="updateInputsForSet(this.value)">
+              <input type="number" id="setNum" value="1" min="1" onchange="updateTargetsForSet()">
             </div>
             <div>
               <label>Peso (kg)</label>
@@ -1357,6 +1438,47 @@
       </div>
 
       <button class="btn-sec" style="width: 100%; border-color: var(--danger); color: var(--danger);" onclick="logoutStudent()">Cerrar Sesión</button>
+    </div>
+  </div>
+
+  <!-- MODAL: FEEDBACK POST ENTRENAMIENTO -->
+  <div id="feedbackOverlay" class="modal-overlay" style="flex-direction: column;">
+    <div class="modal-content" style="background: var(--card); border: 1px solid var(--border); text-align: center; padding: 24px; margin-bottom: 16px;">
+      <h2 style="color: var(--accent); margin-bottom: 16px; font-size: 1.4rem;">¡Entrenamiento Completado!</h2>
+      <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 20px;">Antes de ver tu resumen, contanos cómo te fue hoy:</p>
+      
+      <div style="text-align: left; margin-bottom: 16px;">
+        <label>¿Cómo te sentís?</label>
+        <div style="display: flex; gap: 10px; margin-top: 8px;">
+          <button type="button" class="btn-sec feedback-emoji" data-val="Bien" style="flex:1; font-size: 1.5rem;" onclick="selectEmoji(this)">😄</button>
+          <button type="button" class="btn-sec feedback-emoji" data-val="Neutral" style="flex:1; font-size: 1.5rem;" onclick="selectEmoji(this)">😐</button>
+          <button type="button" class="btn-sec feedback-emoji" data-val="Mal" style="flex:1; font-size: 1.5rem;" onclick="selectEmoji(this)">🙁</button>
+        </div>
+        <input type="hidden" id="fbSensacion" value="">
+      </div>
+
+      <div style="text-align: left; margin-bottom: 16px;">
+        <label>Percepción del Esfuerzo (1 a 10)</label>
+        <input type="range" id="fbRPE" min="1" max="10" value="5" oninput="document.getElementById('rpeVal').textContent = this.value" style="width: 100%; margin-top: 8px;">
+        <div style="text-align: center; font-weight: bold; color: var(--accent); font-size: 1.2rem;" id="rpeVal">5</div>
+      </div>
+
+      <div style="text-align: left; margin-bottom: 16px;">
+        <label>¿Sentiste dolores?</label>
+        <div style="display: flex; gap: 10px; margin-top: 8px;">
+          <button type="button" class="btn-sec feedback-pain" data-val="No" style="flex:1;" onclick="selectPain(this, false)">No</button>
+          <button type="button" class="btn-sec feedback-pain" data-val="Si" style="flex:1;" onclick="selectPain(this, true)">Sí</button>
+        </div>
+        <input type="hidden" id="fbDolor" value="No">
+        <input type="text" id="fbDolorDetalle" placeholder="¿En qué zona? Ej: hombro derecho" style="display:none; margin-top: 8px;">
+      </div>
+
+      <div style="text-align: left; margin-bottom: 16px;">
+        <label>Comentarios Generales</label>
+        <textarea id="fbComentarios" placeholder="Observaciones sobre la sesión..."></textarea>
+      </div>
+
+      <button class="btn-main" onclick="submitFeedback()">Enviar y ver resumen</button>
     </div>
   </div>
 
