@@ -97,7 +97,8 @@
     .student-info-block { display: flex; flex-direction: column; flex-grow: 1; word-break: break-all; overflow-wrap: anywhere; } 
     .profile-img-circular { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); flex-shrink: 0; }
 
-    .log-card { background: var(--input-bg); border-left: 4px solid var(--accent); padding: 10px 14px; margin-top: 8px; border-radius: 6px; font-size: 0.88rem; }
+    .log-card { background: var(--input-bg); border-left: 4px solid var(--accent); padding: 10px 14px; margin-top: 8px; border-radius: 6px; font-size: 0.88rem; transition: background 0.2s; }
+    .log-card:hover { background: var(--border); }
     
     .sub-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; overflow-x: auto; }
     .sub-tab-btn { padding: 6px 12px; background: transparent; border: none; color: var(--text); font-weight: 600; cursor: pointer; width: auto; margin-bottom: 0; white-space: nowrap; opacity: 0.6; transition: opacity 0.2s, color 0.2s, border-bottom 0.2s; }
@@ -139,7 +140,7 @@
   <!-- Módulos de Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, getDocs, collection, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, getDocs, collection, addDoc, deleteDoc, updateDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -196,7 +197,7 @@
           await loadGlobalExercises();
           await loadGlobalTemplates();
           await fetchAndRenderStudents();
-          scanNotifications();
+          scanNotifications(); // Inicia el listener en tiempo real
         } else {
           document.getElementById('authError').textContent = `❌ Acceso denegado: ${user.email} no es administrador.`;
           signOut(auth);
@@ -259,7 +260,6 @@
       document.getElementById(`bank-subtab-btn-${subName}`).classList.add('active');
     };
 
-    // --- PARSEO ROBUSTO DE FECHAS ---
     function parseToISODate(rawFecha) {
         if (!rawFecha) return new Date().toISOString().split('T')[0];
         if (rawFecha.toDate) return rawFecha.toDate().toISOString().split('T')[0];
@@ -288,7 +288,6 @@
         return isoDate;
     }
 
-    // --- MÓDULO 1: MIS ALUMNOS ---
     window.toggleNewStudentForm = function() {
       document.getElementById('newStudentModal').classList.add('show');
     };
@@ -387,110 +386,58 @@
       container.innerHTML = html;
     }
 
-    // --- SISTEMA DE NOTIFICACIONES CORREGIDO ---
-    window.scanNotifications = async function() {
+    // --- LISTENER EN TIEMPO REAL PARA NOTIFICACIONES DE ALUMNOS ---
+    window.scanNotifications = function() {
       const notifBadge = document.getElementById('notifBadge');
       const notifList = document.getElementById('notifListContainer');
-      notifList.innerHTML = '<p style="color:var(--muted); font-size:0.9rem;">⏳ Buscando comentarios...</p>';
+      notifList.innerHTML = '<p style="color:var(--muted); font-size:0.9rem;">⏳ Conectando con servidor de notificaciones...</p>';
       
-      let notifs = [];
-
-      const extractComments = (d, studentName) => {
-          let rawFecha = d.fecha || d.Fecha || d.date || d.timestamp || d.createdAt;
-          let isoDate = parseToISODate(rawFecha);
-          let fechaStr = formatDisplayDate(isoDate);
-          
-          let msgParts = [];
-
-          if (d.como_se_siente) msgParts.push(`Sensación: ${d.como_se_siente}`);
-          if (d.percepcion_esfuerzo) msgParts.push(`Esfuerzo: ${d.percepcion_esfuerzo}/10`);
-          
-          let rawComment = d.mensaje || d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas;
-          if (rawComment && typeof rawComment === 'string' && rawComment.trim() !== '') {
-              msgParts.push(rawComment);
-          }
-
-          if (d.tipo === 'rutina_completada' || d.accion === 'termino_entrenamiento') {
-              let compMsg = "Rutina completada. " + msgParts.join(" | ");
-              notifs.push({ nombre: studentName, mensaje: compMsg, fecha: fechaStr, isoDate: isoDate });
-          } else if (msgParts.length > 0) {
-              notifs.push({ nombre: studentName, mensaje: msgParts.join(" | "), fecha: fechaStr, isoDate: isoDate });
-          }
-
-          if (d.ejercicios && Array.isArray(d.ejercicios)) {
-              d.ejercicios.forEach(ej => {
-                  let ejComment = ej.comentario || ej.Comentarios || ej.comentarios || ej.nota || ej.notas;
-                  if (ejComment && typeof ejComment === 'string' && ejComment.trim() !== '') {
-                      notifs.push({ nombre: studentName, mensaje: `(${ej.ejercicio || ej.nombre || 'Ejercicio'}) ${ejComment}`, fecha: fechaStr, isoDate: isoDate });
-                  }
-              });
-          } else if (d.ejercicio || d.Ejercicio || d.nombre) {
-              let ejComment = d.comentario || d.Comentarios || d.comentarios || d.nota || d.notas;
-              if (ejComment && typeof ejComment === 'string' && ejComment.trim() !== '' && !msgParts.includes(ejComment)) {
-                  notifs.push({ nombre: studentName, mensaje: `(${d.ejercicio || d.Ejercicio || d.nombre}) ${ejComment}`, fecha: fechaStr, isoDate: isoDate });
-              }
-          }
-      };
-
-      try {
-         const notifSnap = await getDocs(collection(db, "notificaciones"));
-         notifSnap.forEach(doc => {
-             let d = doc.data();
-             extractComments(d, d.alumno || d.nombreAlumno || d.nombre || 'Alumno');
-         });
-      } catch(e) {}
-
-      try {
-         const histSnap = await getDocs(collection(db, "historial"));
-         histSnap.forEach(doc => {
-             let d = doc.data();
-             extractComments(d, d.alumno || d.nombreAlumno || 'Alumno');
-         });
-      } catch(e) {}
-
-      for (const student of window.allStudentsList) {
-         try {
-            const cols = ["historial", "registros", "entrenamientos"];
-            for (let col of cols) {
-                const histSnap = await getDocs(collection(db, "alumnos", student.id, col));
-                histSnap.forEach(docSnap => {
-                   let d = docSnap.data();
-                   extractComments(d, student.nombre || student.id);
-                });
-            }
-         } catch(e) {}
-      }
-
-      if (notifs.length > 0) {
-         let uniqueNotifs = [];
-         let seen = new Set();
-         notifs.forEach(n => {
-             let key = n.nombre + n.mensaje + n.fecha;
-             if(!seen.has(key)) {
-                 seen.add(key);
-                 uniqueNotifs.push(n);
-             }
+      const q = query(collection(db, "notificaciones_admin"), where("leida", "==", false));
+      
+      onSnapshot(q, (snapshot) => {
+         let notifs = [];
+         snapshot.forEach(docSnap => {
+             notifs.push({ id: docSnap.id, ...docSnap.data() });
          });
 
-         // Ordenar por fecha más reciente primero
-         uniqueNotifs.sort((a, b) => b.isoDate.localeCompare(a.isoDate));
+         // Ordenar por fecha (las más recientes arriba)
+         notifs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-         notifBadge.style.display = 'block';
-         notifBadge.textContent = uniqueNotifs.length;
-         notifList.innerHTML = '';
-         
-         uniqueNotifs.forEach(n => {
-            notifList.innerHTML += `
-              <div class="log-card">
-                <strong>${n.fecha} - ${n.nombre}</strong><br>
-                <span style="color: var(--muted); font-size: 0.9rem;">${n.mensaje}</span>
-              </div>
-            `;
-         });
-      } else {
-         notifBadge.style.display = 'none';
-         notifList.innerHTML = '<p style="color:var(--muted); font-size:0.9rem;">No hay notificaciones ni comentarios recientes de alumnos.</p>';
-      }
+         if (notifs.length > 0) {
+             notifBadge.style.display = 'block';
+             notifBadge.textContent = notifs.length;
+             notifList.innerHTML = '';
+             
+             notifs.forEach(n => {
+                let msg = n.mensaje || "Entrenamiento finalizado.";
+                if(n.feedback) {
+                    msg += `<br><span style="color:var(--accent); font-size:0.8rem;">Sensación: ${n.feedback.sensacion || '-'} | RPE: ${n.feedback.rpe || '-'}/10 | Dolor: ${n.feedback.dolor || 'No'}</span>`;
+                    if(n.feedback.comentarios) msg += `<br><em>"💬 ${n.feedback.comentarios}"</em>`;
+                }
+                notifList.innerHTML += `
+                  <div class="log-card" style="position:relative; padding-right: 30px;">
+                    <strong style="color: var(--text);">${n.fecha || ''} ${n.hora || ''} - ${n.alumnoNombre || 'Alumno'}</strong><br>
+                    <div style="color: var(--muted); font-size: 0.9rem; margin-top: 4px;">${msg}</div>
+                    <button onclick="markNotifAsRead('${n.id}')" style="position:absolute; right:10px; top:12px; background:transparent; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer;" title="Marcar como leída y descartar">×</button>
+                  </div>
+                `;
+             });
+         } else {
+             notifBadge.style.display = 'none';
+             notifList.innerHTML = '<p style="color:var(--muted); font-size:0.9rem; text-align:center;">No tienes notificaciones recientes.</p>';
+         }
+      }, (error) => {
+          console.error("Error conectando con notificaciones en tiempo real:", error);
+          notifList.innerHTML = '<p style="color:var(--danger); font-size:0.9rem;">Error al cargar notificaciones.</p>';
+      });
+    };
+
+    window.markNotifAsRead = async function(id) {
+       try {
+           await updateDoc(doc(db, "notificaciones_admin", id), { leida: true });
+       } catch (e) {
+           console.error("Error al descartar notificación:", e);
+       }
     };
 
     window.openNotifModal = function() { document.getElementById('notifModal').classList.add('show'); };
@@ -709,7 +656,6 @@
       }
     };
 
-    // --- CARGA DE HISTORIAL ESTRUCTURADO CORREGIDO ---
     async function loadLogs30Days() {
       const container = document.getElementById('historialSelectedWorkoutDetails');
       container.innerHTML = "<p style='color:var(--muted); font-size: 0.9rem;'>⏳ Consultando registros recientes...</p>";
@@ -1164,7 +1110,16 @@
       window.currentStudentData.patologias = document.getElementById('editStudentPathologies').value.trim();
       window.currentStudentData.fecha_pago = document.getElementById('editStudentPayDate').value;
       window.currentStudentData.notas_admin = document.getElementById('editStudentNotes').value.trim();
-      window.currentStudentData.nota_para_alumno = document.getElementById('editStudentAppNote').value.trim();
+      
+      const prevNote = window.currentStudentData.nota_para_alumno;
+      const newNote = document.getElementById('editStudentAppNote').value.trim();
+      window.currentStudentData.nota_para_alumno = newNote;
+
+      // ACTUALIZAR FLAGS PARA DESPERTAR EL LISTENER DE LA APP ALUMNO
+      window.currentStudentData.hide_routine_update = false;
+      if (newNote && newNote !== prevNote) {
+          window.currentStudentData.hide_note = ""; 
+      }
 
       try {
         await setDoc(doc(db, "alumnos", window.currentStudentId), window.currentStudentData);
