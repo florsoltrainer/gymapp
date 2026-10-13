@@ -174,7 +174,14 @@
     window.currentEditExImages = []; 
     
     let progressChartInstance = null;
-
+    
+// --- NUEVO: Función para obtener el orden estricto de circuitos ---
+    window.getOrderedCircuits = function(dayData) {
+        if (!dayData) return [];
+        let keys = dayData._orden || Object.keys(dayData).filter(k => k !== '_orden').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        return keys.filter(k => dayData[k] !== undefined); // Filtro de seguridad
+    };
+    // ------------------------------------------------------------------
     // --- MANEJO DE CLICS FUERA DE MODALES Y MENÚS ---
     window.addEventListener('click', function(event) {
       const dropdown = document.getElementById('userMenuDropdown');
@@ -1898,7 +1905,7 @@
          return;
       }
 
-      const circKeys = Object.keys(dayData).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+      const circKeys = window.getOrderedCircuits(dayData);
       for (const circ of circKeys) {
         const circDiv = document.createElement('div');
         circDiv.style.marginTop = '15px';
@@ -1962,13 +1969,23 @@
     };
 
     // Gestión de Circuitos
-    window.addCircuitToDay = function() {
+window.addCircuitToDay = function() {
       const day = window.currentEditorDay;
       const circName = document.getElementById('newCircuitInput').value.trim();
       if (!circName || !day) return;
       const rut = getActiveRoutine();
       if (!rut[day][circName]) {
         rut[day][circName] = [];
+        
+        // --- NUEVO: Agregar al índice estricto ---
+        if (!rut[day]._orden) {
+            rut[day]._orden = Object.keys(rut[day]).filter(k => k !== '_orden').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        }
+        if (!rut[day]._orden.includes(circName)) {
+            rut[day]._orden.push(circName);
+        }
+        // -----------------------------------------
+
         document.getElementById('newCircuitInput').value = '';
         updateCircuitDropdown();
         document.getElementById('selectCircuitForEx').value = circName; // Auto selecciona el creado
@@ -1983,7 +2000,7 @@
       select.innerHTML = '';
       if (!day) return;
       const rut = getActiveRoutine();
-      const circKeys = Object.keys(rut[day] || {}).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+      const circKeys = window.getOrderedCircuits(rut[day] || {});
       circKeys.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c; opt.textContent = c;
@@ -2100,10 +2117,12 @@
     };
 
     // Ordenamiento de Circuitos
-    window.moveCircuit = function(circ, direction) {
+window.moveCircuit = function(circ, direction) {
       const day = window.currentEditorDay;
       const rut = getActiveRoutine();
-      const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+      
+      // --- NUEVO: Modificar directamente el índice estricto ---
+      let circKeys = window.getOrderedCircuits(rut[day]);
       const idx = circKeys.indexOf(circ);
       
       if (direction === -1 && idx > 0) {
@@ -2112,9 +2131,8 @@
         [circKeys[idx + 1], circKeys[idx]] = [circKeys[idx], circKeys[idx + 1]];
       } else { return; }
       
-      const newDayData = {};
-      circKeys.forEach(k => newDayData[k] = rut[day][k]);
-      rut[day] = newDayData;
+      rut[day]._orden = circKeys;
+      // --------------------------------------------------------
       
       renderExercisesListEditor();
       if(window.editorContext.type === 'student') renderRoutineDetails();
@@ -2179,12 +2197,19 @@
       if(window.editorContext.type === 'student') renderRoutineDetails();
     };
 
-    window.deleteExercise = function(circ, idx) {
+window.deleteExercise = function(circ, idx) {
       const day = window.currentEditorDay;
       const rut = getActiveRoutine();
       rut[day][circ].splice(idx, 1);
       if (rut[day][circ].length === 0) {
         delete rut[day][circ];
+        
+        // --- NUEVO: Quitar del índice estricto ---
+        if (rut[day]._orden) {
+            rut[day]._orden = rut[day]._orden.filter(z => z !== circ);
+        }
+        // ----------------------------------------
+
         updateCircuitDropdown();
       }
       renderExercisesListEditor();
@@ -2199,7 +2224,7 @@
       const rut = getActiveRoutine();
       if (!day || !rut[day]) return;
 
-      const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+      const circKeys = window.getOrderedCircuits(rut[day]);
       circKeys.forEach(circ => {
         const circTitle = document.createElement('div');
         circTitle.style.display = 'flex';
