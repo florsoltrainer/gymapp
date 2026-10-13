@@ -1013,8 +1013,7 @@
             const nextZone = zones[currentZoneIndex + 1];
             window.startExercise(day, nextZone, 0);
         } else {
-            alert("¡Has completado todos los ejercicios de esta rutina! Toca 'Terminé por hoy' cuando finalices.");
-            window.switchTab('rutina');
+            document.getElementById('routineCompleteModal').style.display = 'flex';
         }
     };
 
@@ -1524,12 +1523,21 @@
   </div>
 
   <div id="exerciseCompleteModal" class="modal-overlay" style="z-index: 4000;">
-    <div class="modal-content" style="text-align: center; border-left: 4px solid var(--accent);">
+    <div class="modal-content" style="text-align: center;">
       <button class="close-modal" onclick="document.getElementById('exerciseCompleteModal').style.display='none'">&times;</button>
-      <h3 style="color: var(--accent); font-size: 1.5rem; margin-bottom: 10px;">¡Ejercicio Completado! ✅</h3>
+      <h3 style="color: var(--accent); font-size: 1.5rem; margin-bottom: 10px;">¡Ejercicio Completado!</h3>
       <p style="color: var(--muted); margin-bottom: 20px;">Terminaste todas las series de <strong id="completedExName" style="color:var(--text);"></strong>.</p>
-      <button class="btn-main" onclick="loadNextExercise()">Siguiente ejercicio ⏭️</button>
+      <button class="btn-main" onclick="loadNextExercise()">Siguiente ejercicio</button>
       <button class="btn-sec" style="margin-top: 10px; width: 100%;" onclick="document.getElementById('exerciseCompleteModal').style.display='none'">Quedarme aquí</button>
+    </div>
+  </div>
+
+  <!-- NUEVO: Modal de Rutina Completada -->
+  <div id="routineCompleteModal" class="modal-overlay" style="z-index: 4200;">
+    <div class="modal-content" style="text-align: center; border-left: 4px solid var(--accent);">
+      <button class="close-modal" onclick="document.getElementById('routineCompleteModal').style.display='none'">&times;</button>
+      <h3 style="color: var(--accent); font-size: 1.4rem; margin-bottom: 20px;">¡Has completado todos los ejercicios de esta rutina!</h3>
+      <button class="btn-main" onclick="document.getElementById('routineCompleteModal').style.display='none'; finishDay();">Finalizar rutina</button>
     </div>
   </div>
 
@@ -1575,8 +1583,8 @@
 
   <div id="shareOverlay" class="modal-overlay" style="flex-direction: column; z-index: 4500;">
     <div class="modal-content" id="shareCardCapture" style="background: var(--card); border: 1px solid var(--border); text-align: center; padding: 30px 20px; margin-bottom: 16px;">
-      <img src="logo chico.png" alt="Logo Flor Sol Trainer" style="height: 45px; margin-bottom: 16px; object-fit: contain;">
-      <h2 style="color: var(--accent); margin-bottom: 8px; font-size: 1.6rem;">¡MISIÓN CUMPLIDA! 🚀</h2>
+      <img src="logo fst.png" alt="Logo Flor Sol Trainer" style="height: 45px; margin-bottom: 16px; object-fit: contain;">
+      <h2 style="color: var(--accent); margin-bottom: 8px; font-size: 1.6rem;">¡MISIÓN CUMPLIDA!</h2>
       <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 24px;">Resumen de tu entrenamiento de hoy</p>
 
       <div style="display: flex; gap: 8px; margin-bottom: 10px;">
