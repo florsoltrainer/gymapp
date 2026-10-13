@@ -152,17 +152,16 @@
     window.alumnoId = new URLSearchParams(window.location.search).get('id') || "";
     window.studentDocRef = null;
     window.isSyncing = false;
+    window.isSubmittingFeedback = false; // Bloqueador de envíos de encuesta
     window.defaultRestTime = 60; // 60s por defecto
 
     window.db = db;
 
-    // --- NUEVO: Función para obtener el orden estricto de circuitos ---
     window.getOrderedCircuits = function(dayData) {
         if (!dayData) return [];
         let keys = dayData._orden || Object.keys(dayData).filter(k => k !== '_orden').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
         return keys.filter(k => dayData[k] !== undefined && k !== '_orden');
     };
-    // ------------------------------------------------------------------
 
     window.onclick = function(event) {
       if (event.target.classList.contains('modal-overlay')) {
@@ -198,7 +197,6 @@
             window.spreadsheetId = data.spreadsheet_id || data.google_sheet_url || "";
             window.trainerNotes = data.nota_para_alumno || "";
 
-            // Actualizar datos de notificaciones desde Firebase
             const dbHideNote = data.hide_note || '';
             const dbHideRoutine = data.hide_routine_update || false;
             const dbHideSys = data.hide_sys_update || false;
@@ -207,7 +205,6 @@
             if (dbHideRoutine) localStorage.setItem('hide_routine_update', 'true');
             if (dbHideSys) localStorage.setItem('hide_update', 'true');
 
-            // Routine Update Detection
             const routineStr = JSON.stringify(window.workoutData);
             const cachedRoutine = localStorage.getItem('fst_cached_routine');
             if (cachedRoutine && cachedRoutine !== routineStr) {
@@ -410,7 +407,6 @@
            if(el) el.style.display = 'none';
        }
        
-       // Persistencia en Firebase
        if (window.studentDocRef) {
            try {
                const { updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -511,12 +507,12 @@
       
       const normalizeDate = (dateStr) => {
           if(!dateStr) return "";
-          dateStr = String(dateStr).replace(/[^\d\/\-]/g, ''); // Limpiar caracteres invisibles
+          dateStr = String(dateStr).replace(/[^\d\/\-]/g, ''); 
           if (dateStr.includes('-')) {
              const p = dateStr.split('-');
-             if (p[0].length === 4) { // YYYY-MM-DD
+             if (p[0].length === 4) { 
                  return `${parseInt(p[2], 10)}/${parseInt(p[1], 10)}/${parseInt(p[0], 10)}`;
-             } else { // DD-MM-YYYY
+             } else { 
                  return `${parseInt(p[0], 10)}/${parseInt(p[1], 10)}/${parseInt(p[2], 10)}`;
              }
           }
@@ -662,7 +658,7 @@
         return;
       }
 
-const orderedZones = window.getOrderedCircuits(zones);
+      const orderedZones = window.getOrderedCircuits(zones);
       orderedZones.forEach(zone => {
         const zoneBlock = document.createElement('div');
         zoneBlock.className = 'zone-block';
@@ -671,7 +667,6 @@ const orderedZones = window.getOrderedCircuits(zones);
         zones[zone].forEach((ex, exIndex) => {
           const exCard = document.createElement('div');
           
-          // Verificamos si completó el ejercicio EN ESTE DÍA
           const loggedSetsCount = window.sessionLogs.filter(log => log.Ejercicio === ex.name && log.Día === dayName).length;
           const targetSets = Number(ex.sets || 3);
           const isComplete = loggedSetsCount >= targetSets;
@@ -738,6 +733,7 @@ const orderedZones = window.getOrderedCircuits(zones);
         let images = ex.imageUrls || (ex.imageUrl ? [ex.imageUrl] : []);
         let localNote = ex.notes || ex.nota || ex.nota_alumno || '';
         let globalObs = ex.observaciones || ex.detalles_tecnicos || '';
+        let videoUrl = ex.video_url || '';
 
         try {
             const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -752,6 +748,9 @@ const orderedZones = window.getOrderedCircuits(zones);
                 }
                 if(!globalObs) {
                     globalObs = globalEx.observaciones || globalEx.detalles_tecnicos || '';
+                }
+                if(!videoUrl) {
+                    videoUrl = globalEx.video_url || '';
                 }
             }
         } catch(e) {
@@ -773,6 +772,13 @@ const orderedZones = window.getOrderedCircuits(zones);
         }
 
         let combinedNotes = '';
+        
+        // --- Lógica del botón YouTube (Soporta Shorts) ---
+        const esVideoValido = videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.includes('/shorts/'));
+        if (esVideoValido) {
+            combinedNotes += `<a href="${videoUrl}" target="_blank" style="display: block; width: 100%; background: #ff0000; color: #fff; text-align: center; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-bottom: 15px;">▶ Ver video explicativo</a>`;
+        }
+
         if (localNote.trim() !== '') {
             combinedNotes += `<div style="margin-bottom: ${globalObs ? '12px' : '0'};">📌 <strong style="color: var(--accent);">Nota para ti:</strong> ${localNote}</div>`;
         }
@@ -783,9 +789,17 @@ const orderedZones = window.getOrderedCircuits(zones);
         if (combinedNotes !== '') {
             notas.innerHTML = combinedNotes;
             notas.style.display = 'block';
-            notas.style.borderLeft = '3px solid var(--accent)';
-            notas.style.background = 'var(--input-bg)';
-            notas.style.padding = '10px 14px';
+            
+            // Ajustar estilos si solo hay botón de video pero no hay texto
+            if (!localNote.trim() && !globalObs.trim()) {
+                notas.style.borderLeft = 'none';
+                notas.style.background = 'transparent';
+                notas.style.padding = '0';
+            } else {
+                notas.style.borderLeft = '3px solid var(--accent)';
+                notas.style.background = 'var(--input-bg)';
+                notas.style.padding = '10px 14px';
+            }
         }
     };
 
@@ -794,7 +808,6 @@ const orderedZones = window.getOrderedCircuits(zones);
 
     window.setRestTime = function(seconds, btnElement) {
         window.defaultRestTime = seconds;
-        // Solo cambiamos el visual sin disparar el timer
         clearInterval(timerInterval);
         endTime = null;
         
@@ -1177,7 +1190,6 @@ const orderedZones = window.getOrderedCircuits(zones);
       }
     }
 
-    // ABRIR FORMULARIO DE FEEDBACK
     window.finishDay = function() {
       if(window.sessionLogs.length === 0) {
         alert("¡Aún no registraste ninguna serie hoy!");
@@ -1186,7 +1198,6 @@ const orderedZones = window.getOrderedCircuits(zones);
       document.getElementById('feedbackOverlay').style.display = 'flex';
     };
 
-    // LOGICA FEEDBACK Y ENVIO A FIREBASE
     window.selectEmoji = function(btn) {
       document.querySelectorAll('.feedback-emoji').forEach(b => {
         b.style.background = 'transparent';
@@ -1211,11 +1222,21 @@ const orderedZones = window.getOrderedCircuits(zones);
     };
 
     window.submitFeedback = async function() {
+      // Bloqueador anti-clicks múltiples
+      if (window.isSubmittingFeedback) return;
+      
       const sensacion = document.getElementById('fbSensacion').value;
       if (!sensacion) {
         alert("Por favor indicá cómo te sentís seleccionando un emoji.");
         return;
       }
+
+      window.isSubmittingFeedback = true;
+      const btn = document.querySelector('#feedbackOverlay .btn-main');
+      const originalText = btn.textContent;
+      btn.textContent = "⏳ Enviando...";
+      btn.disabled = true;
+
       const rpe = document.getElementById('fbRPE').value;
       const dolor = document.getElementById('fbDolor').value;
       const dolorDetalle = document.getElementById('fbDolorDetalle').value;
@@ -1234,12 +1255,10 @@ const orderedZones = window.getOrderedCircuits(zones);
         try {
           const { setDoc, doc, collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
           
-          // Guarda el feedback en el historial de la sesión del alumno
           const dateId = feedbackData.fecha.replaceAll('/', '-'); 
           const histDocRef = doc(window.db, `alumnos/${window.alumnoId}/historial`, dateId);
           await setDoc(histDocRef, { feedback: feedbackData }, { merge: true });
 
-          // Envía una notificación Push a la campana del Entrenador
           const notifAdminRef = collection(window.db, "notificaciones_admin");
           const alumnoName = document.getElementById('profileName').textContent;
           await addDoc(notifAdminRef, {
@@ -1258,11 +1277,15 @@ const orderedZones = window.getOrderedCircuits(zones);
         }
       }
 
+      // Desbloqueo y continuación
+      btn.textContent = originalText;
+      btn.disabled = false;
+      window.isSubmittingFeedback = false;
+
       document.getElementById('feedbackOverlay').style.display = 'none';
       window.showShareOverlay();
     };
 
-    // MOSTRAR TARJETA RESUMEN DEL DÍA
     window.showShareOverlay = function() {
       let totalVolume = 0;
       let uniqueEx = new Set();
@@ -1372,7 +1395,7 @@ const orderedZones = window.getOrderedCircuits(zones);
           <div class="grid-3">
             <div>
               <label id="setNumLabel">Serie Nº</label>
-              <input type="number" id="setNum" value="1" min="1" onchange="updateTargetsForSet()">
+              <input type="number" id="setNum" value="1" min="1" onchange="updateInputsForSet(1)">
             </div>
             <div>
               <label>Peso (kg)</label>
@@ -1500,7 +1523,6 @@ const orderedZones = window.getOrderedCircuits(zones);
     </div>
   </div>
 
-  <!-- MODAL: EJERCICIO COMPLETADO (NUEVO) -->
   <div id="exerciseCompleteModal" class="modal-overlay" style="z-index: 4000;">
     <div class="modal-content" style="text-align: center; border-left: 4px solid var(--accent);">
       <button class="close-modal" onclick="document.getElementById('exerciseCompleteModal').style.display='none'">&times;</button>
@@ -1511,7 +1533,6 @@ const orderedZones = window.getOrderedCircuits(zones);
     </div>
   </div>
 
-  <!-- MODAL: FEEDBACK POST ENTRENAMIENTO -->
   <div id="feedbackOverlay" class="modal-overlay" style="flex-direction: column; z-index: 4500;">
     <div class="modal-content" style="background: var(--card); border: 1px solid var(--border); text-align: center; padding: 24px; margin-bottom: 16px;">
       <h2 style="color: var(--accent); margin-bottom: 16px; font-size: 1.4rem;">¡Entrenamiento Completado!</h2>
