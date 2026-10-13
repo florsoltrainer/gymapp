@@ -2270,7 +2270,7 @@ window.deleteExercise = function(circ, idx) {
 
   <!-- MODAL FEEDBACK (Nuevo Modal) -->
   <div id="feedbackModal" class="modal-overlay" style="z-index: 3500;">
-    <div class="modal-content" style="max-width: 400px; border-left: 4px solid var(--accent);">
+    <div class="modal-content" style="max-width: 400px;">
       
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
         <h3 style="margin: 0; color: var(--accent);">Encuesta Post-Entrenamiento</h3>
@@ -2318,7 +2318,7 @@ window.deleteExercise = function(circ, idx) {
   
   <!-- MODAL REGISTRO NUEVO ALUMNO -->
   <div id="newStudentModal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 600px; border-left: 4px solid var(--accent);">
+    <div class="modal-content" style="max-width: 600px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
         <h3 style="margin: 0;">➕ Nuevo alumno</h3>
         <button onclick="closeNewStudentForm()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
@@ -2375,8 +2375,7 @@ window.deleteExercise = function(circ, idx) {
         </button>
         
         <div class="user-menu-dropdown" id="userMenuDropdown">
-          <span id="adminEmailDisplay" class="menu-email">Cargando...</span>
-          <hr style="border:1px solid var(--border); margin: 8px 0;">
+          <span id="adminEmailDisplay" class="menu-email" style="border-bottom: none;">Cargando...</span>
           <button id="exportBackupBtn" class="btn-sec" onclick="exportBackup()" style="width: 100%; margin: 0; font-size:0.85rem;">💾 Exportar Backup (JSON)</button>
           <button class="btn-sec" onclick="triggerImportBackup()" style="width: 100%; margin: 0; font-size:0.85rem;">📂 Importar Backup (JSON)</button>
           <input type="file" id="importBackupFile" accept=".json" style="display:none;" onchange="importBackup(event)">
@@ -2516,7 +2515,7 @@ window.deleteExercise = function(circ, idx) {
           </div>
         </div>
 
-        <div class="card" id="studentDataEdit" style="display: none; border-left: 4px solid var(--accent);">
+        <div class="card" id="studentDataEdit" style="display: none;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 style="margin: 0;">✏️ Editar Datos</h3>
             <button class="btn-danger" onclick="deleteCurrentStudent()" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">🗑️ Eliminar</button>
@@ -2674,7 +2673,7 @@ window.deleteExercise = function(circ, idx) {
 
   <!-- MODAL: Añadir Día (En lugar de prompt) -->
   <div id="newDayNameModal" class="modal-overlay" style="z-index: 3200;">
-    <div class="modal-content" style="max-width: 400px; border-left: 4px solid var(--accent);">
+    <div class="modal-content" style="max-width: 400px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
         <h3 style="margin: 0;">➕ Sumar día</h3>
         <button onclick="document.getElementById('newDayNameModal').classList.remove('show')" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
@@ -2740,7 +2739,7 @@ window.deleteExercise = function(circ, idx) {
 
   <!-- MODAL: Editar Parámetros de un Ejercicio Individual -->
   <div id="editSingleExerciseModal" class="modal-overlay" style="z-index: 3300;">
-    <div class="modal-content" style="max-width: 400px; border-left: 4px solid var(--accent);">
+    <div class="modal-content" style="max-width: 400px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
         <h3 style="margin: 0;">⚙️ Editar parámetros</h3>
         <button onclick="closeEditSingleExerciseModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
@@ -2786,7 +2785,7 @@ window.deleteExercise = function(circ, idx) {
 
   <!-- MODAL: Nombre de la nueva Plantilla -->
   <div id="newTemplatePromptModal" class="modal-overlay" style="z-index: 3500;">
-    <div class="modal-content" style="max-width: 400px; border-left: 4px solid var(--accent);">
+    <div class="modal-content" style="max-width: 400px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
         <h3 style="margin: 0;">📋 Nombre de plantilla</h3>
         <button onclick="document.getElementById('newTemplatePromptModal').classList.remove('show')" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
@@ -2801,7 +2800,7 @@ window.deleteExercise = function(circ, idx) {
 
   <!-- MODAL: Nuevo Ejercicio (Banco Global) -->
   <div id="newGlobalExModal" class="modal-overlay">
-    <div class="modal-content" style="max-width: 500px; border-left: 4px solid var(--accent);">
+    <div class="modal-content" style="max-width: 500px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
         <h3 style="margin: 0;">➕ Nuevo ejercicio</h3>
         <button onclick="closeNewGlobalExModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
