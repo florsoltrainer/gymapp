@@ -415,10 +415,12 @@
                     if(n.feedback.comentarios) msg += `<br><em>"💬 ${n.feedback.comentarios}"</em>`;
                 }
                 notifList.innerHTML += `
-                  <div class="log-card" style="position:relative; padding-right: 30px;">
-                    <strong style="color: var(--text);">${n.fecha || ''} ${n.hora || ''} - ${n.alumnoNombre || 'Alumno'}</strong><br>
+                  <div class="log-card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                      <strong style="color: var(--text);">${n.fecha || ''} ${n.hora || ''} - ${n.alumnoNombre || 'Alumno'}</strong>
+                      <button onclick="markNotifAsRead('${n.id}')" style="background:transparent; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer; line-height: 1; padding: 0; margin-left: 10px; width: auto;" title="Marcar como leída y descartar">×</button>
+                    </div>
                     <div style="color: var(--muted); font-size: 0.9rem; margin-top: 4px;">${msg}</div>
-                    <button onclick="markNotifAsRead('${n.id}')" style="position:absolute; right:10px; top:12px; background:transparent; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer;" title="Marcar como leída y descartar">×</button>
                   </div>
                 `;
              });
@@ -1004,7 +1006,7 @@
             return '❓';
         };
 
-        document.getElementById('fbModalDate').textContent = formatDisplayDate(selectedIsoDate);
+        document.getElementById('fbModalDate').textContent = `📅 ${formatDisplayDate(selectedIsoDate)}`;
         document.getElementById('fbModalSensacion').innerHTML = `${getEmoji(summ.como_se_siente)} <span style="font-size: 1rem; color: var(--text);">${summ.como_se_siente || 'No indicó'}</span>`;
         document.getElementById('fbModalRPE').textContent = summ.percepcion_esfuerzo ? `${summ.percepcion_esfuerzo}/10` : 'No indicó';
         document.getElementById('fbModalDolor').textContent = summ.dolor && summ.dolor !== 'No' ? `⚠️ Sí: ${summ.dolor}` : '✅ Ninguno';
@@ -2243,9 +2245,13 @@
 
   <!-- MODAL FEEDBACK (Nuevo Modal) -->
   <div id="feedbackModal" class="modal-overlay" style="z-index: 3500;">
-    <div class="modal-content" style="max-width: 400px; text-align: center; border-left: 4px solid var(--accent);">
-      <button class="modal-close" onclick="closeFeedbackModal()">&times;</button>
-      <h3 style="margin-bottom: 5px; color: var(--accent);">Encuesta Post-Entrenamiento</h3>
+    <div class="modal-content" style="max-width: 400px; border-left: 4px solid var(--accent);">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <h3 style="margin: 0; color: var(--accent);">Encuesta Post-Entrenamiento</h3>
+        <button onclick="closeFeedbackModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">&times;</button>
+      </div>
+      
       <p id="fbModalDate" style="color: var(--muted); font-size: 0.9rem; margin-bottom: 20px;">📅 --/--/----</p>
       
       <div style="background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 12px; margin-bottom: 12px; text-align: left;">
