@@ -156,6 +156,14 @@
 
     window.db = db;
 
+    // --- NUEVO: Función para obtener el orden estricto de circuitos ---
+    window.getOrderedCircuits = function(dayData) {
+        if (!dayData) return [];
+        let keys = dayData._orden || Object.keys(dayData).filter(k => k !== '_orden').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        return keys.filter(k => dayData[k] !== undefined && k !== '_orden');
+    };
+    // ------------------------------------------------------------------
+
     window.onclick = function(event) {
       if (event.target.classList.contains('modal-overlay')) {
         event.target.style.display = 'none';
@@ -654,7 +662,8 @@
         return;
       }
 
-      Object.keys(zones).forEach(zone => {
+const orderedZones = window.getOrderedCircuits(zones);
+      orderedZones.forEach(zone => {
         const zoneBlock = document.createElement('div');
         zoneBlock.className = 'zone-block';
         zoneBlock.innerHTML = `<h3 class="zone-title">${zone}</h3>`;
@@ -813,9 +822,11 @@
       zoneSelect.innerHTML = '';
 
       if (day && window.workoutData[day]) {
-        Object.keys(window.workoutData[day]).forEach(zone => {
+        const orderedZones = window.getOrderedCircuits(window.workoutData[day]);
+        orderedZones.forEach(zone => {
           const opt = document.createElement('option');
-          opt.value = zone; opt.textContent = zone;
+          opt.value = zone;
+          opt.textContent = zone;
           zoneSelect.appendChild(opt);
         });
       }
@@ -978,7 +989,7 @@
         const currentZone = window.activeExercise.zone;
         const currentExName = window.activeExercise.name;
 
-        const zones = Object.keys(window.workoutData[day]);
+        const zones = window.getOrderedCircuits(window.workoutData[day]);
         const currentZoneIndex = zones.indexOf(currentZone);
         const currentExList = window.workoutData[day][currentZone];
         const currentExIndex = currentExList.findIndex(e => e.name === currentExName);
@@ -1083,7 +1094,8 @@
       let totalSetsDay = 0;
       const dayKey = window.currentDay || document.getElementById('daySelect').value;
       if (dayKey && window.workoutData[dayKey]) {
-        Object.keys(window.workoutData[dayKey]).forEach(zone => {
+        const orderedZones = window.getOrderedCircuits(window.workoutData[dayKey]);
+        orderedZones.forEach(zone => {
           window.workoutData[dayKey][zone].forEach(ex => {
             totalSetsDay += Number(ex.sets || 3);
           });
