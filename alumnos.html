@@ -1582,26 +1582,32 @@
   </div>
 
   <div id="shareOverlay" class="modal-overlay" style="flex-direction: column; z-index: 4500;">
-    <div class="modal-content" id="shareCardCapture" style="background: var(--card) url('fondofin.jpeg') center/cover no-repeat; text-align: center; padding: 30px 20px; margin-bottom: 16px;">
+    <div class="modal-content" id="shareCardCapture" style="background: #1e1e24 url('fondofin.png') center/cover no-repeat; text-align: center; padding: 30px 20px; margin-bottom: 16px; border: none;">
       <img src="logofin.png" alt="Flor Sol Trainer" style="height: 45px; margin-bottom: 16px; object-fit: contain;">
-      <h2 style="color: var(--accent); margin-bottom: 8px; font-size: 1.6rem;">¡MISIÓN CUMPLIDA!</h2>
-      <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 24px;">Resumen de tu entrenamiento de hoy</p>
+      <h2 style="color: #00e676; margin-bottom: 8px; font-size: 1.6rem;">¡MISIÓN CUMPLIDA!</h2>
+      <p style="color: #a0a0b0; font-size: 0.9rem; margin-bottom: 24px;">Resumen de tu entrenamiento de hoy</p>
 
       <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-        <div class="share-stat-box" style="background: color-mix(in srgb, var(--input-bg) 30%, transparent); padding: 16px; border-radius: 16px; backdrop-filter: blur(2px);">
-          <div class="share-stat-value" id="shareTotalEx">0</div>
-          <div class="share-stat-label">Ejercicios</div>
+        <div class="share-stat-box" style="background: color-mix(in srgb, #252530 50%, transparent); padding: 16px; border-radius: 16px; backdrop-filter: blur(3px);">
+          <div class="share-stat-value" id="shareTotalEx" style="color: #ffffff;">0</div>
+          <div class="share-stat-label" style="color: #a0a0b0;">Ejercicios</div>
         </div>
-        <div class="share-stat-box" style="background: color-mix(in srgb, var(--input-bg) 30%, transparent); padding: 16px; border-radius: 16px; backdrop-filter: blur(2px);">
-          <div class="share-stat-value" id="shareTotalSets">0</div>
-          <div class="share-stat-label">Series</div>
+        <div class="share-stat-box" style="background: color-mix(in srgb, #252530 50%, transparent); padding: 16px; border-radius: 16px; backdrop-filter: blur(3px);">
+          <div class="share-stat-value" id="shareTotalSets" style="color: #ffffff;">0</div>
+          <div class="share-stat-label" style="color: #a0a0b0;">Series</div>
         </div>
-        <div class="share-stat-box" style="background: color-mix(in srgb, var(--input-bg) 30%, transparent); padding: 16px; border-radius: 16px; backdrop-filter: blur(2px);">
-          <div class="share-stat-value" style="color: var(--accent);" id="shareTotalVolume">0</div>
-          <div class="share-stat-label" style="color: var(--accent);">Kg Totales</div>
+        <div class="share-stat-box" style="background: color-mix(in srgb, #252530 50%, transparent); padding: 16px; border-radius: 16px; backdrop-filter: blur(3px);">
+          <div class="share-stat-value" style="color: #00e676;" id="shareTotalVolume">0</div>
+          <div class="share-stat-label" style="color: #00e676;">Kg Totales</div>
         </div>
       </div>
     </div>
+    
+    <div style="width: 100%; max-width: 400px; display: flex; gap: 10px;">
+        <button class="btn-sec" style="flex: 1; background: var(--card);" onclick="descargarShareCard()">⬇️ Descargar</button>
+        <button class="btn-main" style="flex: 1;" onclick="document.getElementById('shareOverlay').style.display='none'">Excelente</button>
+    </div>
+  </div>
     
     <div style="width: 100%; max-width: 400px; display: flex; gap: 10px;">
         <button class="btn-sec" style="flex: 1; background: var(--card);" onclick="descargarShareCard()">⬇️ Descargar</button>
