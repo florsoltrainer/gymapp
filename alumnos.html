@@ -1303,14 +1303,20 @@
 
     window.descargarShareCard = function() {
         const captureDiv = document.getElementById('shareCardCapture');
+        
         html2canvas(captureDiv, {
-            backgroundColor: document.body.classList.contains('light-mode') ? '#ffffff' : '#1e1e24',
-            scale: 2
+            backgroundColor: null, // Permite que el fondo de la imagen se vea correctamente
+            scale: 2,
+            useCORS: true, // Fundamental para capturar el fondo y el logo sin que el navegador lo bloquee
+            allowTaint: true
         }).then(canvas => {
             const link = document.createElement('a');
             link.download = 'FST_Entrenamiento.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
+        }).catch(err => {
+            console.error("Error al generar la imagen: ", err);
+            alert("Hubo un error al generar la imagen. Intenta de nuevo.");
         });
     };
   </script>
@@ -1588,15 +1594,15 @@
       <p style="color: #a0a0b0; font-size: 0.9rem; margin-bottom: 24px;">Resumen de tu entrenamiento de hoy</p>
 
       <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-        <div class="share-stat-box" style="background: color-mix(in srgb, #252530 30%, transparent); padding: 16px; border-radius: 16px; backdrop-filter: blur(3px);">
+        <div class="share-stat-box" style="background: rgba(37, 37, 48, 0.6); padding: 16px; border-radius: 16px; backdrop-filter: blur(3px);">
           <div class="share-stat-value" id="shareTotalEx" style="color: #ffffff;">0</div>
           <div class="share-stat-label" style="color: #a0a0b0;">Ejercicios</div>
         </div>
-        <div class="share-stat-box" style="background: color-mix(in srgb, #252530 30%, transparent); padding: 16px; border-radius: 16px; backdrop-filter: blur(3px);">
+        <div class="share-stat-box" style="background: rgba(37, 37, 48, 0.6); padding: 16px; border-radius: 16px; backdrop-filter: blur(3px);">
           <div class="share-stat-value" id="shareTotalSets" style="color: #ffffff;">0</div>
           <div class="share-stat-label" style="color: #a0a0b0;">Series</div>
         </div>
-        <div class="share-stat-box" style="background: color-mix(in srgb, #252530 30%, transparent); padding: 16px; border-radius: 16px; backdrop-filter: blur(3px);">
+        <div class="share-stat-box" style="background: rgba(37, 37, 48, 0.6); padding: 16px; border-radius: 16px; backdrop-filter: blur(3px); border: 1px solid rgba(0,230,118,0.3);">
           <div class="share-stat-value" style="color: #00e676;" id="shareTotalVolume">0</div>
           <div class="share-stat-label" style="color: #00e676;">Kg Totales</div>
         </div>
