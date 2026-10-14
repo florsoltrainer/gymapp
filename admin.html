@@ -640,6 +640,14 @@
         }
       }
 
+      // --- NUEVO: Validación para asignar un avatar genérico al azar si no hay foto ---
+      if (!photoUrl) {
+        const avataresGenericos = ["avatar1.jpg", "avatar2.jpg", "avatar3.jpg"];
+        const randomIndex = Math.floor(Math.random() * avataresGenericos.length);
+        photoUrl = avataresGenericos[randomIndex];
+      }
+      // --------------------------------------------------------------------------------
+
       try {
         const response = await fetch(MASTER_SCRIPT_URL, {
           method: "POST",
