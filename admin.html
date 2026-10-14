@@ -640,56 +640,6 @@
         }
       }
 
-      // --- NUEVO: Validación para asignar un avatar genérico al azar si no hay foto ---
-      if (!photoUrl) {
-        const avataresGenericos = ["avatar1.jpg", "avatar2.jpg", "avatar3.jpg"];
-        const randomIndex = Math.floor(Math.random() * avataresGenericos.length);
-        photoUrl = avataresGenericos[randomIndex];
-      }
-      // --------------------------------------------------------------------------------
-
-      try {
-        const response = await fetch(MASTER_SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "CREATE_SHEET", nombre: name, email: email })
-        });
-        const resData = await response.json();
-
-        if (resData.status === "success") {
-          const directLink = `https://florsoltrainer.github.io/gymapp/?id=${id}`;
-          const newStudentData = {
-            nombre: name, email: email, edad: age, peso: weight, altura: height, patologias: pathologies,
-            foto_url: photoUrl, notas_admin: notes, nota_para_alumno: "", google_sheet_url: resData.sheetUrl,
-            spreadsheet_id: resData.spreadsheetId, link_personal: directLink, rutina: {}
-          };
-
-          await setDoc(doc(db, "alumnos", id), newStudentData);
-          status.textContent = "✅ ¡Alumno creado y planilla vinculada!";
-          status.style.color = "var(--accent)";
-
-          document.getElementById('newStudentName').value = '';
-          document.getElementById('newStudentId').value = '';
-          document.getElementById('newStudentEmail').value = '';
-          document.getElementById('newStudentAge').value = '';
-          document.getElementById('newStudentWeight').value = '';
-          document.getElementById('newStudentHeight').value = '';
-          document.getElementById('newStudentPathologies').value = '';
-          document.getElementById('newStudentPhoto').value = '';
-          document.getElementById('newStudentNotes').value = '';
-          
-          closeNewStudentForm();
-          await fetchAndRenderStudents();
-          selectStudentToEdit(id);
-        } else {
-          status.textContent = "❌ Error al crear la planilla en Drive.";
-        }
-      } catch (e) {
-        status.textContent = "❌ Error de conexión al comunicarse con Drive.";
-        console.error(e);
-      }
-    };
-
       try {
         const response = await fetch(MASTER_SCRIPT_URL, {
           method: "POST",
