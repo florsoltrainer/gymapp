@@ -57,21 +57,21 @@
     .header-logo { height: 30px; width: auto; object-fit: contain; }
     
     .user-menu-container { position: relative; display: flex; gap: 10px; align-items: center; }
-    .user-menu-btn { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); border-radius: 50%; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; margin-bottom: 0; width: 42px; height: 42px; padding: 0; transition: background 0.2s; font-size: 1.1rem; }
+    .user-menu-btn { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; margin-bottom: 0; width: 42px; height: 42px; padding: 0; transition: background 0.2s; font-size: 1.1rem; }
     .user-menu-btn:hover { background: var(--border); }
     
-    .user-menu-dropdown { display: none; position: absolute; top: 115%; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 220px; box-shadow: 0 8px 24px var(--shadow); z-index: 100; flex-direction: column; gap: 12px; }
+    .user-menu-dropdown { display: none; position: absolute; top: 115%; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; min-width: 220px; box-shadow: 0 8px 24px var(--shadow); z-index: 100; flex-direction: column; gap: 12px; }
     .user-menu-dropdown.show { display: flex; }
     .menu-email { font-size: 0.85rem; color: var(--muted); text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; word-break: break-all; }
 
     .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
-    .tab-btn { padding: 12px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.95rem; }
+    .tab-btn { padding: 12px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.95rem; }
     .tab-btn.active { background: var(--accent); color: #000000; border-color: var(--accent); }
 
     .module-section { display: none; }
     .module-section.active { display: block; }
 
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px var(--shadow); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px var(--shadow); }
     h2, h3, h4 { margin-bottom: 12px; }
 
     label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
@@ -81,15 +81,15 @@
     .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
     .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
 
-    button.btn-main { background: var(--accent); color: #000; font-weight: bold; cursor: pointer; border: none; }
+    button.btn-main { background: var(--accent); color: #000; font-weight: bold; cursor: pointer; border: none; border-radius: 8px; transition: opacity 0.2s; }
     button.btn-main:hover { opacity: 0.9; }
-    button.btn-sec { background: transparent; color: var(--accent); border: 1px solid var(--accent); font-weight: 600; cursor: pointer; }
-    button.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-weight: 600; cursor: pointer; }
+    button.btn-sec { background: transparent; color: var(--accent); border: 1px solid var(--accent); font-weight: 600; cursor: pointer; border-radius: 8px; transition: background 0.2s, color 0.2s; }
+    button.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-weight: 600; cursor: pointer; border-radius: 8px; transition: background 0.2s, color 0.2s; }
     button.btn-danger:hover { background: var(--danger); color: #fff; }
-    button.btn-google { background: #4285F4; color: #fff; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; border-radius: 10px; }
+    button.btn-google { background: #4285F4; color: #fff; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; border-radius: 8px; }
     
     .item-chip { background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; word-break: break-all; overflow-wrap: anywhere; } 
-    .tree-node { background: var(--input-bg); border-radius: 10px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
+    .tree-node { background: var(--input-bg); border-radius: 8px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
     .status-msg { text-align: center; font-weight: bold; margin-top: 10px; font-size: 0.9rem; }
     
     .student-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 15px; }
@@ -97,18 +97,18 @@
     .student-info-block { display: flex; flex-direction: column; flex-grow: 1; word-break: break-all; overflow-wrap: anywhere; } 
     .profile-img-circular { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); flex-shrink: 0; }
 
-    .log-card { background: var(--input-bg); border-left: 4px solid var(--accent); padding: 10px 14px; margin-top: 8px; border-radius: 6px; font-size: 0.88rem; transition: background 0.2s; }
+    .log-card { background: var(--input-bg); border-left: 4px solid var(--accent); padding: 10px 14px; margin-top: 8px; border-radius: 8px; font-size: 0.88rem; transition: background 0.2s; }
     .log-card:hover { background: var(--border); }
     
     .sub-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; overflow-x: auto; }
-    .sub-tab-btn { padding: 6px 12px; background: transparent; border: none; color: var(--text); font-weight: 600; cursor: pointer; width: auto; margin-bottom: 0; white-space: nowrap; opacity: 0.6; transition: opacity 0.2s, color 0.2s, border-bottom 0.2s; }
+    .sub-tab-btn { padding: 6px 12px; background: transparent; border: none; border-radius: 8px 8px 0 0; color: var(--text); font-weight: 600; cursor: pointer; width: auto; margin-bottom: 0; white-space: nowrap; opacity: 0.6; transition: opacity 0.2s, color 0.2s, border-bottom 0.2s; }
     .sub-tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); opacity: 1; font-weight: bold; } 
 
     /* Modal Alerta Estilos */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 3000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
     .modal-overlay.show { display: flex; }
-    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 1.5rem; color: var(--muted); cursor: pointer; }
+    .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 1.5rem; color: var(--muted); cursor: pointer; border-radius: 8px; }
     
     /* MODAL PANTALLA COMPLETA - PANEL DE ALUMNO */
     #editorContainer {
@@ -125,7 +125,7 @@
       box-sizing: border-box;
     }
     
-    .badge-notif { background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; font-weight: bold; position: absolute; top: -5px; right: -5px; display: none; }
+    .badge-notif { background: var(--danger); color: white; border-radius: 8px; padding: 2px 6px; font-size: 0.7rem; font-weight: bold; position: absolute; top: -5px; right: -5px; display: none; }
     
     .ranking-list { list-style: none; padding: 0; margin-top: 10px; }
     .ranking-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid var(--border); align-items: center; }
@@ -134,7 +134,7 @@
 
     /* Estilos extra para las miniaturas del editor de imágenes */
     .thumb-edit-wrapper { position: relative; display: inline-block; }
-    .thumb-del-btn { position: absolute; top: -6px; right: -6px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+    .thumb-del-btn { position: absolute; top: -6px; right: -6px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 8px; width: 22px; height: 22px; cursor: pointer; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); margin: 0; padding: 0; }
   </style>
 
   <!-- Módulos de Firebase -->
@@ -174,14 +174,45 @@
     window.currentEditExImages = []; 
     
     let progressChartInstance = null;
+
+    // --- GESTIÓN DE MODALIDAD DE RUTINA (CIRCUITOS VS GRUPOS MUSCULARES) ---
+    window.getActiveRoutineMode = function() {
+      if (window.editorContext.type === 'template') {
+        return window.editorContext.modo_rutina || 'circuitos';
+      }
+      return (window.currentStudentData && window.currentStudentData.modo_rutina) ? window.currentStudentData.modo_rutina : 'circuitos';
+    };
+
+    window.setActiveRoutineMode = function(mode) {
+      if (window.editorContext.type === 'template') {
+        window.editorContext.modo_rutina = mode;
+      } else if (window.currentStudentData) {
+        window.currentStudentData.modo_rutina = mode;
+      }
+    };
+
+    window.onRoutineModeChange = function() {
+      const select = document.getElementById('routineModeSelect');
+      if (!select) return;
+      window.setActiveRoutineMode(select.value);
+      renderEditorSelectedDay();
+      if (window.editorContext.type === 'student') renderRoutineDetails();
+    };
     
-// --- NUEVO: Función para obtener el orden estricto de circuitos ---
-    window.getOrderedCircuits = function(dayData) {
+    // --- Función para obtener el orden de circuitos o grupos musculares ---
+    window.getOrderedCircuits = function(dayData, modeOverride) {
         if (!dayData) return [];
-        let keys = dayData._orden || Object.keys(dayData).filter(k => k !== '_orden').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-        return keys.filter(k => dayData[k] !== undefined); // Filtro de seguridad
+        const mode = modeOverride || window.getActiveRoutineMode();
+        if (mode === 'musculos') {
+            return Object.keys(dayData)
+              .filter(k => k !== '_orden' && k !== '_modo' && dayData[k] !== undefined)
+              .sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        }
+        let keys = dayData._orden || Object.keys(dayData).filter(k => k !== '_orden' && k !== '_modo').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        return keys.filter(k => k !== '_orden' && k !== '_modo' && dayData[k] !== undefined);
     };
     // ------------------------------------------------------------------
+
     // --- MANEJO DE CLICS FUERA DE MODALES Y MENÚS ---
     window.addEventListener('click', function(event) {
       const dropdown = document.getElementById('userMenuDropdown');
@@ -358,7 +389,7 @@
             </div>
           </div>
           <div style="display:flex; gap:8px; flex-shrink: 0;">
-            <button class="btn-main" style="width: auto; padding: 8px 14px; font-size: 0.85rem;" onclick="selectStudentToEdit('${student.id}')">👁️</button>
+            <button class="btn-main" style="width: auto; padding: 8px 14px; font-size: 0.85rem; margin-bottom: 0;" onclick="selectStudentToEdit('${student.id}')">👁️</button>
           </div>
         `;
         container.appendChild(div);
@@ -410,26 +441,24 @@
          // 1. Ordenar por fecha y hora (las más recientes arriba)
          notifs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-         // --- NUEVO: FILTRO DE NOTIFICACIONES DUPLICADAS ---
+         // --- FILTRO DE NOTIFICACIONES DUPLICADAS ---
          let notifsFiltradas = [];
          let firmasVistas = new Set();
 
          notifs.forEach(n => {
-             // Creamos una "firma" única combinando nombre y fecha
              let firma = `${n.alumnoNombre}-${n.fecha}`;
              
              if (!firmasVistas.has(firma)) {
                  firmasVistas.add(firma);
-                 notifsFiltradas.push(n); // Guardamos la más reciente
+                 notifsFiltradas.push(n);
              } else {
-                 // Si ya existe una notificación de este alumno hoy, marcamos la copia antigua como leída para limpiar la BD silenciosamente
                  window.markNotifAsRead(n.id);
              }
          });
 
          if (notifsFiltradas.length > 0) {
              notifBadge.style.display = 'block';
-             notifBadge.textContent = notifsFiltradas.length; // Usamos el conteo ya filtrado
+             notifBadge.textContent = notifsFiltradas.length;
              notifList.innerHTML = '';
              
              notifsFiltradas.forEach(n => {
@@ -442,7 +471,7 @@
                   <div class="log-card">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                       <strong style="color: var(--text);">${n.fecha || ''} ${n.hora || ''} - ${n.alumnoNombre || 'Alumno'}</strong>
-                      <button onclick="markNotifAsRead('${n.id}')" style="background:transparent; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer; line-height: 1; padding: 0; margin-left: 10px; width: auto;" title="Marcar como leída y descartar">×</button>
+                      <button onclick="markNotifAsRead('${n.id}')" style="background:transparent; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer; line-height: 1; padding: 0; margin: 0 0 0 10px; width: auto;" title="Marcar como leída y descartar">×</button>
                     </div>
                     <div style="color: var(--muted); font-size: 0.9rem; margin-top: 4px;">${msg}</div>
                   </div>
@@ -537,6 +566,7 @@
         window.currentStudentData = { id, ...docSnap.data() };
         if (!window.currentStudentData.rutina) window.currentStudentData.rutina = {};
         if (!window.currentStudentData.sessionSummaries) window.currentStudentData.sessionSummaries = {};
+        if (!window.currentStudentData.modo_rutina) window.currentStudentData.modo_rutina = "circuitos";
 
         document.getElementById('lblNombre').textContent = window.currentStudentData.nombre || "-";
         document.getElementById('lblEdad').textContent = window.currentStudentData.edad || "-";
@@ -640,13 +670,11 @@
         }
       }
 
-      // --- NUEVO: Validación para asignar un avatar genérico al azar si no hay foto ---
       if (!photoUrl) {
         const avataresGenericos = ["avatar1.jpg", "avatar2.jpg", "avatar3.jpg"];
         const randomIndex = Math.floor(Math.random() * avataresGenericos.length);
         photoUrl = avataresGenericos[randomIndex];
       }
-      // --------------------------------------------------------------------------------
 
       try {
         const response = await fetch(MASTER_SCRIPT_URL, {
@@ -661,7 +689,7 @@
           const newStudentData = {
             nombre: name, email: email, edad: age, peso: weight, altura: height, patologias: pathologies,
             foto_url: photoUrl, notas_admin: notes, nota_para_alumno: "", google_sheet_url: resData.sheetUrl,
-            spreadsheet_id: resData.spreadsheetId, link_personal: directLink, rutina: {}
+            spreadsheet_id: resData.spreadsheetId, link_personal: directLink, rutina: {}, modo_rutina: "circuitos"
           };
 
           await setDoc(doc(db, "alumnos", id), newStudentData);
@@ -958,7 +986,10 @@
             return;
         }
 
-        // Agrupar por Circuito -> Ejercicio
+        const mode = (window.currentStudentData && window.currentStudentData.modo_rutina) ? window.currentStudentData.modo_rutina : 'circuitos';
+        const groupIcon = mode === 'musculos' ? '💪' : '🔄';
+
+        // Agrupar por Circuito / Grupo Muscular -> Ejercicio
         let grouped = {};
         dayLogs.forEach(l => {
             let circ = l.Circuito || "General";
@@ -972,7 +1003,7 @@
         for(let circ of circKeys) {
             let circDiv = document.createElement('div');
             circDiv.style.marginBottom = '15px';
-            circDiv.innerHTML = `<h5 style="color:var(--muted); margin-bottom:8px; font-size:1rem; text-transform: uppercase;">🔄 ${circ}</h5>`;
+            circDiv.innerHTML = `<h5 style="color:var(--muted); margin-bottom:8px; font-size:1rem; text-transform: uppercase;">${groupIcon} ${circ}</h5>`;
 
             for(let exName in grouped[circ]) {
                 let exDiv = document.createElement('div');
@@ -1147,6 +1178,7 @@
       window.currentStudentData.patologias = document.getElementById('editStudentPathologies').value.trim();
       window.currentStudentData.fecha_pago = document.getElementById('editStudentPayDate').value;
       window.currentStudentData.notas_admin = document.getElementById('editStudentNotes').value.trim();
+      if (!window.currentStudentData.modo_rutina) window.currentStudentData.modo_rutina = "circuitos";
       
       const prevNote = window.currentStudentData.nota_para_alumno;
       const newNote = document.getElementById('editStudentAppNote').value.trim();
@@ -1193,16 +1225,21 @@
       const btnContainer = document.getElementById('editorActionButtons');
       const editorTitle = document.getElementById('routineEditorTitle');
       const applyTplDiv = document.getElementById('applyTemplateContainer');
+      const modeSelect = document.getElementById('routineModeSelect');
       
+      if(modeSelect) {
+        modeSelect.value = window.getActiveRoutineMode();
+      }
+
       if(window.editorContext.type === 'template') {
         if(editorTitle) editorTitle.textContent = window.editorContext.nombre ? `⚙️ Editando plantilla: ${window.editorContext.nombre}` : `⚙️ Nueva plantilla`;
-        btnContainer.innerHTML = `<button class="btn-main" onclick="saveTemplateToFirebase()" style="padding: 12px; grid-column: 1 / -1;">💾 Guardar plantilla</button>`;
+        btnContainer.innerHTML = `<button class="btn-main" onclick="saveTemplateToFirebase()" style="padding: 12px; grid-column: 1 / -1; margin-bottom: 0;">💾 Guardar plantilla</button>`;
         if(applyTplDiv) applyTplDiv.style.display = 'none';
       } else {
         if(editorTitle) editorTitle.textContent = `⚙️ Diseñar y publicar rutina`;
         btnContainer.innerHTML = `
-          <button class="btn-main" onclick="saveToFirebase()" style="padding: 12px;">💾 Guardar rutina</button>
-          <button class="btn-sec" onclick="saveCurrentAsTemplate()" style="padding: 12px;">⭐ Guardar como plantilla</button>
+          <button class="btn-main" onclick="saveToFirebase()" style="padding: 12px; margin-bottom: 0;">💾 Guardar rutina</button>
+          <button class="btn-sec" onclick="saveCurrentAsTemplate()" style="padding: 12px; margin-bottom: 0;">⭐ Guardar como plantilla</button>
         `;
         if(applyTplDiv) applyTplDiv.style.display = 'block';
       }
@@ -1218,7 +1255,13 @@
     window.openTemplateEditor = function(templateId = null) {
       if (templateId) {
         const template = window.globalTemplates.find(t => t.id === templateId);
-        window.editorContext = { type: 'template', id: templateId, rutina: JSON.parse(JSON.stringify(template.rutina)), nombre: template.nombre_plantilla };
+        window.editorContext = {
+          type: 'template',
+          id: templateId,
+          rutina: JSON.parse(JSON.stringify(template.rutina || {})),
+          nombre: template.nombre_plantilla,
+          modo_rutina: template.modo_rutina || 'circuitos'
+        };
         closeViewTemplateModal();
         document.getElementById('routineEditorModal').classList.add('show');
         window.currentEditorDay = null;
@@ -1240,31 +1283,44 @@
       container.innerHTML = '';
       
       const rut = window.currentStudentData.rutina;
-      if (!rut || Object.keys(rut).length === 0) {
+      const mode = window.currentStudentData.modo_rutina || 'circuitos';
+      const groupIcon = mode === 'musculos' ? '💪' : '🔄';
+      const modeBadgeText = mode === 'musculos' ? '💪 Modo: Grupos Musculares' : '🔄 Modo: Circuitos (Por Rondas)';
+
+      const dayKeys = Object.keys(rut || {}).filter(k => k !== '_orden' && k !== '_modo');
+      if (!rut || dayKeys.length === 0) {
         container.innerHTML = `
           <p style="color:var(--muted); margin-bottom: 12px;">Sin Rutina</p>
-          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openRoutineEditorModal()">⚙️ Configurar</button>
+          <button class="btn-main" style="width: auto; padding: 8px 16px; margin-bottom: 0;" onclick="openRoutineEditorModal()">⚙️ Configurar</button>
         `;
         return;
       }
+
+      const modeHeader = document.createElement('div');
+      modeHeader.style.marginBottom = '10px';
+      modeHeader.style.fontSize = '0.85rem';
+      modeHeader.style.color = 'var(--accent)';
+      modeHeader.style.fontWeight = 'bold';
+      modeHeader.textContent = modeBadgeText;
+      container.appendChild(modeHeader);
       
-      for (const day in rut) {
+      for (const day of dayKeys) {
         const dayDiv = document.createElement('div');
         dayDiv.className = 'tree-node';
         
         dayDiv.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <h4 style="color:var(--accent); margin:0;">📅 ${day}</h4>
           <div style="display: flex; gap: 8px;">
-             <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem;" onclick="downloadStudentRoutinePDF('${day}')">⬇️ PDF</button>
-             <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem;" onclick="openRoutineEditorModal('${day}')">✏️ Editar</button>
+             <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem; margin-bottom: 0;" onclick="downloadStudentRoutinePDF('${day}')">⬇️ PDF</button>
+             <button class="btn-sec" style="width:auto; padding: 4px 10px; font-size: 0.8rem; margin-bottom: 0;" onclick="openRoutineEditorModal('${day}')">✏️ Editar</button>
           </div>
         </div>`;
         
-        const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        const circKeys = window.getOrderedCircuits(rut[day], mode);
         for (const circ of circKeys) {
           const circDiv = document.createElement('div');
           circDiv.style.marginBottom = '8px';
-          circDiv.innerHTML = `<strong>🔄 ${circ}</strong>`;
+          circDiv.innerHTML = `<strong>${groupIcon} ${circ}</strong>`;
           
           const ul = document.createElement('ul');
           ul.style.paddingLeft = '20px';
@@ -1462,7 +1518,7 @@
           <div>
             <strong>🏋️ ${data.nombre}</strong> <small style="color:var(--muted)">[${data.zona || 'Sin Zona'}]</small>
           </div>
-          <button class="btn-sec" style="width:auto; padding:4px 12px;" onclick="openEditGlobalExModal('${data.id}')">Ver / Editar</button>
+          <button class="btn-sec" style="width:auto; padding:6px 12px; margin-bottom:0;" onclick="openEditGlobalExModal('${data.id}')">Ver / Editar</button>
         `;
         listContainer.appendChild(chip);
       });
@@ -1547,7 +1603,7 @@
         chip.className = 'item-chip';
         chip.innerHTML = `
           <div><strong>📋 ${data.nombre_plantilla}</strong></div>
-          <button class="btn-sec" style="width:auto; padding:4px 12px;" onclick="openViewTemplateModal('${data.id}')">Ver Plantilla</button>
+          <button class="btn-sec" style="width:auto; padding:6px 12px; margin-bottom:0;" onclick="openViewTemplateModal('${data.id}')">Ver Plantilla</button>
         `;
         listContainer.appendChild(chip);
       });
@@ -1569,11 +1625,12 @@
       
       if (window.templatePromptContext === 'save_current') {
         const rut = getActiveRoutine();
-        await addDoc(collection(db, "plantillas_rutinas"), { nombre_plantilla: name, rutina: rut });
+        const mode = window.getActiveRoutineMode();
+        await addDoc(collection(db, "plantillas_rutinas"), { nombre_plantilla: name, rutina: rut, modo_rutina: mode });
         alert("✅ Plantilla guardada.");
         await loadGlobalTemplates();
       } else if (window.templatePromptContext === 'new_editor') {
-        window.editorContext = { type: 'template', id: null, rutina: {}, nombre: name };
+        window.editorContext = { type: 'template', id: null, rutina: {}, nombre: name, modo_rutina: 'circuitos' };
         closeViewTemplateModal();
         document.getElementById('routineEditorModal').classList.add('show');
         window.currentEditorDay = null;
@@ -1585,16 +1642,15 @@
       const status = document.getElementById('saveStatus');
       if(status) status.textContent = "⏳ Guardando plantilla...";
       try {
+        const payload = {
+          nombre_plantilla: window.editorContext.nombre,
+          rutina: window.editorContext.rutina,
+          modo_rutina: window.editorContext.modo_rutina || 'circuitos'
+        };
         if (window.editorContext.id) {
-          await updateDoc(doc(db, "plantillas_rutinas", window.editorContext.id), {
-            nombre_plantilla: window.editorContext.nombre,
-            rutina: window.editorContext.rutina
-          });
+          await updateDoc(doc(db, "plantillas_rutinas", window.editorContext.id), payload);
         } else {
-          await addDoc(collection(db, "plantillas_rutinas"), {
-            nombre_plantilla: window.editorContext.nombre,
-            rutina: window.editorContext.rutina
-          });
+          await addDoc(collection(db, "plantillas_rutinas"), payload);
         }
         if(status) {
           status.textContent = "✅ Plantilla guardada.";
@@ -1614,8 +1670,10 @@
       if (found) {
         if (window.editorContext.type === 'template') {
            window.editorContext.rutina = JSON.parse(JSON.stringify(found.rutina));
+           window.editorContext.modo_rutina = found.modo_rutina || 'circuitos';
         } else {
            window.currentStudentData.rutina = JSON.parse(JSON.stringify(found.rutina));
+           window.currentStudentData.modo_rutina = found.modo_rutina || 'circuitos';
         }
         window.currentEditorDay = null; 
         renderEditor();
@@ -1658,20 +1716,24 @@
       if(!container) return;
       container.innerHTML = '';
       const rut = template.rutina;
-      if (!rut || Object.keys(rut).length === 0) {
+      const mode = template.modo_rutina || 'circuitos';
+      const groupIcon = mode === 'musculos' ? '💪' : '🔄';
+
+      const dayKeys = Object.keys(rut || {}).filter(k => k !== '_orden' && k !== '_modo');
+      if (!rut || dayKeys.length === 0) {
         container.innerHTML = `<p style="color:var(--muted); margin-bottom: 12px;">Plantilla vacía.</p>`;
         return;
       }
-      for (const day in rut) {
+      for (const day of dayKeys) {
         const dayDiv = document.createElement('div');
         dayDiv.className = 'tree-node';
         dayDiv.innerHTML = `<h4 style="color:var(--accent); margin-bottom:8px; margin-top:0;">📅 ${day}</h4>`;
         
-        const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        const circKeys = window.getOrderedCircuits(rut[day], mode);
         for (const circ of circKeys) {
           const circDiv = document.createElement('div');
           circDiv.style.marginBottom = '8px';
-          circDiv.innerHTML = `<strong>🔄 ${circ}</strong>`;
+          circDiv.innerHTML = `<strong>${groupIcon} ${circ}</strong>`;
           const ul = document.createElement('ul');
           ul.style.paddingLeft = '20px';
           ul.style.color = 'var(--muted)';
@@ -1705,21 +1767,23 @@
       
       let currentY = 38;
       const rut = window.currentStudentData.rutina;
+      const mode = window.currentStudentData.modo_rutina || 'circuitos';
+      const groupLabel = mode === 'musculos' ? 'Grupo Muscular' : 'Circuito';
       
       if(rut && Object.keys(rut).length > 0) {
-        const daysToProcess = selectedDay ? [selectedDay] : Object.keys(rut);
+        const daysToProcess = selectedDay ? [selectedDay] : Object.keys(rut).filter(k => k !== '_orden' && k !== '_modo');
 
         daysToProcess.forEach(day => {
           docPDF.setFontSize(14);
           docPDF.text(`Día: ${day}`, 14, currentY);
           currentY += 6;
           
-          const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+          const circKeys = window.getOrderedCircuits(rut[day], mode);
           
           circKeys.forEach(circ => {
               docPDF.setFontSize(12);
               docPDF.setTextColor(0, 230, 118); // Accent Color
-              docPDF.text(`Circuito: ${circ}`, 14, currentY);
+              docPDF.text(`${groupLabel}: ${circ}`, 14, currentY);
               docPDF.setTextColor(0, 0, 0); // Reset Color
               currentY += 6;
 
@@ -1801,19 +1865,22 @@
       
       let currentY = 30;
       const rut = template.rutina;
+      const mode = template.modo_rutina || 'circuitos';
+      const groupLabel = mode === 'musculos' ? 'Grupo Muscular' : 'Circuito';
       
       if(rut && Object.keys(rut).length > 0) {
-        for (const day in rut) {
+        const dayKeys = Object.keys(rut).filter(k => k !== '_orden' && k !== '_modo');
+        for (const day of dayKeys) {
           docPDF.setFontSize(14);
           docPDF.text(`Día: ${day}`, 14, currentY);
           currentY += 6;
           
-          const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+          const circKeys = window.getOrderedCircuits(rut[day], mode);
           
           circKeys.forEach(circ => {
               docPDF.setFontSize(12);
               docPDF.setTextColor(0, 230, 118); // Accent Color
-              docPDF.text(`Circuito: ${circ}`, 14, currentY);
+              docPDF.text(`${groupLabel}: ${circ}`, 14, currentY);
               docPDF.setTextColor(0, 0, 0); // Reset Color
               currentY += 6;
 
@@ -1877,7 +1944,7 @@
       populateZoneDropdowns();
       
       const rut = getActiveRoutine();
-      const days = Object.keys(rut || {});
+      const days = Object.keys(rut || {}).filter(k => k !== '_orden' && k !== '_modo');
       
       if (days.length > 0 && !days.includes(window.currentEditorDay)) {
          window.currentEditorDay = days[0];
@@ -1894,7 +1961,7 @@
       container.innerHTML = '';
       const rut = getActiveRoutine();
       
-      Object.keys(rut || {}).forEach(day => {
+      Object.keys(rut || {}).filter(k => k !== '_orden' && k !== '_modo').forEach(day => {
         const btn = document.createElement('button');
         btn.className = `sub-tab-btn ${day === window.currentEditorDay ? 'active' : ''}`;
         btn.textContent = day;
@@ -1922,19 +1989,21 @@
       
       const rut = getActiveRoutine();
       const dayData = rut[window.currentEditorDay] || {};
+      const mode = window.getActiveRoutineMode();
+      const groupIcon = mode === 'musculos' ? '💪' : '🔄';
       
       listDiv.innerHTML = '';
       
-      if (Object.keys(dayData).length === 0) {
+      const circKeys = window.getOrderedCircuits(dayData, mode);
+      if (circKeys.length === 0) {
          listDiv.innerHTML = '<p style="color:var(--muted); font-size:0.9rem; margin-top:10px;">No hay ejercicios asignados a este día.</p>';
          return;
       }
 
-      const circKeys = window.getOrderedCircuits(dayData);
       for (const circ of circKeys) {
         const circDiv = document.createElement('div');
         circDiv.style.marginTop = '15px';
-        circDiv.innerHTML = `<strong style="color:var(--muted); display:block; margin-bottom: 8px;">🔄 ${circ}</strong>`;
+        circDiv.innerHTML = `<strong style="color:var(--muted); display:block; margin-bottom: 8px;">${groupIcon} ${circ}</strong>`;
         
         dayData[circ].forEach((ex, idx) => {
           const displayWeights = ex.weights ? ex.weights.join("kg, ") + "kg" : `${ex.weight} kg`;
@@ -1970,7 +2039,7 @@
 
     window.deleteSelectedDay = function() {
       if(!window.currentEditorDay) return;
-      if(confirm(`¿Estás seguro de eliminar el día "${window.currentEditorDay}" y todos sus circuitos?`)) {
+      if(confirm(`¿Estás seguro de eliminar el día "${window.currentEditorDay}" y todos sus ejercicios?`)) {
         const rut = getActiveRoutine();
         delete rut[window.currentEditorDay];
         window.currentEditorDay = null;
@@ -1982,6 +2051,22 @@
     window.openEditDayExercisesModal = function() {
       if(!window.currentEditorDay) return;
       document.getElementById('editDayExercisesTitle').textContent = `⚙️ Editar: ${window.currentEditorDay}`;
+      
+      const mode = window.getActiveRoutineMode();
+      const circBox = document.getElementById('circuitDestinationBox');
+      const bankBoxLabel = document.getElementById('bankSearchStepLabel');
+      const addExBtn = document.getElementById('addExerciseSubmitBtn');
+
+      if (mode === 'musculos') {
+        if (circBox) circBox.style.display = 'none';
+        if (bankBoxLabel) bankBoxLabel.textContent = '1. Buscar Ejercicio por Grupo Muscular en el Banco:';
+        if (addExBtn) addExBtn.textContent = '+ Añadir Ejercicio al Grupo Muscular';
+      } else {
+        if (circBox) circBox.style.display = 'block';
+        if (bankBoxLabel) bankBoxLabel.textContent = '2. Buscar Ejercicio en el Banco:';
+        if (addExBtn) addExBtn.textContent = '+ Añadir Ejercicio al Circuito';
+      }
+
       document.getElementById('editDayExercisesModal').classList.add('show');
       updateCircuitDropdown();
       updateGlobalExerciseDropdown();
@@ -1994,7 +2079,7 @@
     };
 
     // Gestión de Circuitos
-window.addCircuitToDay = function() {
+    window.addCircuitToDay = function() {
       const day = window.currentEditorDay;
       const circName = document.getElementById('newCircuitInput').value.trim();
       if (!circName || !day) return;
@@ -2002,14 +2087,12 @@ window.addCircuitToDay = function() {
       if (!rut[day][circName]) {
         rut[day][circName] = [];
         
-        // --- NUEVO: Agregar al índice estricto ---
         if (!rut[day]._orden) {
-            rut[day]._orden = Object.keys(rut[day]).filter(k => k !== '_orden').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+            rut[day]._orden = Object.keys(rut[day]).filter(k => k !== '_orden' && k !== '_modo').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
         }
         if (!rut[day]._orden.includes(circName)) {
             rut[day]._orden.push(circName);
         }
-        // -----------------------------------------
 
         document.getElementById('newCircuitInput').value = '';
         updateCircuitDropdown();
@@ -2065,7 +2148,7 @@ window.addCircuitToDay = function() {
 
     window.addExercise = function() {
       const day = window.currentEditorDay;
-      const circ = document.getElementById('selectCircuitForEx').value;
+      const mode = window.getActiveRoutineMode();
       const selectedExName = document.getElementById('selectGlobalExercise').value;
       const manualExName = document.getElementById('manualExName').value.trim();
       const notes = document.getElementById('newExNotes').value.trim();
@@ -2075,7 +2158,18 @@ window.addCircuitToDay = function() {
       const weightsInput = document.getElementById('newExWeights').value.trim();
       const repsInput = document.getElementById('newExReps').value.trim();
 
-      if (!day || !circ || !exName) return alert("Asegurate de haber creado/seleccionado un Circuito de destino y elegido un ejercicio.");
+      if (!day || !exName) return alert("Selecciona o escribe un ejercicio.");
+
+      const foundGlobal = window.globalExercises.find(e => e.nombre === exName);
+      let circ = "";
+
+      if (mode === 'musculos') {
+        const selectedZoneFilter = document.getElementById('filterZoneForEx').value;
+        circ = (foundGlobal && foundGlobal.zona) ? foundGlobal.zona : (selectedZoneFilter || "General");
+      } else {
+        circ = document.getElementById('selectCircuitForEx').value;
+        if (!circ) return alert("Asegurate de haber creado/seleccionado un Circuito de destino y elegido un ejercicio.");
+      }
 
       let weightsArray = [];
       if (weightsInput.includes(',')) {
@@ -2094,20 +2188,26 @@ window.addCircuitToDay = function() {
 
       let imageUrls = [];
       let videoUrl = "";
-      const foundGlobal = window.globalExercises.find(e => e.nombre === exName);
       if (foundGlobal) {
         if (foundGlobal.imageUrls) imageUrls = foundGlobal.imageUrls;
         if (foundGlobal.video_url) videoUrl = foundGlobal.video_url;
       }
 
       if (manualExName && !window.globalExercises.some(e => e.nombre.toLowerCase() === manualExName.toLowerCase())) {
-        addDoc(collection(db, "ejercicios_base"), { nombre: manualExName, imageUrls: [], video_url: "" }).then(() => loadGlobalExercises());
+        const zoneToSave = mode === 'musculos' ? circ : (document.getElementById('filterZoneForEx').value || "");
+        addDoc(collection(db, "ejercicios_base"), { nombre: manualExName, zona: zoneToSave, imageUrls: [], video_url: "" }).then(() => loadGlobalExercises());
       }
 
       const rut = getActiveRoutine();
 
       if (!rut[day][circ]) {
         rut[day][circ] = [];
+        if (!rut[day]._orden) {
+          rut[day]._orden = Object.keys(rut[day]).filter(k => k !== '_orden' && k !== '_modo').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        }
+        if (!rut[day]._orden.includes(circ)) {
+          rut[day]._orden.push(circ);
+        }
       }
 
       rut[day][circ].push({ 
@@ -2142,12 +2242,11 @@ window.addCircuitToDay = function() {
     };
 
     // Ordenamiento de Circuitos
-window.moveCircuit = function(circ, direction) {
+    window.moveCircuit = function(circ, direction) {
       const day = window.currentEditorDay;
       const rut = getActiveRoutine();
       
-      // --- NUEVO: Modificar directamente el índice estricto ---
-      let circKeys = window.getOrderedCircuits(rut[day]);
+      let circKeys = window.getOrderedCircuits(rut[day], 'circuitos');
       const idx = circKeys.indexOf(circ);
       
       if (direction === -1 && idx > 0) {
@@ -2157,7 +2256,6 @@ window.moveCircuit = function(circ, direction) {
       } else { return; }
       
       rut[day]._orden = circKeys;
-      // --------------------------------------------------------
       
       renderExercisesListEditor();
       if(window.editorContext.type === 'student') renderRoutineDetails();
@@ -2222,18 +2320,16 @@ window.moveCircuit = function(circ, direction) {
       if(window.editorContext.type === 'student') renderRoutineDetails();
     };
 
-window.deleteExercise = function(circ, idx) {
+    window.deleteExercise = function(circ, idx) {
       const day = window.currentEditorDay;
       const rut = getActiveRoutine();
       rut[day][circ].splice(idx, 1);
       if (rut[day][circ].length === 0) {
         delete rut[day][circ];
         
-        // --- NUEVO: Quitar del índice estricto ---
         if (rut[day]._orden) {
             rut[day]._orden = rut[day]._orden.filter(z => z !== circ);
         }
-        // ----------------------------------------
 
         updateCircuitDropdown();
       }
@@ -2249,7 +2345,10 @@ window.deleteExercise = function(circ, idx) {
       const rut = getActiveRoutine();
       if (!day || !rut[day]) return;
 
-      const circKeys = window.getOrderedCircuits(rut[day]);
+      const mode = window.getActiveRoutineMode();
+      const groupIcon = mode === 'musculos' ? '💪' : '🔄';
+
+      const circKeys = window.getOrderedCircuits(rut[day], mode);
       circKeys.forEach(circ => {
         const circTitle = document.createElement('div');
         circTitle.style.display = 'flex';
@@ -2257,11 +2356,12 @@ window.deleteExercise = function(circ, idx) {
         circTitle.style.alignItems = 'center';
         circTitle.style.margin = '15px 0 5px 0';
         circTitle.innerHTML = `
-          <strong style="color:var(--muted);">🔄 ${circ}</strong>
+          <strong style="color:var(--muted);">${groupIcon} ${circ}</strong>
+          ${mode === 'circuitos' ? `
           <div style="display:flex; gap:5px;">
             <button class="btn-sec" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1.1rem; margin:0;" onclick="moveCircuit('${circ}', -1)" title="Subir Circuito">↑</button>
             <button class="btn-sec" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1.1rem; margin:0;" onclick="moveCircuit('${circ}', 1)" title="Bajar Circuito">↓</button>
-          </div>
+          </div>` : ''}
         `;
         container.appendChild(circTitle);
 
@@ -2293,7 +2393,7 @@ window.deleteExercise = function(circ, idx) {
 </head>
 <body>
 
-  <!-- MODAL FEEDBACK (Nuevo Modal) -->
+  <!-- MODAL FEEDBACK -->
   <div id="feedbackModal" class="modal-overlay" style="z-index: 3500;">
     <div class="modal-content" style="max-width: 400px;">
       
@@ -2304,23 +2404,23 @@ window.deleteExercise = function(circ, idx) {
       
       <p id="fbModalDate" style="color: var(--muted); font-size: 0.9rem; margin-bottom: 20px;">📅 --/--/----</p>
       
-      <div style="background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 12px; margin-bottom: 12px; text-align: left;">
+      <div style="background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 8px; margin-bottom: 12px; text-align: left;">
           <label style="color: var(--muted); font-size: 0.8rem; text-transform: uppercase;">Sensación General</label>
           <div id="fbModalSensacion" style="font-size: 2rem; margin-top: 5px;">😄 <span style="font-size: 1rem; color: var(--text);">Bien</span></div>
       </div>
 
       <div style="display: flex; gap: 10px; margin-bottom: 12px;">
-          <div style="flex: 1; background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 12px; text-align: left;">
+          <div style="flex: 1; background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 8px; text-align: left;">
               <label style="color: var(--muted); font-size: 0.8rem; text-transform: uppercase;">Esfuerzo (RPE)</label>
               <div id="fbModalRPE" style="font-size: 1.5rem; font-weight: bold; color: var(--text); margin-top: 5px;">--/10</div>
           </div>
-          <div style="flex: 1; background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 12px; text-align: left;">
+          <div style="flex: 1; background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 8px; text-align: left;">
               <label style="color: var(--muted); font-size: 0.8rem; text-transform: uppercase;">Dolores</label>
               <div id="fbModalDolor" style="font-size: 1.1rem; color: var(--text); margin-top: 5px; font-weight: 500;">✅ Ninguno</div>
           </div>
       </div>
 
-      <div style="background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 12px; text-align: left;">
+      <div style="background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 8px; text-align: left;">
           <label style="color: var(--muted); font-size: 0.8rem; text-transform: uppercase;">Comentarios</label>
           <div id="fbModalComentarios" style="color: var(--text); font-style: italic; margin-top: 5px; font-size: 0.95rem; line-height: 1.4;">Sin comentarios adicionales.</div>
       </div>
@@ -2371,8 +2471,8 @@ window.deleteExercise = function(circ, idx) {
       <textarea id="newStudentNotes" placeholder="Objetivos, antecedentes..."></textarea>
       
       <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button class="btn-main" onclick="createNewStudent()">Crear Alumno</button>
-        <button class="btn-sec" onclick="closeNewStudentForm()">Cancelar</button>
+        <button class="btn-main" style="margin-bottom: 0;" onclick="createNewStudent()">Crear Alumno</button>
+        <button class="btn-sec" style="margin-bottom: 0;" onclick="closeNewStudentForm()">Cancelar</button>
       </div>
       <div id="createStatus" class="status-msg"></div>
     </div>
@@ -2381,7 +2481,7 @@ window.deleteExercise = function(circ, idx) {
   <div id="loginBox" class="card" style="text-align: center; padding: 40px 20px; max-width: 400px; margin: 40px auto;">
     <h2>🔐 Panel Administrador</h2>
     <p style="color: var(--muted); margin-bottom: 20px;">Inicia sesión con tu cuenta de Google autorizada.</p>
-    <button class="btn-google" onclick="loginGoogle()">Iniciar Sesión con Google</button>
+    <button class="btn-google" style="margin-bottom: 0;" onclick="loginGoogle()">Iniciar Sesión con Google</button>
     <div id="authError" style="color: var(--danger); margin-top: 16px;"></div>
   </div>
 
@@ -2421,7 +2521,7 @@ window.deleteExercise = function(circ, idx) {
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
           <h2 style="margin: 0;">👥 Alumnos</h2>
-          <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="toggleNewStudentForm()">➕</button>
+          <button class="btn-main" style="width: auto; padding: 8px 16px; margin-bottom: 0;" onclick="toggleNewStudentForm()">➕</button>
         </div>
         <input type="text" id="searchStudentInput" placeholder="🔍 Buscar por nombre, mail o ID..." oninput="filterStudents()">
         <div id="studentsListContainer" style="margin-top: 10px;"></div>
@@ -2448,7 +2548,7 @@ window.deleteExercise = function(circ, idx) {
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
             <h2 style="margin: 0;">📚 Ejercicios</h2>
-            <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openNewGlobalExModal()">➕</button>
+            <button class="btn-main" style="width: auto; padding: 8px 16px; margin-bottom: 0;" onclick="openNewGlobalExModal()">➕</button>
           </div>
 
           <div class="grid-2" style="margin-top: 16px;">
@@ -2471,7 +2571,7 @@ window.deleteExercise = function(circ, idx) {
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
             <h2 style="margin: 0;">📋 Plantillas de rutinas</h2>
-            <button class="btn-main" style="width: auto; padding: 8px 16px;" onclick="openTemplateEditor()">➕</button>
+            <button class="btn-main" style="width: auto; padding: 8px 16px; margin-bottom: 0;" onclick="openTemplateEditor()">➕</button>
           </div>
           
           <input type="text" id="searchTemplateInput" placeholder="🔍 Buscar plantilla por nombre..." oninput="filterGlobalTemplates()" style="margin-top: 10px;">
@@ -2490,7 +2590,7 @@ window.deleteExercise = function(circ, idx) {
       
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
         <h2 style="margin: 0;">⚙️ Panel del alumno</h2>
-        <button class="btn-sec" onclick="closeEditorModal()" style="width: auto; padding: 6px 16px;">Cerrar ✖</button>
+        <button class="btn-sec" onclick="closeEditorModal()" style="width: auto; padding: 6px 16px; margin-bottom: 0;">Cerrar ✖</button>
       </div>
 
       <div class="sub-tabs">
@@ -2513,12 +2613,12 @@ window.deleteExercise = function(circ, idx) {
               </div>
             </div>
             <div style="display: flex; gap: 10px;">
-              <button class="btn-main" style="width: auto; padding: 6px 12px;" onclick="copyPersonalLink()">🔗</button>
-              <button class="btn-sec" onclick="toggleEditData(true)" style="width: auto; padding: 6px 12px;">✏️</button>
+              <button class="btn-main" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="copyPersonalLink()">🔗</button>
+              <button class="btn-sec" onclick="toggleEditData(true)" style="width: auto; padding: 6px 12px; margin-bottom: 0;">✏️</button>
             </div>
           </div>
           
-          <!-- Nuevos cuadritos de Pago y Estado -->
+          <!-- Cuadritos de Pago y Estado -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
             <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center;">
               <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">Último Pago</div>
@@ -2543,7 +2643,7 @@ window.deleteExercise = function(circ, idx) {
         <div class="card" id="studentDataEdit" style="display: none;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 style="margin: 0;">✏️ Editar Datos</h3>
-            <button class="btn-danger" onclick="deleteCurrentStudent()" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">🗑️ Eliminar</button>
+            <button class="btn-danger" onclick="deleteCurrentStudent()" style="width: auto; padding: 6px 12px; font-size: 0.85rem; margin-bottom: 0;">🗑️ Eliminar</button>
           </div>
           <div style="display:flex; align-items:center; gap: 15px; margin-bottom:15px;">
             <img id="previewStudentPhoto" src="" class="profile-img-circular" alt="Foto">
@@ -2574,8 +2674,8 @@ window.deleteExercise = function(circ, idx) {
           <textarea id="editStudentNotes"></textarea>
           
           <div style="margin-top: 16px; display: flex; gap: 10px;">
-            <button class="btn-main" onclick="saveToFirebase()">💾 Guardar cambios</button>
-            <button class="btn-sec" onclick="toggleEditData(false)">Cancelar</button>
+            <button class="btn-main" style="margin-bottom: 0;" onclick="saveToFirebase()">💾 Guardar cambios</button>
+            <button class="btn-sec" style="margin-bottom: 0;" onclick="toggleEditData(false)">Cancelar</button>
           </div>
           <div id="saveDataStatus" class="status-msg"></div>
         </div>
@@ -2584,14 +2684,14 @@ window.deleteExercise = function(circ, idx) {
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <h3 style="margin:0;">📋 Resumen de la Rutina</h3>
-            <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff;">Descargar</button>
+            <button class="btn-main" onclick="downloadStudentRoutinePDF()" style="width:auto; padding:6px 12px; background:#21a366; color:#fff; margin-bottom: 0;">Descargar</button>
           </div>
           <div id="routineDetailsDisplay" style="padding: 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border);">
           </div>
           <div style="margin-top:15px; padding-top: 15px; border-top: 1px solid var(--border);">
             <label style="color:var(--accent);">💬 Mensaje Adicional (Visible para el alumno en su app)</label>
             <textarea id="editStudentAppNote" placeholder="Escribe aquí un mensaje general, aviso o recomendación que el alumno verá al abrir su rutina..."></textarea>
-            <button class="btn-sec" onclick="saveToFirebase()">Guardar Mensaje</button>
+            <button class="btn-sec" style="margin-bottom: 0;" onclick="saveToFirebase()">Guardar Mensaje</button>
           </div>
         </div>
       </div>
@@ -2601,7 +2701,7 @@ window.deleteExercise = function(circ, idx) {
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap:10px; margin-bottom: 15px;">
             <h3 style="margin:0;">📈 Historial</h3>
-            <button class="btn-main" onclick="openFeedbackModal()" style="width:auto; padding:6px 12px; background:var(--accent); color:#000;">📋 Ver Encuesta</button>
+            <button class="btn-main" onclick="openFeedbackModal()" style="width:auto; padding:6px 12px; background:var(--accent); color:#000; margin-bottom: 0;">📋 Ver Encuesta</button>
           </div>
 
           <!-- Sección de Entrenamiento Seleccionado (Calendario y Rutina del Día) -->
@@ -2655,12 +2755,21 @@ window.deleteExercise = function(circ, idx) {
         <button onclick="closeRoutineEditorModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
       
-      <div id="applyTemplateContainer" style="margin-bottom: 20px;">
+      <div id="applyTemplateContainer" style="margin-bottom: 16px;">
         <label>Aplicar Plantilla Estándar:</label>
         <div style="display: flex; gap: 8px;">
           <select id="selectTemplateToApply" style="margin:0;"></select>
-          <button class="btn-sec" onclick="applySelectedTemplate()" style="width: auto;">Aplicar</button>
+          <button class="btn-sec" onclick="applySelectedTemplate()" style="width: auto; margin-bottom: 0;">Aplicar</button>
         </div>
+      </div>
+
+      <!-- Selector de Modo de Entrenamiento (Bimodal: Circuitos vs Grupos Musculares) -->
+      <div style="margin-bottom: 20px; background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+        <label style="color: var(--accent); font-weight: bold; margin-bottom: 6px;">🎯 Modo de Entrenamiento de la Rutina:</label>
+        <select id="routineModeSelect" onchange="onRoutineModeChange()" style="margin-bottom: 0; background: var(--card);">
+          <option value="circuitos">🔄 Por Circuitos (Avance por rondas secuenciales y orden personalizado)</option>
+          <option value="musculos">💪 Por Grupos Musculares (Agrupa y ordena automáticamente por zona muscular)</option>
+        </select>
       </div>
       
       <!-- Pestañas de Días -->
@@ -2669,7 +2778,7 @@ window.deleteExercise = function(circ, idx) {
           <div id="editorDaysTabs" class="sub-tabs" style="margin-bottom: 0; border-bottom: none; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; flex-grow: 1;">
              <!-- Las pestañas se generarán aquí -->
           </div>
-          <button class="btn-sec" onclick="promptNewDay()" style="width: auto; padding: 6px 12px; font-size: 0.85rem; flex-shrink: 0;">➕ Sumar día</button>
+          <button class="btn-sec" onclick="promptNewDay()" style="width: auto; padding: 6px 12px; font-size: 0.85rem; flex-shrink: 0; margin-bottom: 0;">➕ Sumar día</button>
         </div>
       </div>
 
@@ -2678,8 +2787,8 @@ window.deleteExercise = function(circ, idx) {
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
           <h3 id="editorSelectedDayTitle" style="margin: 0; color: var(--accent);">Día</h3>
           <div style="display: flex; gap: 8px;">
-            <button class="btn-sec" onclick="openEditDayExercisesModal()" style="width: auto; padding: 6px 12px; font-size: 0.9rem;">✏️ Editar ejercicios</button>
-            <button class="btn-danger" onclick="deleteSelectedDay()" style="width: auto; padding: 6px 12px; font-size: 0.9rem;">🗑️ Eliminar día</button>
+            <button class="btn-sec" onclick="openEditDayExercisesModal()" style="width: auto; padding: 6px 12px; font-size: 0.9rem; margin-bottom: 0;">✏️ Editar ejercicios</button>
+            <button class="btn-danger" onclick="deleteSelectedDay()" style="width: auto; padding: 6px 12px; font-size: 0.9rem; margin-bottom: 0;">🗑️ Eliminar día</button>
           </div>
         </div>
         
@@ -2706,7 +2815,7 @@ window.deleteExercise = function(circ, idx) {
       <label>Ingresa el nombre del día de entrenamiento:</label>
       <input type="text" id="newDayNameInput" placeholder="Ej: Lunes, Piernas, etc.">
       <div style="display: flex; gap: 10px; margin-top: 15px;">
-        <button class="btn-main" onclick="confirmAddDay()">Añadir Día</button>
+        <button class="btn-main" style="margin-bottom: 0;" onclick="confirmAddDay()">Añadir Día</button>
       </div>
     </div>
   </div>
@@ -2720,7 +2829,7 @@ window.deleteExercise = function(circ, idx) {
       </div>
       
       <div class="grid-2" style="margin-bottom: 20px;">
-        <div style="background: var(--bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border);">
+        <div id="circuitDestinationBox" style="background: var(--bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
           <label style="color: var(--accent); font-weight: bold; margin-bottom: 8px;">1. Circuito de destino:</label>
           <select id="selectCircuitForEx"></select>
           <div style="display:flex; gap:5px; margin-top:8px; align-items:center;">
@@ -2729,14 +2838,14 @@ window.deleteExercise = function(circ, idx) {
           </div>
         </div>
         
-        <div style="background: var(--bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border);">
-          <label style="color: var(--accent); font-weight: bold; margin-bottom: 8px;">2. Buscar Ejercicio en el Banco:</label>
+        <div style="background: var(--bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+          <label id="bankSearchStepLabel" style="color: var(--accent); font-weight: bold; margin-bottom: 8px;">2. Buscar Ejercicio en el Banco:</label>
           <select id="filterZoneForEx" onchange="updateGlobalExerciseDropdown()"></select>
-          <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''" style="margin-top:8px;"></select>
+          <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''" style="margin-top:8px; margin-bottom:0;"></select>
         </div>
       </div>
 
-      <div style="background:var(--bg); padding:15px; border-radius:10px; margin-bottom:20px; border: 1px solid var(--border);">
+      <div style="background:var(--bg); padding:15px; border-radius:8px; margin-bottom:20px; border: 1px solid var(--border);">
         <label>O escribir un ejercicio nuevo libremente:</label>
         <input type="text" id="manualExName" placeholder="Ej: Press Francés" oninput="document.getElementById('selectGlobalExercise').value=''">
 
@@ -2748,7 +2857,7 @@ window.deleteExercise = function(circ, idx) {
           <div><label>Pesos (ej: 50, 55)</label><input type="text" id="newExWeights" placeholder="50, 55"></div>
           <div><label>Reps Target (ej: 12, 10)</label><input type="text" id="newExReps" placeholder="12, 10, 8"></div>
         </div>
-        <button class="btn-main" onclick="addExercise()" style="margin-bottom:0; width: 100%;">+ Añadir Ejercicio al Circuito</button>
+        <button id="addExerciseSubmitBtn" class="btn-main" onclick="addExercise()" style="margin-bottom:0; width: 100%;">+ Añadir Ejercicio al Circuito</button>
       </div>
 
       <h4 style="margin-bottom: 10px;">Ejercicios Agregados al Día:</h4>
@@ -2757,7 +2866,7 @@ window.deleteExercise = function(circ, idx) {
       </div>
       
       <div style="margin-top: 20px; text-align: right; border-top: 1px solid var(--border); padding-top: 15px;">
-         <button class="btn-main" style="width: auto; padding: 10px 25px;" onclick="closeEditDayExercisesModal()">Terminar y Volver</button>
+         <button class="btn-main" style="width: auto; padding: 10px 25px; margin-bottom: 0;" onclick="closeEditDayExercisesModal()">Terminar y Volver</button>
       </div>
     </div>
   </div>
@@ -2784,7 +2893,7 @@ window.deleteExercise = function(circ, idx) {
       <input type="text" id="editSingleExNotes" placeholder="Ej: Controlar la bajada / Usar agarre neutro">
       
       <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
-        <button class="btn-main" style="width: auto; padding: 10px 20px;" onclick="saveSingleExerciseEdit()">Guardar Cambios</button>
+        <button class="btn-main" style="width: auto; padding: 10px 20px; margin-bottom: 0;" onclick="saveSingleExerciseEdit()">Guardar Cambios</button>
       </div>
     </div>
   </div>
@@ -2801,9 +2910,9 @@ window.deleteExercise = function(circ, idx) {
       </div>
       
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button class="btn-danger" style="width:auto; padding: 10px 20px;" onclick="deleteCurrentTemplate()">Eliminar</button>
-        <button class="btn-main" style="width:auto; padding: 10px 20px;" onclick="editCurrentTemplate()">Editar</button>
-        <button class="btn-sec" style="width:auto; padding: 10px 20px;" onclick="downloadTemplatePDF()">Descargar</button>
+        <button class="btn-danger" style="width:auto; padding: 10px 20px; margin-bottom: 0;" onclick="deleteCurrentTemplate()">Eliminar</button>
+        <button class="btn-main" style="width:auto; padding: 10px 20px; margin-bottom: 0;" onclick="editCurrentTemplate()">Editar</button>
+        <button class="btn-sec" style="width:auto; padding: 10px 20px; margin-bottom: 0;" onclick="downloadTemplatePDF()">Descargar</button>
       </div>
     </div>
   </div>
@@ -2818,7 +2927,7 @@ window.deleteExercise = function(circ, idx) {
       <label>Ingresa el nombre para la plantilla:</label>
       <input type="text" id="newTemplateNameInput" placeholder="Ej: Rutina Hipertrofia 4 Días">
       <div style="display: flex; gap: 10px; margin-top: 15px;">
-        <button class="btn-main" onclick="confirmTemplateName()">Confirmar</button>
+        <button class="btn-main" style="margin-bottom: 0;" onclick="confirmTemplateName()">Confirmar</button>
       </div>
     </div>
   </div>
@@ -2847,7 +2956,7 @@ window.deleteExercise = function(circ, idx) {
       <label>Fotos / GIFs demostrativos (hasta 5 archivos)</label>
       <input type="file" id="newGlobalExFiles" accept="image/*" multiple>
       
-      <button class="btn-main" style="margin-top: 15px;" onclick="addGlobalExercise()">+ Guardar en el Banco</button>
+      <button class="btn-main" style="margin-top: 15px; margin-bottom: 0;" onclick="addGlobalExercise()">+ Guardar en el Banco</button>
     </div>
   </div>
 
@@ -2881,15 +2990,15 @@ window.deleteExercise = function(circ, idx) {
       <div id="editExUploadStatus" class="status-msg" style="margin-top: 5px;"></div>
 
       <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 20px;">
-        <button class="btn-main" onclick="saveGlobalExerciseEdit()">Guardar cambios</button>
-        <button class="btn-danger" onclick="deleteGlobalExerciseFromModal()">Eliminar</button>
+        <button class="btn-main" style="margin-bottom: 0;" onclick="saveGlobalExerciseEdit()">Guardar cambios</button>
+        <button class="btn-danger" style="margin-bottom: 0;" onclick="deleteGlobalExerciseFromModal()">Eliminar</button>
       </div>
     </div>
   </div>
 
   <!-- MODAL: Visor de Imágenes -->
   <div id="imageViewerModal" class="modal-overlay" style="z-index: 4000; background: rgba(0,0,0,0.9);">
-    <button onclick="closeImageViewer()" style="position: absolute; top: 20px; right: 30px; background: none; border: none; font-size: 2.5rem; color: white; cursor: pointer; line-height: 1;">×</button>
+    <button onclick="closeImageViewer()" style="position: absolute; top: 20px; right: 30px; background: none; border: none; font-size: 2.5rem; color: white; cursor: pointer; line-height: 1; width: auto; margin: 0;">×</button>
     <div style="max-width: 90%; max-height: 90%; position: relative;" onclick="event.stopPropagation()">
       <img id="imageViewerSrc" src="" style="max-width: 100%; max-height: 90vh; border-radius: 8px; object-fit: contain; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
     </div>
