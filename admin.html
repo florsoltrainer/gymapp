@@ -57,7 +57,7 @@
     .header-logo { height: 30px; width: auto; object-fit: contain; }
     
     .user-menu-container { position: relative; display: flex; gap: 10px; align-items: center; }
-    .user-menu-btn { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; margin-bottom: 0; width: 42px; height: 42px; padding: 0; transition: background 0.2s; font-size: 1.1rem; }
+    .user-menu-btn { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); border-radius: 50%; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; margin-bottom: 0; width: 42px; height: 42px; padding: 0; transition: background 0.2s; font-size: 1.1rem; }
     .user-menu-btn:hover { background: var(--border); }
     
     .user-menu-dropdown { display: none; position: absolute; top: 115%; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 220px; box-shadow: 0 8px 24px var(--shadow); z-index: 100; flex-direction: column; gap: 12px; }
@@ -65,13 +65,13 @@
     .menu-email { font-size: 0.85rem; color: var(--muted); text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; word-break: break-all; }
 
     .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
-    .tab-btn { padding: 12px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.95rem; }
+    .tab-btn { padding: 12px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.95rem; }
     .tab-btn.active { background: var(--accent); color: #000000; border-color: var(--accent); }
 
     .module-section { display: none; }
     .module-section.active { display: block; }
 
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px var(--shadow); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px var(--shadow); }
     h2, h3, h4 { margin-bottom: 12px; }
 
     label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
@@ -86,10 +86,10 @@
     button.btn-sec { background: transparent; color: var(--accent); border: 1px solid var(--accent); font-weight: 600; cursor: pointer; }
     button.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-weight: 600; cursor: pointer; }
     button.btn-danger:hover { background: var(--danger); color: #fff; }
-    button.btn-google { background: #4285F4; color: #fff; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; }
+    button.btn-google { background: #4285F4; color: #fff; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; border-radius: 10px; }
     
     .item-chip { background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; word-break: break-all; overflow-wrap: anywhere; } 
-    .tree-node { background: var(--input-bg); border-radius: 8px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
+    .tree-node { background: var(--input-bg); border-radius: 10px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
     .status-msg { text-align: center; font-weight: bold; margin-top: 10px; font-size: 0.9rem; }
     
     .student-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 15px; }
@@ -134,7 +134,7 @@
 
     /* Estilos extra para las miniaturas del editor de imágenes */
     .thumb-edit-wrapper { position: relative; display: inline-block; }
-    .thumb-del-btn { position: absolute; top: -6px; right: -6px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 8px; width: 22px; height: 22px; cursor: pointer; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+    .thumb-del-btn { position: absolute; top: -6px; right: -6px; background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
   </style>
 
   <!-- Módulos de Firebase -->
@@ -175,34 +175,13 @@
     
     let progressChartInstance = null;
     
-    // --- Lógica bimodal (Rondas vs Músculos) ---
-    window.getActiveRoutineMode = function() {
-      if (window.editorContext.type === 'template') {
-        return window.editorContext.modo_rutina || "circuitos";
-      }
-      return (window.currentStudentData && window.currentStudentData.modo_rutina) ? window.currentStudentData.modo_rutina : "circuitos";
-    };
-
-    window.setActiveRoutineMode = function(mode) {
-      if (window.editorContext.type === 'template') {
-        window.editorContext.modo_rutina = mode;
-      } else {
-        if(window.currentStudentData) window.currentStudentData.modo_rutina = mode;
-      }
-    };
-
-    window.updateRoutineMode = function() {
-       setActiveRoutineMode(document.getElementById('routineModeSelect').value);
-       renderEditorSelectedDay(); 
-       if(window.editorContext.type === 'student') renderRoutineDetails();
-    };
-
+// --- NUEVO: Función para obtener el orden estricto de circuitos ---
     window.getOrderedCircuits = function(dayData) {
         if (!dayData) return [];
         let keys = dayData._orden || Object.keys(dayData).filter(k => k !== '_orden').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-        return keys.filter(k => dayData[k] !== undefined); 
+        return keys.filter(k => dayData[k] !== undefined); // Filtro de seguridad
     };
-
+    // ------------------------------------------------------------------
     // --- MANEJO DE CLICS FUERA DE MODALES Y MENÚS ---
     window.addEventListener('click', function(event) {
       const dropdown = document.getElementById('userMenuDropdown');
@@ -225,7 +204,7 @@
           await loadGlobalExercises();
           await loadGlobalTemplates();
           await fetchAndRenderStudents();
-          scanNotifications(); 
+          scanNotifications(); // Inicia el listener en tiempo real
         } else {
           document.getElementById('authError').textContent = `❌ Acceso denegado: ${user.email} no es administrador.`;
           signOut(auth);
@@ -414,6 +393,7 @@
       container.innerHTML = html;
     }
 
+    // --- LISTENER EN TIEMPO REAL PARA NOTIFICACIONES DE ALUMNOS ---
     window.scanNotifications = function() {
       const notifBadge = document.getElementById('notifBadge');
       const notifList = document.getElementById('notifListContainer');
@@ -427,24 +407,29 @@
              notifs.push({ id: docSnap.id, ...docSnap.data() });
          });
 
+         // 1. Ordenar por fecha y hora (las más recientes arriba)
          notifs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
+         // --- NUEVO: FILTRO DE NOTIFICACIONES DUPLICADAS ---
          let notifsFiltradas = [];
          let firmasVistas = new Set();
 
          notifs.forEach(n => {
+             // Creamos una "firma" única combinando nombre y fecha
              let firma = `${n.alumnoNombre}-${n.fecha}`;
+             
              if (!firmasVistas.has(firma)) {
                  firmasVistas.add(firma);
-                 notifsFiltradas.push(n); 
+                 notifsFiltradas.push(n); // Guardamos la más reciente
              } else {
+                 // Si ya existe una notificación de este alumno hoy, marcamos la copia antigua como leída para limpiar la BD silenciosamente
                  window.markNotifAsRead(n.id);
              }
          });
 
          if (notifsFiltradas.length > 0) {
              notifBadge.style.display = 'block';
-             notifBadge.textContent = notifsFiltradas.length; 
+             notifBadge.textContent = notifsFiltradas.length; // Usamos el conteo ya filtrado
              notifList.innerHTML = '';
              
              notifsFiltradas.forEach(n => {
@@ -552,7 +537,6 @@
         window.currentStudentData = { id, ...docSnap.data() };
         if (!window.currentStudentData.rutina) window.currentStudentData.rutina = {};
         if (!window.currentStudentData.sessionSummaries) window.currentStudentData.sessionSummaries = {};
-        if (!window.currentStudentData.modo_rutina) window.currentStudentData.modo_rutina = "circuitos";
 
         document.getElementById('lblNombre').textContent = window.currentStudentData.nombre || "-";
         document.getElementById('lblEdad').textContent = window.currentStudentData.edad || "-";
@@ -656,11 +640,13 @@
         }
       }
 
+      // --- NUEVO: Validación para asignar un avatar genérico al azar si no hay foto ---
       if (!photoUrl) {
         const avataresGenericos = ["avatar1.jpg", "avatar2.jpg", "avatar3.jpg"];
         const randomIndex = Math.floor(Math.random() * avataresGenericos.length);
         photoUrl = avataresGenericos[randomIndex];
       }
+      // --------------------------------------------------------------------------------
 
       try {
         const response = await fetch(MASTER_SCRIPT_URL, {
@@ -675,7 +661,7 @@
           const newStudentData = {
             nombre: name, email: email, edad: age, peso: weight, altura: height, patologias: pathologies,
             foto_url: photoUrl, notas_admin: notes, nota_para_alumno: "", google_sheet_url: resData.sheetUrl,
-            spreadsheet_id: resData.spreadsheetId, link_personal: directLink, rutina: {}, modo_rutina: "circuitos"
+            spreadsheet_id: resData.spreadsheetId, link_personal: directLink, rutina: {}
           };
 
           await setDoc(doc(db, "alumnos", id), newStudentData);
@@ -1166,6 +1152,7 @@
       const newNote = document.getElementById('editStudentAppNote').value.trim();
       window.currentStudentData.nota_para_alumno = newNote;
 
+      // ACTUALIZAR FLAGS PARA DESPERTAR EL LISTENER DE LA APP ALUMNO
       window.currentStudentData.hide_routine_update = false;
       if (newNote && newNote !== prevNote) {
           window.currentStudentData.hide_note = ""; 
@@ -1194,6 +1181,7 @@
       }
     };
 
+    // --- Manejo del Contexto del Editor de Rutinas ---
     function getActiveRoutine() {
       if (window.editorContext.type === 'template') {
         return window.editorContext.rutina;
@@ -1218,11 +1206,6 @@
         `;
         if(applyTplDiv) applyTplDiv.style.display = 'block';
       }
-      
-      const modeSelect = document.getElementById('routineModeSelect');
-      if (modeSelect) {
-         modeSelect.value = getActiveRoutineMode();
-      }
     }
 
     window.openRoutineEditorModal = function(day) {
@@ -1235,13 +1218,7 @@
     window.openTemplateEditor = function(templateId = null) {
       if (templateId) {
         const template = window.globalTemplates.find(t => t.id === templateId);
-        window.editorContext = { 
-            type: 'template', 
-            id: templateId, 
-            rutina: JSON.parse(JSON.stringify(template.rutina)), 
-            nombre: template.nombre_plantilla,
-            modo_rutina: template.modo_rutina || "circuitos"
-        };
+        window.editorContext = { type: 'template', id: templateId, rutina: JSON.parse(JSON.stringify(template.rutina)), nombre: template.nombre_plantilla };
         closeViewTemplateModal();
         document.getElementById('routineEditorModal').classList.add('show');
         window.currentEditorDay = null;
@@ -1263,9 +1240,6 @@
       container.innerHTML = '';
       
       const rut = window.currentStudentData.rutina;
-      const modo = window.currentStudentData.modo_rutina || "circuitos";
-      const circIcon = modo === 'circuitos' ? '🔄' : '💪';
-
       if (!rut || Object.keys(rut).length === 0) {
         container.innerHTML = `
           <p style="color:var(--muted); margin-bottom: 12px;">Sin Rutina</p>
@@ -1275,7 +1249,6 @@
       }
       
       for (const day in rut) {
-        if(day === '_orden' || day === 'modo_rutina') continue;
         const dayDiv = document.createElement('div');
         dayDiv.className = 'tree-node';
         
@@ -1287,11 +1260,11 @@
           </div>
         </div>`;
         
-        const circKeys = window.getOrderedCircuits(rut[day]);
+        const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
         for (const circ of circKeys) {
           const circDiv = document.createElement('div');
           circDiv.style.marginBottom = '8px';
-          circDiv.innerHTML = `<strong>${circIcon} ${circ}</strong>`;
+          circDiv.innerHTML = `<strong>🔄 ${circ}</strong>`;
           
           const ul = document.createElement('ul');
           ul.style.paddingLeft = '20px';
@@ -1596,12 +1569,11 @@
       
       if (window.templatePromptContext === 'save_current') {
         const rut = getActiveRoutine();
-        const modo = window.currentStudentData.modo_rutina || 'circuitos';
-        await addDoc(collection(db, "plantillas_rutinas"), { nombre_plantilla: name, rutina: rut, modo_rutina: modo });
+        await addDoc(collection(db, "plantillas_rutinas"), { nombre_plantilla: name, rutina: rut });
         alert("✅ Plantilla guardada.");
         await loadGlobalTemplates();
       } else if (window.templatePromptContext === 'new_editor') {
-        window.editorContext = { type: 'template', id: null, rutina: {}, nombre: name, modo_rutina: 'circuitos' };
+        window.editorContext = { type: 'template', id: null, rutina: {}, nombre: name };
         closeViewTemplateModal();
         document.getElementById('routineEditorModal').classList.add('show');
         window.currentEditorDay = null;
@@ -1613,15 +1585,16 @@
       const status = document.getElementById('saveStatus');
       if(status) status.textContent = "⏳ Guardando plantilla...";
       try {
-        const payload = {
-            nombre_plantilla: window.editorContext.nombre,
-            rutina: window.editorContext.rutina,
-            modo_rutina: window.editorContext.modo_rutina || "circuitos"
-        };
         if (window.editorContext.id) {
-          await updateDoc(doc(db, "plantillas_rutinas", window.editorContext.id), payload);
+          await updateDoc(doc(db, "plantillas_rutinas", window.editorContext.id), {
+            nombre_plantilla: window.editorContext.nombre,
+            rutina: window.editorContext.rutina
+          });
         } else {
-          await addDoc(collection(db, "plantillas_rutinas"), payload);
+          await addDoc(collection(db, "plantillas_rutinas"), {
+            nombre_plantilla: window.editorContext.nombre,
+            rutina: window.editorContext.rutina
+          });
         }
         if(status) {
           status.textContent = "✅ Plantilla guardada.";
@@ -1641,14 +1614,9 @@
       if (found) {
         if (window.editorContext.type === 'template') {
            window.editorContext.rutina = JSON.parse(JSON.stringify(found.rutina));
-           window.editorContext.modo_rutina = found.modo_rutina || "circuitos";
         } else {
            window.currentStudentData.rutina = JSON.parse(JSON.stringify(found.rutina));
-           window.currentStudentData.modo_rutina = found.modo_rutina || "circuitos";
         }
-        const modeSelect = document.getElementById('routineModeSelect');
-        if(modeSelect) modeSelect.value = getActiveRoutineMode();
-
         window.currentEditorDay = null; 
         renderEditor();
         if(window.editorContext.type === 'student') renderRoutineDetails();
@@ -1690,24 +1658,20 @@
       if(!container) return;
       container.innerHTML = '';
       const rut = template.rutina;
-      const modo = template.modo_rutina || 'circuitos';
-      const circIcon = modo === 'circuitos' ? '🔄' : '💪';
-
       if (!rut || Object.keys(rut).length === 0) {
         container.innerHTML = `<p style="color:var(--muted); margin-bottom: 12px;">Plantilla vacía.</p>`;
         return;
       }
       for (const day in rut) {
-        if(day === '_orden' || day === 'modo_rutina') continue;
         const dayDiv = document.createElement('div');
         dayDiv.className = 'tree-node';
         dayDiv.innerHTML = `<h4 style="color:var(--accent); margin-bottom:8px; margin-top:0;">📅 ${day}</h4>`;
         
-        const circKeys = window.getOrderedCircuits(rut[day]);
+        const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
         for (const circ of circKeys) {
           const circDiv = document.createElement('div');
           circDiv.style.marginBottom = '8px';
-          circDiv.innerHTML = `<strong>${circIcon} ${circ}</strong>`;
+          circDiv.innerHTML = `<strong>🔄 ${circ}</strong>`;
           const ul = document.createElement('ul');
           ul.style.paddingLeft = '20px';
           ul.style.color = 'var(--muted)';
@@ -1741,30 +1705,29 @@
       
       let currentY = 38;
       const rut = window.currentStudentData.rutina;
-      const modo = window.currentStudentData.modo_rutina || 'circuitos';
-      const circLabel = modo === 'circuitos' ? 'Circuito' : 'Grupo Muscular';
       
       if(rut && Object.keys(rut).length > 0) {
-        const daysToProcess = selectedDay ? [selectedDay] : Object.keys(rut).filter(k => k !== '_orden' && k !== 'modo_rutina');
+        const daysToProcess = selectedDay ? [selectedDay] : Object.keys(rut);
 
         daysToProcess.forEach(day => {
           docPDF.setFontSize(14);
           docPDF.text(`Día: ${day}`, 14, currentY);
           currentY += 6;
           
-          const circKeys = window.getOrderedCircuits(rut[day]);
+          const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
           
           circKeys.forEach(circ => {
               docPDF.setFontSize(12);
-              docPDF.setTextColor(0, 230, 118); 
-              docPDF.text(`${circLabel}: ${circ}`, 14, currentY);
-              docPDF.setTextColor(0, 0, 0); 
+              docPDF.setTextColor(0, 230, 118); // Accent Color
+              docPDF.text(`Circuito: ${circ}`, 14, currentY);
+              docPDF.setTextColor(0, 0, 0); // Reset Color
               currentY += 6;
 
               rut[day][circ].forEach(ex => {
                   const displayWeights = ex.weights ? ex.weights.join(", ") : ex.weight;
                   const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
                   
+                  // Fila Principal del Ejercicio
                   const tableData = [[
                       ex.name, 
                       `${ex.sets}x [${displayReps}]`, 
@@ -1777,13 +1740,14 @@
                       head: [['Ejercicio', 'Series x Reps', 'Pesos', 'Hecho']],
                       body: tableData,
                       styles: { fontSize: 10, fontStyle: 'bold' },
-                      headStyles: { fillColor: [30, 30, 36], textColor: [255,255,255] }, 
+                      headStyles: { fillColor: [30, 30, 36], textColor: [255,255,255] }, // Dark header
                       columnStyles: { 3: { halign: 'center', cellWidth: 20 } },
                       margin: { bottom: 0 }
                   });
                   
                   currentY = docPDF.lastAutoTable.finalY + 2;
 
+                  // Notas del ejercicio (si existen)
                   if (ex.notes && ex.notes.trim() !== "") {
                       docPDF.setFontSize(9);
                       docPDF.setTextColor(100, 100, 100);
@@ -1800,9 +1764,9 @@
                       currentY = 20;
                   }
               });
-              currentY += 5; 
+              currentY += 5; // Spacing between circuits
           });
-          currentY += 10; 
+          currentY += 10; // Spacing between days
           
           if (currentY > 260) {
               docPDF.addPage();
@@ -1837,29 +1801,27 @@
       
       let currentY = 30;
       const rut = template.rutina;
-      const modo = template.modo_rutina || 'circuitos';
-      const circLabel = modo === 'circuitos' ? 'Circuito' : 'Grupo Muscular';
       
       if(rut && Object.keys(rut).length > 0) {
         for (const day in rut) {
-          if(day === '_orden' || day === 'modo_rutina') continue;
           docPDF.setFontSize(14);
           docPDF.text(`Día: ${day}`, 14, currentY);
           currentY += 6;
           
-          const circKeys = window.getOrderedCircuits(rut[day]);
+          const circKeys = Object.keys(rut[day]).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
           
           circKeys.forEach(circ => {
               docPDF.setFontSize(12);
-              docPDF.setTextColor(0, 230, 118); 
-              docPDF.text(`${circLabel}: ${circ}`, 14, currentY);
-              docPDF.setTextColor(0, 0, 0); 
+              docPDF.setTextColor(0, 230, 118); // Accent Color
+              docPDF.text(`Circuito: ${circ}`, 14, currentY);
+              docPDF.setTextColor(0, 0, 0); // Reset Color
               currentY += 6;
 
               rut[day][circ].forEach(ex => {
                   const displayWeights = ex.weights ? ex.weights.join(", ") : ex.weight;
                   const displayReps = Array.isArray(ex.reps) ? ex.reps.join(", ") : (ex.reps || '-');
                   
+                  // Fila Principal del Ejercicio
                   const tableData = [[
                       ex.name, 
                       `${ex.sets}x [${displayReps}]`, 
@@ -1879,6 +1841,7 @@
                   
                   currentY = docPDF.lastAutoTable.finalY + 2;
 
+                  // Notas del ejercicio (si existen)
                   if (ex.notes && ex.notes.trim() !== "") {
                       docPDF.setFontSize(9);
                       docPDF.setTextColor(100, 100, 100);
@@ -1895,9 +1858,9 @@
                       currentY = 20;
                   }
               });
-              currentY += 5; 
+              currentY += 5; // Spacing between circuits
           });
-          currentY += 10; 
+          currentY += 10; // Spacing between days
           
           if (currentY > 260) {
               docPDF.addPage();
@@ -1914,7 +1877,7 @@
       populateZoneDropdowns();
       
       const rut = getActiveRoutine();
-      const days = Object.keys(rut || {}).filter(k => k !== '_orden' && k !== 'modo_rutina');
+      const days = Object.keys(rut || {});
       
       if (days.length > 0 && !days.includes(window.currentEditorDay)) {
          window.currentEditorDay = days[0];
@@ -1931,7 +1894,7 @@
       container.innerHTML = '';
       const rut = getActiveRoutine();
       
-      Object.keys(rut || {}).filter(k => k !== '_orden' && k !== 'modo_rutina').forEach(day => {
+      Object.keys(rut || {}).forEach(day => {
         const btn = document.createElement('button');
         btn.className = `sub-tab-btn ${day === window.currentEditorDay ? 'active' : ''}`;
         btn.textContent = day;
@@ -1948,8 +1911,6 @@
       const contentDiv = document.getElementById('editorDayContent');
       const title = document.getElementById('editorSelectedDayTitle');
       const listDiv = document.getElementById('editorSelectedDayExercises');
-      const mode = getActiveRoutineMode();
-      const circIcon = mode === 'circuitos' ? '🔄' : '💪';
       
       if (!window.currentEditorDay) {
         contentDiv.style.display = 'none';
@@ -1964,16 +1925,16 @@
       
       listDiv.innerHTML = '';
       
-      const circKeys = window.getOrderedCircuits(dayData);
-      if (circKeys.length === 0) {
+      if (Object.keys(dayData).length === 0) {
          listDiv.innerHTML = '<p style="color:var(--muted); font-size:0.9rem; margin-top:10px;">No hay ejercicios asignados a este día.</p>';
          return;
       }
 
+      const circKeys = window.getOrderedCircuits(dayData);
       for (const circ of circKeys) {
         const circDiv = document.createElement('div');
         circDiv.style.marginTop = '15px';
-        circDiv.innerHTML = `<strong style="color:var(--muted); display:block; margin-bottom: 8px;">${circIcon} ${circ}</strong>`;
+        circDiv.innerHTML = `<strong style="color:var(--muted); display:block; margin-bottom: 8px;">🔄 ${circ}</strong>`;
         
         dayData[circ].forEach((ex, idx) => {
           const displayWeights = ex.weights ? ex.weights.join("kg, ") + "kg" : `${ex.weight} kg`;
@@ -2009,7 +1970,7 @@
 
     window.deleteSelectedDay = function() {
       if(!window.currentEditorDay) return;
-      if(confirm(`¿Estás seguro de eliminar el día "${window.currentEditorDay}" y todos sus ejercicios?`)) {
+      if(confirm(`¿Estás seguro de eliminar el día "${window.currentEditorDay}" y todos sus circuitos?`)) {
         const rut = getActiveRoutine();
         delete rut[window.currentEditorDay];
         window.currentEditorDay = null;
@@ -2021,15 +1982,6 @@
     window.openEditDayExercisesModal = function() {
       if(!window.currentEditorDay) return;
       document.getElementById('editDayExercisesTitle').textContent = `⚙️ Editar: ${window.currentEditorDay}`;
-      
-      const mode = getActiveRoutineMode();
-      const destContainer = document.getElementById('circuitDestContainer');
-      if (mode === 'circuitos') {
-          destContainer.style.display = 'block';
-      } else {
-          destContainer.style.display = 'none';
-      }
-
       document.getElementById('editDayExercisesModal').classList.add('show');
       updateCircuitDropdown();
       updateGlobalExerciseDropdown();
@@ -2041,7 +1993,8 @@
       renderEditorSelectedDay(); 
     };
 
-    window.addCircuitToDay = function() {
+    // Gestión de Circuitos
+window.addCircuitToDay = function() {
       const day = window.currentEditorDay;
       const circName = document.getElementById('newCircuitInput').value.trim();
       if (!circName || !day) return;
@@ -2049,16 +2002,18 @@
       if (!rut[day][circName]) {
         rut[day][circName] = [];
         
+        // --- NUEVO: Agregar al índice estricto ---
         if (!rut[day]._orden) {
             rut[day]._orden = Object.keys(rut[day]).filter(k => k !== '_orden').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
         }
         if (!rut[day]._orden.includes(circName)) {
             rut[day]._orden.push(circName);
         }
+        // -----------------------------------------
 
         document.getElementById('newCircuitInput').value = '';
         updateCircuitDropdown();
-        document.getElementById('selectCircuitForEx').value = circName; 
+        document.getElementById('selectCircuitForEx').value = circName; // Auto selecciona el creado
         renderExercisesListEditor();
         if(window.editorContext.type === 'student') renderRoutineDetails();
       }
@@ -2110,28 +2065,17 @@
 
     window.addExercise = function() {
       const day = window.currentEditorDay;
-      const mode = getActiveRoutineMode();
-
+      const circ = document.getElementById('selectCircuitForEx').value;
       const selectedExName = document.getElementById('selectGlobalExercise').value;
       const manualExName = document.getElementById('manualExName').value.trim();
-      const exName = selectedExName || manualExName;
-      
-      let circ = "";
-      if (mode === 'circuitos') {
-          circ = document.getElementById('selectCircuitForEx').value;
-          if (!circ) return alert("Asegurate de haber creado/seleccionado un Circuito de destino.");
-      } else {
-          const foundGlobal = window.globalExercises.find(e => e.nombre === exName);
-          const manualZone = document.getElementById('filterZoneForEx').value;
-          circ = foundGlobal && foundGlobal.zona ? foundGlobal.zona : (manualZone || "General");
-      }
-
-      if (!day || !exName) return alert("Asegurate de elegir o escribir un ejercicio.");
-
       const notes = document.getElementById('newExNotes').value.trim();
+
+      const exName = selectedExName || manualExName;
       const sets = Number(document.getElementById('newExSets').value) || 3;
       const weightsInput = document.getElementById('newExWeights').value.trim();
       const repsInput = document.getElementById('newExReps').value.trim();
+
+      if (!day || !circ || !exName) return alert("Asegurate de haber creado/seleccionado un Circuito de destino y elegido un ejercicio.");
 
       let weightsArray = [];
       if (weightsInput.includes(',')) {
@@ -2157,19 +2101,13 @@
       }
 
       if (manualExName && !window.globalExercises.some(e => e.nombre.toLowerCase() === manualExName.toLowerCase())) {
-        addDoc(collection(db, "ejercicios_base"), { nombre: manualExName, imageUrls: [], video_url: "", zona: circ }).then(() => loadGlobalExercises());
+        addDoc(collection(db, "ejercicios_base"), { nombre: manualExName, imageUrls: [], video_url: "" }).then(() => loadGlobalExercises());
       }
 
       const rut = getActiveRoutine();
 
       if (!rut[day][circ]) {
         rut[day][circ] = [];
-        if (!rut[day]._orden) {
-            rut[day]._orden = Object.keys(rut[day]).filter(k => k !== '_orden').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-        }
-        if (!rut[day]._orden.includes(circ)) {
-            rut[day]._orden.push(circ);
-        }
       }
 
       rut[day][circ].push({ 
@@ -2187,6 +2125,7 @@
       if(window.editorContext.type === 'student') renderRoutineDetails();
     };
 
+    // Ordenamiento de Ejercicios
     window.moveExercise = function(circ, idx, direction) {
       const day = window.currentEditorDay;
       const rut = getActiveRoutine();
@@ -2202,10 +2141,12 @@
       if(window.editorContext.type === 'student') renderRoutineDetails();
     };
 
-    window.moveCircuit = function(circ, direction) {
+    // Ordenamiento de Circuitos
+window.moveCircuit = function(circ, direction) {
       const day = window.currentEditorDay;
       const rut = getActiveRoutine();
       
+      // --- NUEVO: Modificar directamente el índice estricto ---
       let circKeys = window.getOrderedCircuits(rut[day]);
       const idx = circKeys.indexOf(circ);
       
@@ -2216,11 +2157,13 @@
       } else { return; }
       
       rut[day]._orden = circKeys;
+      // --------------------------------------------------------
       
       renderExercisesListEditor();
       if(window.editorContext.type === 'student') renderRoutineDetails();
     };
 
+    // --- Edición rápida de parámetros de un ejercicio ya agregado ---
     window.openEditSingleExercise = function(circ, idx) {
       const day = window.currentEditorDay;
       const rut = getActiveRoutine();
@@ -2279,16 +2222,18 @@
       if(window.editorContext.type === 'student') renderRoutineDetails();
     };
 
-    window.deleteExercise = function(circ, idx) {
+window.deleteExercise = function(circ, idx) {
       const day = window.currentEditorDay;
       const rut = getActiveRoutine();
       rut[day][circ].splice(idx, 1);
       if (rut[day][circ].length === 0) {
         delete rut[day][circ];
         
+        // --- NUEVO: Quitar del índice estricto ---
         if (rut[day]._orden) {
             rut[day]._orden = rut[day]._orden.filter(z => z !== circ);
         }
+        // ----------------------------------------
 
         updateCircuitDropdown();
       }
@@ -2302,9 +2247,6 @@
       
       const day = window.currentEditorDay;
       const rut = getActiveRoutine();
-      const mode = getActiveRoutineMode();
-      const circIcon = mode === 'circuitos' ? '🔄' : '💪';
-
       if (!day || !rut[day]) return;
 
       const circKeys = window.getOrderedCircuits(rut[day]);
@@ -2315,13 +2257,11 @@
         circTitle.style.alignItems = 'center';
         circTitle.style.margin = '15px 0 5px 0';
         circTitle.innerHTML = `
-          <strong style="color:var(--muted);">${circIcon} ${circ}</strong>
-          ${mode === 'circuitos' ? `
+          <strong style="color:var(--muted);">🔄 ${circ}</strong>
           <div style="display:flex; gap:5px;">
             <button class="btn-sec" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1.1rem; margin:0;" onclick="moveCircuit('${circ}', -1)" title="Subir Circuito">↑</button>
             <button class="btn-sec" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; font-size:1.1rem; margin:0;" onclick="moveCircuit('${circ}', 1)" title="Bajar Circuito">↓</button>
           </div>
-          ` : ''}
         `;
         container.appendChild(circTitle);
 
@@ -2353,7 +2293,7 @@
 </head>
 <body>
 
-  <!-- MODAL FEEDBACK -->
+  <!-- MODAL FEEDBACK (Nuevo Modal) -->
   <div id="feedbackModal" class="modal-overlay" style="z-index: 3500;">
     <div class="modal-content" style="max-width: 400px;">
       
@@ -2578,6 +2518,7 @@
             </div>
           </div>
           
+          <!-- Nuevos cuadritos de Pago y Estado -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
             <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center;">
               <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">Último Pago</div>
@@ -2663,6 +2604,7 @@
             <button class="btn-main" onclick="openFeedbackModal()" style="width:auto; padding:6px 12px; background:var(--accent); color:#000;">📋 Ver Encuesta</button>
           </div>
 
+          <!-- Sección de Entrenamiento Seleccionado (Calendario y Rutina del Día) -->
           <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
               <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;">
                  <h4 style="margin:0; color:var(--accent);" id="historialSelectedDateDisplay">📅 Seleccionar Fecha</h4>
@@ -2676,6 +2618,7 @@
               </div>
           </div>
 
+          <!-- Gráfico de Progreso -->
           <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
             <h4 style="margin-top:0;">📊 Evolución de Cargas</h4>
             <div class="grid-2">
@@ -2695,7 +2638,10 @@
             <div style="position: relative; height:300px; width:100%; margin-top:15px;"><canvas id="progressChart"></canvas></div>
           </div>
 
-          <div id="historialPRContainer"></div>
+          <!-- Récords Personales (Cargas Máximas) -->
+          <div id="historialPRContainer">
+             <!-- Récords inyectados dinámicamente aquí -->
+          </div>
         </div>
       </div>
     </div>
@@ -2715,15 +2661,6 @@
           <select id="selectTemplateToApply" style="margin:0;"></select>
           <button class="btn-sec" onclick="applySelectedTemplate()" style="width: auto;">Aplicar</button>
         </div>
-      </div>
-      
-      <!-- NUEVO: Selector de Modo Bimodal -->
-      <div style="margin-bottom: 20px; background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
-        <label style="color: var(--text); font-weight: bold; margin-bottom: 8px; display: block;">🎯 Modalidad de entrenamiento para esta rutina:</label>
-        <select id="routineModeSelect" onchange="updateRoutineMode()" style="margin-bottom: 0;">
-          <option value="circuitos">🔄 Por Circuitos (Permite ordenar ejercicios en rondas)</option>
-          <option value="musculos">💪 Por Grupos Musculares (Agrupa y ordena automáticamente por zona)</option>
-        </select>
       </div>
       
       <!-- Pestañas de Días -->
@@ -2752,12 +2689,14 @@
       </div>
       
       <div id="editorActionButtons" class="grid-2" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+        <!-- Botones inyectados dinámicamente según contexto (alumno o plantilla) -->
       </div>
       <div id="saveStatus" class="status-msg"></div>
+
     </div>
   </div>
 
-  <!-- MODAL: Añadir Día -->
+  <!-- MODAL: Añadir Día (En lugar de prompt) -->
   <div id="newDayNameModal" class="modal-overlay" style="z-index: 3200;">
     <div class="modal-content" style="max-width: 400px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
@@ -2781,7 +2720,7 @@
       </div>
       
       <div class="grid-2" style="margin-bottom: 20px;">
-        <div id="circuitDestContainer" style="background: var(--bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+        <div style="background: var(--bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border);">
           <label style="color: var(--accent); font-weight: bold; margin-bottom: 8px;">1. Circuito de destino:</label>
           <select id="selectCircuitForEx"></select>
           <div style="display:flex; gap:5px; margin-top:8px; align-items:center;">
@@ -2790,14 +2729,14 @@
           </div>
         </div>
         
-        <div style="background: var(--bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+        <div style="background: var(--bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border);">
           <label style="color: var(--accent); font-weight: bold; margin-bottom: 8px;">2. Buscar Ejercicio en el Banco:</label>
           <select id="filterZoneForEx" onchange="updateGlobalExerciseDropdown()"></select>
           <select id="selectGlobalExercise" onchange="document.getElementById('manualExName').value=''" style="margin-top:8px;"></select>
         </div>
       </div>
 
-      <div style="background:var(--bg); padding:15px; border-radius:8px; margin-bottom:20px; border: 1px solid var(--border);">
+      <div style="background:var(--bg); padding:15px; border-radius:10px; margin-bottom:20px; border: 1px solid var(--border);">
         <label>O escribir un ejercicio nuevo libremente:</label>
         <input type="text" id="manualExName" placeholder="Ej: Press Francés" oninput="document.getElementById('selectGlobalExercise').value=''">
 
@@ -2809,11 +2748,12 @@
           <div><label>Pesos (ej: 50, 55)</label><input type="text" id="newExWeights" placeholder="50, 55"></div>
           <div><label>Reps Target (ej: 12, 10)</label><input type="text" id="newExReps" placeholder="12, 10, 8"></div>
         </div>
-        <button class="btn-main" onclick="addExercise()" style="margin-bottom:0; width: 100%;">+ Añadir Ejercicio</button>
+        <button class="btn-main" onclick="addExercise()" style="margin-bottom:0; width: 100%;">+ Añadir Ejercicio al Circuito</button>
       </div>
 
       <h4 style="margin-bottom: 10px;">Ejercicios Agregados al Día:</h4>
       <div id="exercisesListEditor" style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+         <!-- Editable list with delete buttons -->
       </div>
       
       <div style="margin-top: 20px; text-align: right; border-top: 1px solid var(--border); padding-top: 15px;">
