@@ -54,20 +54,20 @@
     .top-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
     .top-header img.logo { height: 30px; width: auto; object-fit: contain; }
     .header-actions { display: flex; gap: 12px; align-items: center; }
-    .icon-btn { background: transparent; border: 1px solid var(--border); color: var(--text); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; position: relative; }
+    .icon-btn { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; position: relative; }
     .icon-btn:hover { background: var(--border); }
-    .notification-dot { position: absolute; top: 0; right: 0; width: 10px; height: 10px; background: var(--danger); border-radius: 50%; display: none; }
+    .notification-dot { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; background: var(--danger); border-radius: 50%; display: none; }
 
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
     .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
-    .tab-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); padding: 14px; text-align: center; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .tab-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); padding: 14px; text-align: center; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
     .tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
 
     .module-section { display: none; animation: fadeIn 0.3s ease; }
     .module-section.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px var(--shadow); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px var(--shadow); }
 
     .profile-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
     .profile-info { display: flex; align-items: center; gap: 16px; }
@@ -77,25 +77,25 @@
     
     button.btn-sec { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
     button.btn-sec:hover { background: var(--border); }
-    button.btn-main { background: var(--accent); color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 1rem; width: 100%; cursor: pointer; transition: 0.2s; }
+    button.btn-main { background: var(--accent); color: #000; border: none; padding: 14px; border-radius: 8px; font-weight: 700; font-size: 1rem; width: 100%; cursor: pointer; transition: 0.2s; }
     button.btn-main:hover { background: var(--accent-hover); }
-    button.btn-done { background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 14px; border-radius: 12px; font-weight: 700; font-size: 1rem; width: 100%; cursor: pointer; margin-top: 16px; transition: 0.2s;}
+    button.btn-done { background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 14px; border-radius: 8px; font-weight: 700; font-size: 1rem; width: 100%; cursor: pointer; margin-top: 16px; transition: 0.2s;}
     button.btn-done:hover { background: rgba(0, 230, 118, 0.1); }
 
     .days-nav { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 16px; scrollbar-width: none; }
     .days-nav::-webkit-scrollbar { display: none; }
-    .day-pill { padding: 10px 20px; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; white-space: nowrap; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--muted); }
+    .day-pill { padding: 10px 20px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; white-space: nowrap; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--muted); transition: 0.2s; }
     .day-pill.active { background: var(--text); color: var(--bg); border-color: var(--text); }
 
     .zone-block { margin-bottom: 24px; }
     .zone-title { font-size: 1.1rem; color: var(--accent); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-    .ex-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; padding: 16px; transition: background-color 0.3s; }
+    .ex-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; overflow: hidden; padding: 16px; transition: background-color 0.3s; }
     
     .timer-display { font-size: 3rem; font-weight: bold; text-align: center; color: var(--accent); margin: 10px 0; font-variant-numeric: tabular-nums; }
     .grid-timer { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
     label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
-    input, textarea, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 1rem; outline: none; margin-bottom: 12px; }
+    input, textarea, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 1rem; outline: none; margin-bottom: 12px; }
     input:focus, textarea:focus, select:focus { border-color: var(--accent); }
     textarea { resize: vertical; min-height: 70px; }
     
@@ -109,15 +109,15 @@
     .sync-badge { background: rgba(255, 152, 0, 0.1); color: #ff9800; border: 1px solid #ff9800; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; text-align: center; margin-top: 16px; display: none; }
 
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(5px); }
-    .modal-content { background: var(--card); width: 100%; max-width: 400px; border-radius: 20px; padding: 24px; position: relative; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto;}
-    .close-modal { position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; z-index: 10; }
+    .modal-content { background: var(--card); width: 100%; max-width: 400px; border-radius: 8px; padding: 24px; position: relative; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto;}
+    .close-modal { position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; z-index: 10; border-radius: 8px; }
     .loading-overlay { display: flex; align-items: center; justify-content: center; min-height: 80vh; color: var(--muted); font-size: 1.1rem; }
     
     .share-stat-box { flex: 1; text-align: center; }
     .share-stat-value { font-size: 1.8rem; font-weight: 800; color: var(--text); line-height: 1; margin-bottom: 4px; }
     .share-stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 
-    .notification-card { background: var(--input-bg); border: 1px solid var(--border); padding: 16px; border-radius: 12px; margin-bottom: 12px; }
+    .notification-card { background: var(--input-bg); border: 1px solid var(--border); padding: 16px; border-radius: 8px; margin-bottom: 12px; }
   </style>
 
   <script type="module">
@@ -142,6 +142,7 @@
     const provider = new GoogleAuthProvider();
 
     window.workoutData = {};
+    window.routineMode = "circuitos";
     window.spreadsheetId = "";
     window.currentDay = "";
     window.activeExercise = null;
@@ -159,8 +160,17 @@
 
     window.getOrderedCircuits = function(dayData) {
         if (!dayData) return [];
-        let keys = dayData._orden || Object.keys(dayData).filter(k => k !== '_orden').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-        return keys.filter(k => dayData[k] !== undefined && k !== '_orden');
+        if (window.routineMode === 'musculos') {
+            return Object.keys(dayData)
+              .filter(k => k !== '_orden' && k !== '_modo' && dayData[k] !== undefined)
+              .sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        }
+        let keys = dayData._orden || Object.keys(dayData).filter(k => k !== '_orden' && k !== '_modo').sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+        return keys.filter(k => dayData[k] !== undefined && k !== '_orden' && k !== '_modo');
+    };
+
+    window.getLoggedSetsCount = function(day, zone, exName) {
+        return window.sessionLogs.filter(log => log.Día === day && (!log.Zona || log.Zona === zone) && log.Ejercicio === exName).length;
     };
 
     window.onclick = function(event) {
@@ -194,6 +204,7 @@
             });
             
             window.workoutData = data.rutina || {};
+            window.routineMode = data.modo_rutina || "circuitos";
             window.spreadsheetId = data.spreadsheet_id || data.google_sheet_url || "";
             window.trainerNotes = data.nota_para_alumno || "";
 
@@ -431,7 +442,7 @@
       
       if(history.length > 0) {
         const today = new Date();
-        const daysInRoutine = Object.keys(window.workoutData).length || 3;
+        const daysInRoutine = Object.keys(window.workoutData).filter(k => k !== '_orden' && k !== '_modo' && k !== 'modo_rutina').length || 3;
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(today.getDate() - 7);
         
@@ -626,7 +637,7 @@
     window.renderDaysNav = function() {
       const daysContainer = document.getElementById('daysNav');
       daysContainer.innerHTML = '';
-      const days = Object.keys(window.workoutData);
+      const days = Object.keys(window.workoutData).filter(k => k !== '_orden' && k !== '_modo' && k !== 'modo_rutina');
 
       if (days.length === 0) {
         document.getElementById('rutinaContent').innerHTML = '<p style="color:var(--muted);">No hay rutina cargada.</p>';
@@ -658,16 +669,18 @@
         return;
       }
 
+      const groupIcon = window.routineMode === 'musculos' ? '💪' : '🔄';
       const orderedZones = window.getOrderedCircuits(zones);
+
       orderedZones.forEach(zone => {
         const zoneBlock = document.createElement('div');
         zoneBlock.className = 'zone-block';
-        zoneBlock.innerHTML = `<h3 class="zone-title">${zone}</h3>`;
+        zoneBlock.innerHTML = `<h3 class="zone-title">${groupIcon} ${zone}</h3>`;
 
         zones[zone].forEach((ex, exIndex) => {
           const exCard = document.createElement('div');
           
-          const loggedSetsCount = window.sessionLogs.filter(log => log.Ejercicio === ex.name && log.Día === dayName).length;
+          const loggedSetsCount = window.getLoggedSetsCount(dayName, zone, ex.name);
           const targetSets = Number(ex.sets || 3);
           const isComplete = loggedSetsCount >= targetSets;
           
@@ -689,7 +702,7 @@
           const titleHtml = isComplete ? `🏋️ ${ex.name} <span style="color: var(--accent); margin-left: 6px; font-size: 0.9rem;">✅</span>` : `🏋️ ${ex.name}`;
 
           exCard.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: ${notasHtml ? '0' : '0'};">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="flex-grow: 1; padding-right: 10px;">
                   <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; color: var(--text);">${titleHtml}</div>
                   <div style="font-size: 0.85rem; color: var(--muted); line-height: 1.4;">
@@ -711,7 +724,7 @@
 
       if (window.trainerNotes && window.trainerNotes.trim() !== '') {
           content.innerHTML += `
-          <div style="background: var(--input-bg); padding: 16px; margin-top: 24px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow);">
+          <div style="background: var(--input-bg); padding: 16px; margin-top: 24px; border-radius: 8px; box-shadow: 0 2px 8px var(--shadow);">
               <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 1rem;">💬 Observaciones de tu entrenador:</h4>
               <p style="font-size: 0.9rem; color: var(--text); line-height: 1.5;">${window.trainerNotes}</p>
           </div>`;
@@ -790,7 +803,6 @@
             notas.innerHTML = combinedNotes;
             notas.style.display = 'block';
             
-            // Ajustar estilos si solo hay botón de video pero no hay texto
             if (!localNote.trim() && !globalObs.trim()) {
                 notas.style.borderLeft = 'none';
                 notas.style.background = 'transparent';
@@ -799,6 +811,7 @@
                 notas.style.borderLeft = '3px solid var(--accent)';
                 notas.style.background = 'var(--input-bg)';
                 notas.style.padding = '10px 14px';
+                notas.style.borderRadius = '8px';
             }
         }
     };
@@ -820,7 +833,7 @@
       const daySelect = document.getElementById('daySelect');
       daySelect.innerHTML = '';
       
-      const days = Object.keys(window.workoutData);
+      const days = Object.keys(window.workoutData).filter(k => k !== '_orden' && k !== '_modo' && k !== 'modo_rutina');
       days.forEach(day => {
         const opt = document.createElement('option');
         opt.value = day; opt.textContent = day;
@@ -862,7 +875,7 @@
       window.onExerciseChange();
     };
 
-    window.onExerciseChange = function() {
+    window.onExerciseChange = function(forcedSetNum = null) {
       const day = document.getElementById('daySelect').value;
       const zone = document.getElementById('zoneSelect').value;
       const exName = document.getElementById('exerciseSelect').value;
@@ -871,16 +884,20 @@
         const exIndex = window.workoutData[day][zone].findIndex(e => e.name === exName);
         if(exIndex !== -1) {
            const ex = window.workoutData[day][zone][exIndex];
-           window.activeExercise = { day, zone, ...ex };
+           window.activeExercise = { day, zone, exIndex, ...ex };
            
-           document.getElementById('setNum').value = 1;
-           window.updateInputsForSet(1);
+           const loggedCount = window.getLoggedSetsCount(day, zone, ex.name);
+           const targetSets = Number(ex.sets || 3);
+           const nextSetToDo = forcedSetNum !== null ? forcedSetNum : (loggedCount < targetSets ? loggedCount + 1 : targetSets);
+
+           document.getElementById('setNum').value = nextSetToDo;
+           window.updateInputsForSet(nextSetToDo);
            document.getElementById('timerExerciseName').textContent = ex.name;
         }
       }
     };
 
-    window.startExercise = function(day, zone, exIndex) {
+    window.startExercise = function(day, zone, exIndex, forcedSetNum = null) {
       window.switchTab('entrenamiento');
       
       document.getElementById('daySelect').value = day;
@@ -890,7 +907,7 @@
       
       const ex = window.workoutData[day][zone][exIndex];
       document.getElementById('exerciseSelect').value = ex.name;
-      window.onExerciseChange();
+      window.onExerciseChange(forcedSetNum);
     };
 
     window.viewCurrentExerciseDetails = function() {
@@ -907,9 +924,10 @@
     window.updateInputsForSet = function(currentSet) {
       const ex = window.activeExercise;
       if (!ex) return;
+      const s = Number(currentSet) || 1;
       
-      let targetWeight = (ex.weights && ex.weights.length >= currentSet) ? ex.weights[currentSet - 1] : (ex.weight || 0);
-      let targetReps = (ex.reps && Array.isArray(ex.reps) && ex.reps.length >= currentSet) ? ex.reps[currentSet - 1] : (ex.reps || 0);
+      let targetWeight = (ex.weights && ex.weights.length >= s) ? ex.weights[s - 1] : (ex.weight || 0);
+      let targetReps = (ex.reps && Array.isArray(ex.reps) && ex.reps.length >= s) ? ex.reps[s - 1] : (ex.reps || 0);
 
       document.getElementById('weight').value = targetWeight;
       document.getElementById('reps').value = targetReps;
@@ -919,20 +937,24 @@
     window.logSet = async function() {
       if (!window.activeExercise) return alert("Selecciona un ejercicio primero.");
 
-      const setNum = document.getElementById('setNum').value;
+      const setNum = Number(document.getElementById('setNum').value) || 1;
       const weight = document.getElementById('weight').value;
       const reps = document.getElementById('reps').value;
       const comments = document.getElementById('workoutComments').value.trim();
+
+      const day = window.activeExercise.day;
+      const currentZone = window.activeExercise.zone;
+      const currentExName = window.activeExercise.name;
 
       const entry = {
         action: "LOG_SET",
         spreadsheetId: window.spreadsheetId,
         Fecha: new Date().toLocaleDateString('es-AR'),
         Hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        Día: window.activeExercise.day,
-        Zona: window.activeExercise.zone,
-        Ejercicio: window.activeExercise.name,
-        Serie: Number(setNum),
+        Día: day,
+        Zona: currentZone,
+        Ejercicio: currentExName,
+        Serie: setNum,
         "Peso (kg)": Number(weight),
         Repeticiones: Number(reps),
         Comentarios: comments
@@ -976,19 +998,85 @@
       localStorage.setItem('fst_sync_queue', JSON.stringify(queue));
 
       window.processSyncQueue();
-
-      const nextSet = Number(setNum) + 1;
-      document.getElementById('setNum').value = nextSet;
       document.getElementById('workoutComments').value = '';
-      window.updateInputsForSet(nextSet);
-      
-      const targetSets = window.activeExercise.sets || 3;
-      if (nextSet > targetSets) {
-          document.getElementById('completedExName').textContent = window.activeExercise.name;
-          document.getElementById('exerciseCompleteModal').style.display = 'flex';
-          document.getElementById('timerExerciseName').innerHTML = `${window.activeExercise.name} <span style="color: var(--accent); font-size: 1rem;">✅</span>`;
+
+      if (window.routineMode === 'circuitos') {
+          // --- LÓGICA POR RONDAS EN MODO CIRCUITOS ---
+          const currentExList = window.workoutData[day][currentZone] || [];
+          const currentExIndex = window.activeExercise.exIndex !== undefined
+              ? window.activeExercise.exIndex
+              : currentExList.findIndex(e => e.name === currentExName);
+
+          let nextExIndex = -1;
+          let nextSetForEx = setNum;
+
+          // 1. Buscar el siguiente ejercicio dentro de la misma serie/ronda del circuito
+          for (let i = currentExIndex + 1; i < currentExList.length; i++) {
+              const ex = currentExList[i];
+              const logged = window.getLoggedSetsCount(day, currentZone, ex.name);
+              const target = Number(ex.sets || 3);
+              if (logged < target && logged < setNum) {
+                  nextExIndex = i;
+                  nextSetForEx = logged + 1;
+                  break;
+              }
+          }
+
+          // 2. Si algún ejercicio previo en la misma ronda quedó sin hacer, ir a ese
+          if (nextExIndex === -1) {
+              for (let i = 0; i <= currentExIndex; i++) {
+                  const ex = currentExList[i];
+                  const logged = window.getLoggedSetsCount(day, currentZone, ex.name);
+                  const target = Number(ex.sets || 3);
+                  if (logged < target && logged < setNum) {
+                      nextExIndex = i;
+                      nextSetForEx = logged + 1;
+                      break;
+                  }
+              }
+          }
+
+          // 3. Si terminó la ronda actual, volver al primer ejercicio del circuito para la siguiente serie
+          if (nextExIndex === -1) {
+              for (let i = 0; i < currentExList.length; i++) {
+                  const ex = currentExList[i];
+                  const logged = window.getLoggedSetsCount(day, currentZone, ex.name);
+                  const target = Number(ex.sets || 3);
+                  if (logged < target) {
+                      nextExIndex = i;
+                      nextSetForEx = logged + 1;
+                      break;
+                  }
+              }
+          }
+
+          if (nextExIndex !== -1) {
+              // Avanza automáticamente al siguiente ejercicio de la ronda o inicia la nueva vuelta
+              window.startExercise(day, currentZone, nextExIndex, nextSetForEx);
+          } else {
+              // Se completaron todas las series de todos los ejercicios de este circuito
+              document.getElementById('completeModalTitle').textContent = '¡Circuito Completado!';
+              document.getElementById('completedExName').textContent = currentZone;
+              document.getElementById('completeModalNextBtn').textContent = 'Siguiente circuito';
+              document.getElementById('exerciseCompleteModal').style.display = 'flex';
+              document.getElementById('timerExerciseName').innerHTML = `${currentExName} <span style="color: var(--accent); font-size: 1rem;">✅</span>`;
+          }
       } else {
-          document.getElementById('timerExerciseName').textContent = window.activeExercise.name;
+          // --- LÓGICA CLÁSICA POR GRUPOS MUSCULARES ---
+          const nextSet = setNum + 1;
+          document.getElementById('setNum').value = nextSet;
+          window.updateInputsForSet(nextSet);
+          
+          const targetSets = Number(window.activeExercise.sets || 3);
+          if (nextSet > targetSets) {
+              document.getElementById('completeModalTitle').textContent = '¡Ejercicio Completado!';
+              document.getElementById('completedExName').textContent = currentExName;
+              document.getElementById('completeModalNextBtn').textContent = 'Siguiente ejercicio';
+              document.getElementById('exerciseCompleteModal').style.display = 'flex';
+              document.getElementById('timerExerciseName').innerHTML = `${currentExName} <span style="color: var(--accent); font-size: 1rem;">✅</span>`;
+          } else {
+              document.getElementById('timerExerciseName').textContent = currentExName;
+          }
       }
       
       window.startTimer(window.defaultRestTime); 
@@ -1007,13 +1095,22 @@
         const currentExList = window.workoutData[day][currentZone];
         const currentExIndex = currentExList.findIndex(e => e.name === currentExName);
 
-        if (currentExIndex + 1 < currentExList.length) {
-            window.startExercise(day, currentZone, currentExIndex + 1);
-        } else if (currentZoneIndex + 1 < zones.length) {
-            const nextZone = zones[currentZoneIndex + 1];
-            window.startExercise(day, nextZone, 0);
+        if (window.routineMode === 'circuitos') {
+            if (currentZoneIndex + 1 < zones.length) {
+                const nextZone = zones[currentZoneIndex + 1];
+                window.startExercise(day, nextZone, 0, 1);
+            } else {
+                document.getElementById('routineCompleteModal').style.display = 'flex';
+            }
         } else {
-            document.getElementById('routineCompleteModal').style.display = 'flex';
+            if (currentExIndex + 1 < currentExList.length) {
+                window.startExercise(day, currentZone, currentExIndex + 1, 1);
+            } else if (currentZoneIndex + 1 < zones.length) {
+                const nextZone = zones[currentZoneIndex + 1];
+                window.startExercise(day, nextZone, 0, 1);
+            } else {
+                document.getElementById('routineCompleteModal').style.display = 'flex';
+            }
         }
     };
 
@@ -1134,7 +1231,7 @@
             <td>${log.Serie}</td>
             <td>${log['Peso (kg)']}kg x ${log.Repeticiones}</td>
             <td style="text-align:right;">
-                <button onclick="deleteSessionLog(${index})" style="background:transparent; color:var(--danger); border:1px solid var(--danger); border-radius:6px; padding:2px 8px; font-weight:bold; cursor:pointer;" title="Borrar serie">&times;</button>
+                <button onclick="deleteSessionLog(${index})" style="background:transparent; color:var(--danger); border:1px solid var(--danger); border-radius:8px; padding:2px 8px; font-weight:bold; cursor:pointer;" title="Borrar serie">&times;</button>
             </td>
           </tr>
         `;
@@ -1221,7 +1318,6 @@
     };
 
     window.submitFeedback = async function() {
-      // Bloqueador anti-clicks múltiples
       if (window.isSubmittingFeedback) return;
       
       const sensacion = document.getElementById('fbSensacion').value;
@@ -1276,7 +1372,6 @@
         }
       }
 
-      // Desbloqueo y continuación
       btn.textContent = originalText;
       btn.disabled = false;
       window.isSubmittingFeedback = false;
@@ -1305,9 +1400,9 @@
         const captureDiv = document.getElementById('shareCardCapture');
         
         html2canvas(captureDiv, {
-            backgroundColor: null, // Permite que el fondo de la imagen se vea correctamente
+            backgroundColor: null,
             scale: 2,
-            useCORS: true, // Fundamental para capturar el fondo y el logo sin que el navegador lo bloquee
+            useCORS: true,
             allowTaint: true
         }).then(canvas => {
             const link = document.createElement('a');
@@ -1340,7 +1435,7 @@
           🔔<div id="notificationDot" class="notification-dot"></div>
         </button>
         <button class="icon-btn" id="themeIcon" onclick="toggleTheme()" title="Cambiar Tema">☀️</button>
-        <button class="icon-btn" style="font-size: 0.85rem;" onclick="logoutStudent()">Salir</button>
+        <button class="icon-btn" style="font-size: 0.85rem; width: auto; padding: 0 12px;" onclick="logoutStudent()">Salir</button>
       </div>
     </header>
 
@@ -1384,7 +1479,7 @@
           
           <div id="timerExerciseName" style="text-align: center; color: var(--accent); margin-bottom: 12px; font-weight: bold; font-size: 1.4rem;">Selecciona un ejercicio</div>
 
-          <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 20px;">
+          <div style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 20px;">
             <div class="timer-display" id="timerDisplay">00:00</div>
             
             <div class="grid-timer">
@@ -1400,7 +1495,7 @@
           <div class="grid-3">
             <div>
               <label id="setNumLabel">Serie Nº</label>
-              <input type="number" id="setNum" value="1" min="1" onchange="updateInputsForSet(1)">
+              <input type="number" id="setNum" value="1" min="1" onchange="updateInputsForSet(this.value)">
             </div>
             <div>
               <label>Peso (kg)</label>
@@ -1419,7 +1514,7 @@
             <button class="btn-sec" style="flex: 1; padding: 14px; font-size: 0.95rem;" onclick="viewCurrentExerciseDetails()">Ver ejercicio</button>
             <button class="btn-main" style="flex: 2; padding: 14px; font-size: 0.95rem;" onclick="logSet()">Completar serie y descansar</button>
           </div>
-          <div class="sync-status" style="margin-top: 12px;" id="syncBadge"></div>
+          <div class="sync-badge" style="margin-top: 12px;" id="syncBadge"></div>
         </div>
 
         <div class="card">
@@ -1486,11 +1581,11 @@
       </div>
       
       <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-        <div style="flex: 1; background: var(--input-bg); padding: 16px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <div style="flex: 1; background: var(--input-bg); padding: 16px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
           <span style="color: var(--muted); font-size: 0.8rem; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px;">Días Totales</span>
           <strong id="statTotalDays" style="color: var(--text); font-size: 1.2rem;">0 días</strong>
         </div>
-        <div style="flex: 1; background: var(--input-bg); padding: 16px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <div style="flex: 1; background: var(--input-bg); padding: 16px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
           <span style="color: var(--muted); font-size: 0.8rem; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px;">Estado Actual</span>
           <strong id="statStatus" style="color: var(--accent); font-size: 1.1rem;">Sin Iniciar</strong>
         </div>
@@ -1498,7 +1593,7 @@
 
       <div style="margin-bottom: 24px;">
         <h4 style="font-size: 1rem; margin-bottom: 12px; color: var(--text);">Historial de Evolución</h4>
-        <div style="background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
+        <div style="background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
           <canvas id="progressChart" width="100" height="60"></canvas>
         </div>
       </div>
@@ -1512,14 +1607,14 @@
             </div>
         </div>
         <p id="ueFechaLabel" style="font-size: 0.9rem; color: var(--accent); font-weight: bold; margin-bottom: 8px;">Cargando...</p>
-        <div id="ueListContainer" style="background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border); font-size: 0.9rem; max-height: 250px; overflow-y: auto;">
+        <div id="ueListContainer" style="background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.9rem; max-height: 250px; overflow-y: auto;">
             <p style="color:var(--muted);">Buscando datos...</p>
         </div>
       </div>
 
       <div style="margin-bottom: 24px;">
         <h4 style="font-size: 1rem; margin-bottom: 12px; color: var(--text);">🏆 Récords Personales (30 días)</h4>
-        <div id="prListContainer" style="background: var(--input-bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border); font-size: 0.9rem;">
+        <div id="prListContainer" style="background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.9rem;">
            <p style="color: var(--muted);">Buscando récords...</p>
         </div>
       </div>
@@ -1531,14 +1626,13 @@
   <div id="exerciseCompleteModal" class="modal-overlay" style="z-index: 4000;">
     <div class="modal-content" style="text-align: center;">
       <button class="close-modal" onclick="document.getElementById('exerciseCompleteModal').style.display='none'">&times;</button>
-      <h3 style="color: var(--accent); font-size: 1.5rem; margin-bottom: 10px;">¡Ejercicio Completado!</h3>
+      <h3 id="completeModalTitle" style="color: var(--accent); font-size: 1.5rem; margin-bottom: 10px;">¡Ejercicio Completado!</h3>
       <p style="color: var(--muted); margin-bottom: 20px;">Terminaste todas las series de <strong id="completedExName" style="color:var(--text);"></strong>.</p>
-      <button class="btn-main" onclick="loadNextExercise()">Siguiente ejercicio</button>
+      <button id="completeModalNextBtn" class="btn-main" onclick="loadNextExercise()">Siguiente ejercicio</button>
       <button class="btn-sec" style="margin-top: 10px; width: 100%;" onclick="document.getElementById('exerciseCompleteModal').style.display='none'">Quedarme aquí</button>
     </div>
   </div>
 
-  <!-- NUEVO: Modal de Rutina Completada -->
   <div id="routineCompleteModal" class="modal-overlay" style="z-index: 4200;">
     <div class="modal-content" style="text-align: center;">
       <button class="close-modal" onclick="document.getElementById('routineCompleteModal').style.display='none'">&times;</button>
@@ -1594,15 +1688,15 @@
       <p style="color: #a0a0b0; font-size: 0.9rem; margin-bottom: 24px;">Resumen de tu entrenamiento de hoy</p>
 
       <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-        <div class="share-stat-box" style="background: rgba(37, 37, 48, 0.6); padding: 16px; border-radius: 16px; backdrop-filter: blur(3px);">
+        <div class="share-stat-box" style="background: rgba(37, 37, 48, 0.6); padding: 16px; border-radius: 8px; backdrop-filter: blur(3px);">
           <div class="share-stat-value" id="shareTotalEx" style="color: #ffffff;">0</div>
           <div class="share-stat-label" style="color: #a0a0b0;">Ejercicios</div>
         </div>
-        <div class="share-stat-box" style="background: rgba(37, 37, 48, 0.6); padding: 16px; border-radius: 16px; backdrop-filter: blur(3px);">
+        <div class="share-stat-box" style="background: rgba(37, 37, 48, 0.6); padding: 16px; border-radius: 8px; backdrop-filter: blur(3px);">
           <div class="share-stat-value" id="shareTotalSets" style="color: #ffffff;">0</div>
           <div class="share-stat-label" style="color: #a0a0b0;">Series</div>
         </div>
-        <div class="share-stat-box" style="background: rgba(37, 37, 48, 0.6); padding: 16px; border-radius: 16px; backdrop-filter: blur(3px);">
+        <div class="share-stat-box" style="background: rgba(37, 37, 48, 0.6); padding: 16px; border-radius: 8px; backdrop-filter: blur(3px);">
           <div class="share-stat-value" style="color: #ffffff;" id="shareTotalVolume">0</div>
           <div class="share-stat-label" style="color: #a0a0b0;">Kg Totales</div>
         </div>
