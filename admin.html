@@ -92,8 +92,9 @@
     .tree-node { background: var(--input-bg); border-radius: 8px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
     .status-msg { text-align: center; font-weight: bold; margin-top: 10px; font-size: 0.9rem; }
     
-    .student-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 15px; }
-    .student-item:last-child { border-bottom: none; }
+    .student-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; flex-wrap: wrap; gap: 15px; cursor: pointer; transition: background 0.2s, border-color 0.2s, transform 0.1s; }
+    .student-item:hover { background: var(--border); border-color: var(--accent); }
+    .student-item:last-child { margin-bottom: 0; }
     .student-info-block { display: flex; flex-direction: column; flex-grow: 1; word-break: break-all; overflow-wrap: anywhere; } 
     .profile-img-circular { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); flex-shrink: 0; }
 
@@ -191,12 +192,28 @@
       }
     };
 
+    window.updateModeButtonsUI = function(mode) {
+      const btnCirc = document.getElementById('modeBtnCircuitos');
+      const btnMusc = document.getElementById('modeBtnMusculos');
+      if (btnCirc && btnMusc) {
+        btnCirc.classList.toggle('active', mode === 'circuitos');
+        btnMusc.classList.toggle('active', mode === 'musculos');
+      }
+    };
+
+    window.selectRoutineMode = function(mode) {
+      window.setActiveRoutineMode(mode);
+      const select = document.getElementById('routineModeSelect');
+      if (select) select.value = mode;
+      window.updateModeButtonsUI(mode);
+      renderEditorSelectedDay();
+      if (window.editorContext.type === 'student') renderRoutineDetails();
+    };
+
     window.onRoutineModeChange = function() {
       const select = document.getElementById('routineModeSelect');
       if (!select) return;
-      window.setActiveRoutineMode(select.value);
-      renderEditorSelectedDay();
-      if (window.editorContext.type === 'student') renderRoutineDetails();
+      window.selectRoutineMode(select.value);
     };
     
     // --- Función para obtener el orden de circuitos o grupos musculares ---
@@ -247,7 +264,9 @@
     });
 
     window.loginGoogle = () => signInWithPopup(auth, provider);
-    window.logout = () => signOut(auth);
+    window.logout = () => signOut(auth).then(() => {
+      window.location.href = 'index.html';
+    });
 
     window.updateThemeIcon = function() {
       const btn = document.getElementById('themeToggleBtn');
@@ -275,7 +294,9 @@
     };
 
     window.switchModule = function(moduleName) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.id && btn.id.startsWith('tab-')) btn.classList.remove('active');
+      });
       document.querySelectorAll('.module-section').forEach(sec => sec.classList.remove('active'));
       document.getElementById(`tab-${moduleName}`).classList.add('active');
       document.getElementById(`module-${moduleName}`).classList.add('active');
@@ -372,6 +393,7 @@
       list.forEach(student => {
         const div = document.createElement('div');
         div.className = 'student-item';
+        div.onclick = () => selectStudentToEdit(student.id);
         
         const photoUrl = student.foto_url || 'https://via.placeholder.com/50?text=👤';
         const edad = student.edad || '-';
@@ -387,9 +409,6 @@
                 Edad: ${edad} | Peso: ${peso} kg | Altura: ${altura} cm
               </div>
             </div>
-          </div>
-          <div style="display:flex; gap:8px; flex-shrink: 0;">
-            <button class="btn-main" style="width: auto; padding: 8px 14px; font-size: 0.85rem; margin-bottom: 0;" onclick="selectStudentToEdit('${student.id}')">👁️</button>
           </div>
         `;
         container.appendChild(div);
@@ -1225,18 +1244,25 @@
       const btnContainer = document.getElementById('editorActionButtons');
       const editorTitle = document.getElementById('routineEditorTitle');
       const applyTplDiv = document.getElementById('applyTemplateContainer');
+      const tplNameDiv = document.getElementById('templateNameInlineContainer');
+      const tplNameInput = document.getElementById('templateNameInlineInput');
       const modeSelect = document.getElementById('routineModeSelect');
       
+      const currentMode = window.getActiveRoutineMode();
       if(modeSelect) {
-        modeSelect.value = window.getActiveRoutineMode();
+        modeSelect.value = currentMode;
       }
+      window.updateModeButtonsUI(currentMode);
 
       if(window.editorContext.type === 'template') {
-        if(editorTitle) editorTitle.textContent = window.editorContext.nombre ? `⚙️ Editando plantilla: ${window.editorContext.nombre}` : `⚙️ Nueva plantilla`;
+        if(editorTitle) editorTitle.textContent = window.editorContext.id ? `⚙️ Editar plantilla` : `⚙️ Nueva plantilla`;
+        if(tplNameDiv) tplNameDiv.style.display = 'block';
+        if(tplNameInput) tplNameInput.value = window.editorContext.nombre || '';
         btnContainer.innerHTML = `<button class="btn-main" onclick="saveTemplateToFirebase()" style="padding: 12px; grid-column: 1 / -1; margin-bottom: 0;">💾 Guardar plantilla</button>`;
         if(applyTplDiv) applyTplDiv.style.display = 'none';
       } else {
         if(editorTitle) editorTitle.textContent = `⚙️ Diseñar y publicar rutina`;
+        if(tplNameDiv) tplNameDiv.style.display = 'none';
         btnContainer.innerHTML = `
           <button class="btn-main" onclick="saveToFirebase()" style="padding: 12px; margin-bottom: 0;">💾 Guardar rutina</button>
           <button class="btn-sec" onclick="saveCurrentAsTemplate()" style="padding: 12px; margin-bottom: 0;">⭐ Guardar como plantilla</button>
@@ -1262,15 +1288,19 @@
           nombre: template.nombre_plantilla,
           modo_rutina: template.modo_rutina || 'circuitos'
         };
-        closeViewTemplateModal();
-        document.getElementById('routineEditorModal').classList.add('show');
-        window.currentEditorDay = null;
-        renderEditor();
       } else {
-        window.templatePromptContext = 'new_editor';
-        document.getElementById('newTemplateNameInput').value = '';
-        document.getElementById('newTemplatePromptModal').classList.add('show');
+        window.editorContext = {
+          type: 'template',
+          id: null,
+          rutina: {},
+          nombre: '',
+          modo_rutina: 'circuitos'
+        };
       }
+      closeViewTemplateModal();
+      document.getElementById('routineEditorModal').classList.add('show');
+      window.currentEditorDay = null;
+      renderEditor();
     };
 
     window.closeRoutineEditorModal = function() {
@@ -1639,6 +1669,14 @@
     };
 
     window.saveTemplateToFirebase = async function() {
+      const inlineInput = document.getElementById('templateNameInlineInput');
+      if (inlineInput) {
+        window.editorContext.nombre = inlineInput.value.trim();
+      }
+      if (!window.editorContext.nombre) {
+        return alert("Por favor ingresa un nombre para la plantilla.");
+      }
+
       const status = document.getElementById('saveStatus');
       if(status) status.textContent = "⏳ Guardando plantilla...";
       try {
@@ -2490,6 +2528,7 @@
       <img src="logo chico.png" alt="Flor Sol Trainer" class="header-logo">
       
       <div class="user-menu-container">
+        <button class="user-menu-btn" onclick="window.location.href='alumnos.html'" title="Ir a mi entrenamiento">🏋️</button>
         <button id="themeToggleBtn" class="user-menu-btn" onclick="toggleTheme()">☀️</button>
         
         <button class="user-menu-btn" onclick="openNotifModal()" style="position: relative;">
@@ -2754,6 +2793,12 @@
         <h3 style="margin: 0;" id="routineEditorTitle">⚙️ Diseñar y publicar rutina</h3>
         <button onclick="closeRoutineEditorModal()" style="background: none; border: none; font-size: 2rem; margin: 0; padding: 0; line-height: 1; color: var(--muted); cursor: pointer; width: auto;">×</button>
       </div>
+
+      <!-- Campo de Nombre de Plantilla Integrado -->
+      <div id="templateNameInlineContainer" style="display: none; margin-bottom: 16px;">
+        <label style="color: var(--accent); font-weight: bold;">📋 Nombre de la Plantilla:</label>
+        <input type="text" id="templateNameInlineInput" placeholder="Ej: Rutina Hipertrofia 4 Días" style="margin-bottom: 0;" oninput="window.editorContext.nombre = this.value.trim()">
+      </div>
       
       <div id="applyTemplateContainer" style="margin-bottom: 16px;">
         <label>Aplicar Plantilla Estándar:</label>
@@ -2763,12 +2808,16 @@
         </div>
       </div>
 
-      <!-- Selector de Modo de Entrenamiento (Bimodal: Circuitos vs Grupos Musculares) -->
+      <!-- Selector de Modo de Entrenamiento Integrado con Botones Directos -->
       <div style="margin-bottom: 20px; background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
-        <label style="color: var(--accent); font-weight: bold; margin-bottom: 6px;">🎯 Modo de Entrenamiento de la Rutina:</label>
-        <select id="routineModeSelect" onchange="onRoutineModeChange()" style="margin-bottom: 0; background: var(--card);">
-          <option value="circuitos">🔄 Por Circuitos (Avance por rondas secuenciales y orden personalizado)</option>
-          <option value="musculos">💪 Por Grupos Musculares (Agrupa y ordena automáticamente por zona muscular)</option>
+        <label style="color: var(--accent); font-weight: bold; margin-bottom: 8px;">🎯 Modo de Entrenamiento de la Rutina:</label>
+        <div class="tabs" style="margin-bottom: 0;">
+          <button type="button" id="modeBtnCircuitos" class="tab-btn active" style="margin-bottom: 0;" onclick="selectRoutineMode('circuitos')">🔄 Por Circuitos</button>
+          <button type="button" id="modeBtnMusculos" class="tab-btn" style="margin-bottom: 0;" onclick="selectRoutineMode('musculos')">💪 Por Grupos Musculares</button>
+        </div>
+        <select id="routineModeSelect" onchange="onRoutineModeChange()" style="display: none;">
+          <option value="circuitos">🔄 Por Circuitos</option>
+          <option value="musculos">💪 Por Grupos Musculares</option>
         </select>
       </div>
       
@@ -2917,7 +2966,7 @@
     </div>
   </div>
 
-  <!-- MODAL: Nombre de la nueva Plantilla -->
+  <!-- MODAL: Nombre de la nueva Plantilla (al guardar desde rutina de alumno) -->
   <div id="newTemplatePromptModal" class="modal-overlay" style="z-index: 3500;">
     <div class="modal-content" style="max-width: 400px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
